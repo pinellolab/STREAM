@@ -1,6 +1,6 @@
 # Ariadne
 
-Ariadne is a powerful computational pipeline implemented in python for reconstructing complex celluar developmental trajectories from scPCR, scRNA-seq or scATAC-seq data.
+STREAM is a powerful computational pipeline implemented in python for reconstructing complex celluar developmental trajectories from scPCR, scRNA-seq or scATAC-seq data.
 
 Ariade provides two different informative and intuitive ways of visulizing celluar trajectories, including flat tree at single-cell level and rainbow plot at density level. It also provides a set of analytic tools that help automatically detect gene markers, which is important in defining cell subpopulations or deciding cell fates.
 
