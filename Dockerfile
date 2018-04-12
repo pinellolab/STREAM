@@ -47,8 +47,15 @@ RUN pip install dash-core-components==0.21.1  # Supercharged components
 RUN pip install plotly --upgrade  # Plotly graphing library used in examples
 RUN pip install gunicorn
 
+
+RUN apt-get install unzip libxml2 libxml2-dev -y
+
+#ATAC-script dependencies
+RUN mv /opt/conda/bin/xml2-config /opt/conda/bin/xml2-config_old
+RUN Rscript -e 'source("https://bioconductor.org/biocLite.R");biocLite("BiocInstaller");biocLite("BSgenome.Hsapiens.UCSC.hg19");biocLite("TFBSTools");BiocInstaller::biocLite("GreenleafLab/chromVAR")'
+RUN mv /opt/conda/bin/xml2-config_old /opt/conda/bin/xml2-config
+
 # upload button
-RUN apt-get install unzip -y
 COPY upload-button.zip /
 RUN unzip upload-button.zip && cd upload-button && python setup.py install
 RUN rm upload-button.zip
@@ -65,8 +72,9 @@ WORKDIR /STREAM
 #RUN  python STREAM.py -m exampleDataset/data_guoji.tsv -l exampleDataset/cell_label.tsv -c exampleDataset/cell_label_color.tsv -o /OUTPUT/test
 #RUN python stream.py -m exampleData/data_guoji.tsv -l exampleData/cell_label.tsv -c exampleData/cell_label_color.tsv -o test
 
+
 EXPOSE 10001
 CMD ["bash", "start_server_docker.sh"]
 
 # Reroute to enable the ariadne-cli and ariadne-webapp commands
-#ENTRYPOINT ["/opt/conda/bin/python", "/STREAM/stream_router.py"]
+#ENTRYPOINT ["/opt/conda/bin/python", "/Ariadne/ariadne_router.py"]
