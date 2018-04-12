@@ -1,4 +1,4 @@
-# Ariadne
+# STREAM
 
 STREAM is a powerful computational pipeline implemented in python for reconstructing complex celluar developmental trajectories from scPCR, scRNA-seq or scATAC-seq data.
 
