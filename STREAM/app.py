@@ -51,6 +51,11 @@ dcc._css_dist[0]['relative_package_path'].append('Loading-State.css')
 app.server.config['UPLOADS_FOLDER']='/tmp/UPLOADS_FOLDER'
 app.server.config['RESULTS_FOLDER']='/tmp/RESULTS_FOLDER'
 
+
+@server.route('/help')
+def help():
+	return render_template('help.html')
+
 @server.route('/')
 def index():
 	newpath = 'STREAM_' + str(uuid.uuid4())
@@ -73,7 +78,9 @@ def index():
 		json_string = json.dumps(param_dict)
 		f.write(json_string + '\n')
 
-	return redirect('/compute/' + newpath)
+
+	return render_template('index.html',newpath=newpath)
+	#return redirect('/compute/' + newpath)
 
 #Import some other useful functions
 def generate_table(dataframe, max_rows = 100):
@@ -442,7 +449,7 @@ app.layout = html.Div([
 	html.Br(),
 	html.Br(),
 
-	html.Div(id = 'compute-container', 
+	html.Div(id = 'compute-container',
 		children = [
 
 		html.Div([
@@ -737,7 +744,7 @@ app.layout = html.Div([
 		]),
 
 	html.Hr(),
-	
+
 	html.Div([
 
 		html.Div([
@@ -1470,7 +1477,7 @@ def update_container(n_clicks, segmentation_container, pathname):
 		return {'display': 'block'}
 
 	else:
-  
+
 		return {'display': 'none'}
 
 @app.callback(
@@ -1497,7 +1504,7 @@ def update_container(n_clicks, segmentation_container, pathname):
 		return 5000
 
 	else:
-  
+
 		return 1000000
 
 @app.callback(
@@ -2264,7 +2271,7 @@ def update_container(n_clicks, figure, pathname):
 		return {'display': 'block'}
 
 	else:
-  
+
 		return {'display': 'none'}
 
 @app.callback(
@@ -2291,7 +2298,7 @@ def update_container(n_clicks, figure, pathname):
 		return 5000
 
 	else:
-  
+
 		return 1000000
 
 @app.callback(
@@ -2694,7 +2701,7 @@ def update_container(n_clicks, figure, pathname):
 		return {'display': 'block'}
 
 	else:
-  
+
 		return {'display': 'none'}
 
 @app.callback(
@@ -2721,7 +2728,7 @@ def update_container(n_clicks, figure, pathname):
 		return 5000
 
 	else:
-  
+
 		return 1000000
 
 @app.callback(
@@ -3209,7 +3216,7 @@ def update_container(n_clicks, figure, pathname):
 		return {'display': 'block'}
 
 	else:
-  
+
 		return {'display': 'none'}
 
 @app.callback(
@@ -3236,7 +3243,7 @@ def update_container(n_clicks, figure, pathname):
 		return 5000
 
 	else:
-  
+
 		return 1000000
 
 @app.callback(
