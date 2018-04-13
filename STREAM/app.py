@@ -41,9 +41,15 @@ hms_logo_image = base64.b64encode(open(hms_logo, 'rb').read())
 server = Flask(__name__)
 server.secret_key = '~x94`zW\sfa24\xa2qdx20g\x9dl\xc0x35x90\kchs\x9c\xceb\xb4'
 app = dash.Dash(name = 'stream-app', server = server, url_base_pathname = '/compute/', csrf_protect=False)
-
 app.css.config.serve_locally = True
 app.scripts.config.serve_locally = True
+
+app2 = dash.Dash(name = 'stream-app-precomputed', server = server, url_base_pathname = '/precomputed/', csrf_protect=False)
+app2.css.config.serve_locally = True
+app2.scripts.config.serve_locally = True
+
+app2.layout = html.Div(['ciao'])
+
 
 dcc._css_dist[0]['relative_package_path'].append('STREAM.css')
 dcc._css_dist[0]['relative_package_path'].append('Loading-State.css')
