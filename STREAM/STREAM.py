@@ -611,8 +611,8 @@ def Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_labe
             ax.text(dict_nodes_pos[node_id][0],dict_nodes_pos[node_id][1],dict_nodes_pos[node_id][2],
                     dict_node_state[node_id],color='black',fontsize = 12,zorder=10)
         if(flag_web):
-        	dict_node_state_pos = {dict_node_state[node_id]:dict_nodes_pos[node_id] for node_id in dict_node_state.keys()}
-        	pd.DataFrame(dict_node_state_pos).T.to_csv(file_path + '/coord_states.csv',sep='\t')
+            dict_node_state_pos = {dict_node_state[node_id]:dict_nodes_pos[node_id] for node_id in dict_node_state.keys()}
+            pd.DataFrame(dict_node_state_pos).T.to_csv(file_path + '/coord_states.csv',sep='\t')
     max_range = np.array([X[:,0].max()-X[:,0].min(), X[:,1].max()-X[:,1].min(), X[:,2].max()-X[:,2].min()]).max() / 2.0
     mid_x = (X[:,0].max()+X[:,0].min()) * 0.5
     mid_y = (X[:,1].max()+X[:,1].min()) * 0.5
@@ -3463,7 +3463,7 @@ def Read_From_Pickle(file_name,file_path_precomp):
     return variable
 
 
-def counts_to_kmers(counts_file,peaks_file,samples_file,k,file_path):
+def counts_to_kmers(counts_file,regions_file,samples_file,k,file_path):
     chromVAR = importr('chromVAR')
     GenomicRanges = importr('GenomicRanges')
     SummarizedExperiment = importr('SummarizedExperiment')
@@ -3473,18 +3473,18 @@ def counts_to_kmers(counts_file,peaks_file,samples_file,k,file_path):
     BiocParallel.register(BiocParallel.MulticoreParam(2))
     pandas2ri.activate()
     
-    df_peaks = pd.read_csv(peaks_file,sep='\t',header=None)
-    df_peaks = df_peaks.iloc[:,:3]
-    df_peaks.columns = ['seqnames','start','end']
+    df_regions = pd.read_csv(regions_file,sep='\t',header=None)
+    df_regions = df_regions.iloc[:,:3]
+    df_regions.columns = ['seqnames','start','end']
     pandas2ri.activate()
-    r_peaks_dataframe = pandas2ri.py2ri(df_peaks)
-    peaks = GenomicRanges.makeGRangesFromDataFrame(r_peaks_dataframe)
+    r_regions_dataframe = pandas2ri.py2ri(df_regions)
+    regions = GenomicRanges.makeGRangesFromDataFrame(r_regions_dataframe)
     df_counts = pd.read_csv(counts_file,sep='\t',header=None,names=['i','j','x'])
     counts = r_Matrix.sparseMatrix(i = df_counts['i'], j = df_counts['j'], x=df_counts['x'])
     df_samples = pd.read_csv(samples_file,sep='\t',header=None,names=['cell_id'])
     samples = pandas2ri.py2ri(df_samples)
     samples.rownames = df_samples['cell_id']
-    SE = SummarizedExperiment.SummarizedExperiment(rowRanges = peaks,colData = samples,assays = robjects.ListVector({'counts':counts}))
+    SE = SummarizedExperiment.SummarizedExperiment(rowRanges = regions,colData = samples,assays = robjects.ListVector({'counts':counts}))
     SE = chromVAR.addGCBias(SE, genome = BSgenome_Hsapiens_UCSC_hg19.BSgenome_Hsapiens_UCSC_hg19)
     # compute kmer deviations
     KmerMatch = chromVAR.matchKmers(k, SE, BSgenome_Hsapiens_UCSC_hg19.BSgenome_Hsapiens_UCSC_hg19)
@@ -3537,8 +3537,8 @@ def main():
                         help="indicate scATAC-seq data")
     parser.add_argument("--atac_counts",dest="atac_counts",default = None,
                         help="scATAC-seq counts file", metavar="FILE")
-    parser.add_argument("--atac_peaks",dest="atac_peaks",default = None,
-                        help="scATAC-seq peaks file", metavar="FILE")
+    parser.add_argument("--atac_regions",dest="atac_regions",default = None,
+                        help="scATAC-seq regions file", metavar="FILE")
     parser.add_argument("--atac_samples",dest="atac_samples",default = None,
                         help="scATAC-seq samples file", metavar="FILE")    
     parser.add_argument("--atac_k",dest="atac_k",type=int,default=7,
@@ -3786,7 +3786,7 @@ def main():
         flag_log2 = args.flag_log2
         flag_norm = args.flag_norm
         flag_atac = args.flag_atac
-        atac_peaks = args.atac_peaks
+        atac_regions = args.atac_regions
         atac_counts = args.atac_counts
         atac_samples = args.atac_samples
         atac_k = args.atac_k
@@ -3848,9 +3848,9 @@ def main():
                     Stream_Plot(df_rooted_tree,flat_tree,dict_branches,node_start,dict_node_state,input_cell_label_uni,input_cell_label_uni_color,flag_stream_log_view,file_path,flag_web,mode='contracted')    
         else:
             if(flag_atac):
-                if((atac_samples!=None) and (atac_peaks!=None) and (atac_counts!=None)):
-                    counts_to_kmers(atac_counts,atac_peaks,atac_samples,atac_k,file_path)
-                    input_filename = 'df_zscores_scaled.tsv'
+                if((atac_samples!=None) and (atac_regions!=None) and (atac_counts!=None)):
+                    counts_to_kmers(atac_counts,atac_regions,atac_samples,atac_k,file_path)
+                    input_filename = file_path + '/df_zscores_scaled.tsv'
             if(input_filename==None):
                 print('Input file must be provided')
                 sys.exit()
@@ -3983,4 +3983,4 @@ def main():
             # Stream_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start,dict_node_state,gene_list,flag_stream_log_view,flag_atac,file_path,flag_web,mode='contracted')
     print('Finished computation...')
 if __name__ == "__main__":
-	main()
+    main()
