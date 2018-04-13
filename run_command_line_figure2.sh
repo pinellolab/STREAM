@@ -1,0 +1,1 @@
+docker run  -v $PWD/Datasets/Buenrostro_2018:/data -w /data  -v $PWD:/output pinellolab/stream STREAM -m data_Jason_7mer_scaled.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -o /output/STREAM_Results_Figure2
