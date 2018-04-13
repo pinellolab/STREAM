@@ -96,7 +96,8 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 
 def Read_In_Data(input_filename,cell_label_filename,cell_label_color_filename,flag_log2,flag_norm):
-    input_data = pd.read_csv(input_filename,sep='\t',header=0,index_col=0)
+    input_data = pd.read_csv(input_filename,sep='\t',header=0,index_col=0,compression= 'gzip' if input_filename.split('.')[-1]=='gz' else None)
+    # input_data = pd.read_csv(input_filename,sep='\t',header=0,index_col=0)
     print('Input: '+ str(input_data.shape[1]) + ' cells, ' + str(input_data.shape[0]) + ' genes')
     if(flag_norm):
         ### remove libary size factor
@@ -126,12 +127,12 @@ def Read_In_Data(input_filename,cell_label_filename,cell_label_color_filename,fl
         input_genes = input_data.index.tolist()
     input_cell_id = input_data.columns.astype('str').tolist()
     if(cell_label_filename != None):
-        input_cell_label = pd.read_csv(cell_label_filename,sep='\t',header=None,index_col=None)
+        input_cell_label = pd.read_csv(cell_label_filename,sep='\t',header=None,index_col=None,compression= 'gzip' if cell_label_filename.split('.')[-1]=='gz' else None)
         input_cell_label = input_cell_label.iloc[:,0].astype('str').tolist()
         input_cell_label_uni = np.unique(input_cell_label).tolist()
         if(cell_label_color_filename != None):
             # df_label_color = pd.read_csv(cell_label_color_filename,sep='\t',header=None,index_col=0)
-            df_label_color = pd.read_csv(cell_label_color_filename,sep='\t',header=None,dtype={0:np.str})
+            df_label_color = pd.read_csv(cell_label_color_filename,sep='\t',header=None,dtype={0:np.str},compression= 'gzip' if cell_label_color_filename.split('.')[-1]=='gz' else None)
             df_label_color = df_label_color.set_index(0)            
             input_cell_label_uni_color = df_label_color.to_dict()[1]
         else:
@@ -154,7 +155,8 @@ def Read_In_Data(input_filename,cell_label_filename,cell_label_color_filename,fl
     return df_flat_tree,df_sc,input_genes,input_cell_label_uni,input_cell_label_uni_color
 
 def Read_In_New_Data(input_filename,cell_label_filename,cell_label_color_filename,flag_log2,flag_norm):
-    input_data = pd.read_csv(input_filename,sep='\t',header=0,index_col=0)
+    input_data = pd.read_csv(input_filename,sep='\t',header=0,index_col=0,compression= 'gzip' if input_filename.split('.')[-1]=='gz' else None)
+    # input_data = pd.read_csv(input_filename,sep='\t',header=0,index_col=0)
     print('New Input: '+ str(input_data.shape[1]) + ' cells, ' + str(input_data.shape[0]) + ' genes')
     if(flag_norm):
         ### remove libary size factor
@@ -176,11 +178,11 @@ def Read_In_New_Data(input_filename,cell_label_filename,cell_label_color_filenam
         input_genes = input_data.index.tolist()
     input_cell_id = input_data.columns.astype('str').tolist()
     if(cell_label_filename != None):
-        input_cell_label = pd.read_csv(cell_label_filename,sep='\t',header=None,index_col=None)
+        input_cell_label = pd.read_csv(cell_label_filename,sep='\t',header=None,index_col=None,compression= 'gzip' if cell_label_filename.split('.')[-1]=='gz' else None)
         input_cell_label = input_cell_label.iloc[:,0].astype('str').tolist()
         input_cell_label_uni = np.unique(input_cell_label).tolist()
         if(cell_label_color_filename != None):
-            df_label_color = pd.read_csv(cell_label_color_filename,sep='\t',header=None,index_col=0)
+            df_label_color = pd.read_csv(cell_label_color_filename,sep='\t',header=None,index_col=0,compression= 'gzip' if cell_label_color_filename.split('.')[-1]=='gz' else None)
             input_cell_label_uni_color = df_label_color.to_dict()[1]
         else:
             input_cm = plt.get_cmap('jet',len(input_cell_label_uni))
@@ -3473,15 +3475,15 @@ def counts_to_kmers(counts_file,regions_file,samples_file,k,file_path):
     BiocParallel.register(BiocParallel.MulticoreParam(2))
     pandas2ri.activate()
     
-    df_regions = pd.read_csv(regions_file,sep='\t',header=None)
+    df_regions = pd.read_csv(regions_file,sep='\t',header=None,compression= 'gzip' if regions_file.split('.')[-1]=='gz' else None)
     df_regions = df_regions.iloc[:,:3]
     df_regions.columns = ['seqnames','start','end']
     pandas2ri.activate()
     r_regions_dataframe = pandas2ri.py2ri(df_regions)
     regions = GenomicRanges.makeGRangesFromDataFrame(r_regions_dataframe)
-    df_counts = pd.read_csv(counts_file,sep='\t',header=None,names=['i','j','x'])
+    df_counts = pd.read_csv(counts_file,sep='\t',header=None,names=['i','j','x'],compression= 'gzip' if counts_file.split('.')[-1]=='gz' else None)
     counts = r_Matrix.sparseMatrix(i = df_counts['i'], j = df_counts['j'], x=df_counts['x'])
-    df_samples = pd.read_csv(samples_file,sep='\t',header=None,names=['cell_id'])
+    df_samples = pd.read_csv(samples_file,sep='\t',header=None,names=['cell_id'],compression= 'gzip' if samples_file.split('.')[-1]=='gz' else None)
     samples = pandas2ri.py2ri(df_samples)
     samples.rownames = df_samples['cell_id']
     SE = SummarizedExperiment.SummarizedExperiment(rowRanges = regions,colData = samples,assays = robjects.ListVector({'counts':counts}))
@@ -3536,11 +3538,11 @@ def main():
     parser.add_argument("--atac",dest="flag_atac", action="store_true",
                         help="indicate scATAC-seq data")
     parser.add_argument("--atac_counts",dest="atac_counts",default = None,
-                        help="scATAC-seq counts file", metavar="FILE")
+                        help="scATAC-seq counts file name", metavar="FILE")
     parser.add_argument("--atac_regions",dest="atac_regions",default = None,
-                        help="scATAC-seq regions file", metavar="FILE")
+                        help="scATAC-seq regions file name", metavar="FILE")
     parser.add_argument("--atac_samples",dest="atac_samples",default = None,
-                        help="scATAC-seq samples file", metavar="FILE")    
+                        help="scATAC-seq samples file name", metavar="FILE")    
     parser.add_argument("--atac_k",dest="atac_k",type=int,default=7,
                         help="specify k-mers in scATAC-seq")
     parser.add_argument("--n_processes",dest = "n_processes",type=int, default=multiprocessing.cpu_count(),
@@ -3756,7 +3758,7 @@ def main():
         
         if(gene_list_filename!=None):
             if(os.path.exists(gene_list_filename)):
-                gene_list = pd.read_csv(gene_list_filename,sep='\t',header=None,index_col=None).iloc[:,0].tolist()
+                gene_list = pd.read_csv(gene_list_filename,sep='\t',header=None,index_col=None,compression= 'gzip' if gene_list_filename.split('.')[-1]=='gz' else None).iloc[:,0].tolist()
                 gene_list = list(set(gene_list))
             else:
                 gene_list = gene_list_filename.split(',')
@@ -3871,7 +3873,7 @@ def main():
             df_sc_final = df_sc.copy()
             if(feature_genes_filename!=None):
                 print('Loading specified feature genes...')
-                feature_genes = pd.read_csv(feature_genes_filename,sep='\t',header=None,index_col=None).iloc[:,0].tolist()
+                feature_genes = pd.read_csv(feature_genes_filename,sep='\t',header=None,index_col=None,compression= 'gzip' if feature_genes_filename.split('.')[-1]=='gz' else None).iloc[:,0].tolist()
                 print(str(len(feature_genes)) + ' feature genes are specified')
                 Save_To_Pickle(feature_genes,'feature_genes',file_path_precomp)
                 df_sc_final = df_sc_final[['CELL_LABEL'] + feature_genes]
@@ -3967,7 +3969,7 @@ def main():
 
     if(gene_list_filename!=None):
         if(os.path.exists(gene_list_filename)):
-            gene_list = pd.read_csv(gene_list_filename,sep='\t',header=None,index_col=None).iloc[:,0].tolist()
+            gene_list = pd.read_csv(gene_list_filename,sep='\t',header=None,index_col=None,compression= 'gzip' if gene_list_filename.split('.')[-1]=='gz' else None).iloc[:,0].tolist()
             gene_list = list(set(gene_list))
         else:
             gene_list = gene_list_filename.split(',')
