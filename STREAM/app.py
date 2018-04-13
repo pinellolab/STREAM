@@ -48,9 +48,6 @@ app2 = dash.Dash(name = 'stream-app-precomputed', server = server, url_base_path
 app2.css.config.serve_locally = True
 app2.scripts.config.serve_locally = True
 
-app2.layout = html.Div(['ciao'])
-
-
 dcc._css_dist[0]['relative_package_path'].append('STREAM.css')
 dcc._css_dist[0]['relative_package_path'].append('Loading-State.css')
 
@@ -126,6 +123,268 @@ def save_files1():
 		sb.call('rm %s' % i, shell = True)
 
 	return upload_files(param_dict['required_files'], UPLOADS_FOLDER)
+
+app2.layout = html.Div([
+
+	html.Img(src='data:image/png;base64,{}'.format(stream_logo_image), width = '50%'),
+	html.H2('Single-cell Trajectory Reconstruction Exploration And Mapping'),
+
+	html.Br(),
+	html.Hr(),
+
+	html.H3('Choose Pre-Computed Data Set'),
+
+	dcc.Dropdown(
+		id = 'precomp-dataset',
+	    options=[
+	        {'label': 'Nestorowa et al. (2016)', 'value': 'Nestorowa_et_al'},
+	    ],
+	    value = 'Nestorowa_et_al'
+	),
+
+	html.Br(),
+	html.Hr(),
+
+	html.H3('Visualize Trajectories'),
+
+	html.Button(id = 'graph-button2', children = '(+) Show', n_clicks = 0),
+
+	html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+	dcc.Dropdown(
+			id = 'root2',
+		    options=[
+		        {'label': 'S0', 'value': 'S0'},
+		    ],
+		    value='S0'
+		),
+
+	html.Div(
+
+		id = 'graph-container2',
+		children = [
+
+		html.Div(
+
+			id = '3d-scatter-container',
+			children = [
+
+				html.H3('3D Scatter Plot'),
+				dcc.Graph(id='3d-scatter2', animate=False),
+
+				html.H3('Flat Tree Plot'),
+				dcc.Graph(id='flat-tree-scatter2', animate=False),
+
+			], className = 'six columns'),
+
+		html.Div(
+
+			id = '2d-subway-container',
+			children = [
+
+				html.H3('2D Subway Map'),
+				dcc.Graph(id='2d-subway2', animate=False),
+
+				html.H3('Stream Plot'),
+				html.Img(id = 'rainbow-plot2', src = None, width = '70%', style = {'align':'middle'}),
+
+			], className = 'six columns'),
+
+		], className = 'row'),
+
+	html.Br(),
+	html.Hr(),
+
+	html.H3('Visualize Genes of Interest'),
+
+	html.Button(id = 'sg-plot-button2', children = '(+) Show', n_clicks = 0),
+
+	html.Div(
+
+		id = 'sg-plot-container2',
+		children = [
+
+		html.Div([
+
+			html.Br(),
+
+			html.Label('Gene', style = {'font-weight':'bold', 'padding-right':'10px'}),
+			dcc.Dropdown(
+					id = 'sg-gene2',
+				    options=[
+				        {'label': 'Choose gene!', 'value': 'False'}
+				    ],
+				    value = 'False'
+				),
+
+			html.Br(),
+
+			]),
+
+		html.Div([
+
+			html.Div([
+
+				dcc.Graph(id='2d-subway-sg2', animate=False)
+
+				], className = 'six columns'),
+
+
+			html.Div([
+
+				html.Img(id = 'sg-plot2', src = None, width = '100%', style = {'align':'middle'}),
+
+				], className = 'six columns'),
+
+			], className = 'row'),
+
+		]),
+
+	html.Br(),
+	html.Hr(),
+
+	html.H3('Visualize Diverging Genes'),
+
+	html.Button(id = 'discovery-plot-button2', children = '(+) Show', n_clicks = 0),
+
+	html.Div(
+		id = 'discovery-container2',
+		children = [
+
+		html.Br(),
+
+		html.Div(
+
+			id = 'discovery-plot-container2',
+			children = [
+
+			html.Div([
+
+				html.Label('Branches for Diverging Gene Analysis', style = {'font-weight':'bold', 'padding-right':'10px'}),
+		        dcc.Dropdown(
+						id = 'de-branches2',
+					    options=[
+					        {'label': 'Choose branch!', 'value': 'False'}
+					    ],
+					    value = 'False'
+					),
+
+		        html.Br(),
+
+		        html.Label('Relatively Highly Expressed On:', style = {'font-weight':'bold', 'padding-right':'10px'}),
+		        dcc.RadioItems(
+			    	id = 'de-direction2',
+			        options=[
+			            {'label': 'Choose branch pair above', 'value': 'False'}
+			        ]),
+
+		        html.Br(),
+
+				html.Label('Number of Genes', style = {'font-weight':'bold', 'padding-right':'10px'}),
+		        dcc.Slider(
+			        id='de-slider2',
+			        min=0,
+			        max=50,
+			        value=10,
+			        step=1
+		        ),
+
+		        html.Br(),
+
+				html.Div(id = 'discovery-table2', style = {'font-family': 'courier', 'align':'center'}),
+
+				], className = 'five columns'),
+
+
+			html.Div([
+
+				html.Label('Gene', style = {'font-weight':'bold', 'padding-right':'10px'}),
+				dcc.Dropdown(
+						id = 'discovery-gene2',
+					    options=[
+					        {'label': 'Choose gene!', 'value': 'False'}
+					    ],
+					    value = 'False'
+					),
+
+				dcc.Graph(id='2d-subway-discovery2', animate=False),
+
+				html.Img(id = 'discovery-plot2', src = None, width = '70%', style = {'align':'middle'}),
+
+				], className = 'seven columns'),
+
+			], className = 'row'),
+
+		]),
+
+	html.Br(),
+	html.Hr(),
+
+	html.H3('Visualize Transition Genes'),
+
+	html.Button(id = 'correlation-plot-button2', children = '(+) Show', n_clicks = 0),
+
+	html.Div(
+		id = 'correlation-container2',
+		children = [
+
+		html.Br(),
+
+		html.Div(
+
+			id = 'correlation-plot-container2',
+			children = [
+
+			html.Div([
+
+				html.Label('Branch for Transition Gene Analysis', style = {'font-weight':'bold', 'padding-right':'10px'}),
+		        dcc.Dropdown(
+						id = 'corr-branches2',
+					    options=[
+					        {'label': 'Choose branch!', 'value': 'False'}
+					    ],
+					    value = 'False'
+					),
+
+		        html.Br(),
+
+				html.Label('Number of Genes', style = {'font-weight':'bold', 'padding-right':'10px'}),
+		        dcc.Slider(
+			        id='corr-slider2',
+			        min=0,
+			        max=50,
+			        value=10,
+			        step=1
+		        ),
+
+		        html.Br(),
+
+				html.Div(id = 'correlation-table2', style = {'font-family': 'courier', 'align':'center'}),
+
+				], className = 'five columns'),
+
+
+			html.Div([
+
+				html.Label('Gene', style = {'font-weight':'bold', 'padding-right':'10px'}),
+				dcc.Dropdown(
+						id = 'correlation-gene2',
+					    options=[
+					        {'label': 'Choose gene!', 'value': 'False'}
+					    ],
+					    value = 'False'
+					),
+
+				dcc.Graph(id='2d-subway-correlation2', animate=False),
+
+				html.Img(id = 'correlation-plot2', src = None, width = '70%', style = {'align':'middle'}),
+
+				], className = 'seven columns'),
+
+			], className = 'row'),
+
+		])
+
+	])
 
 app.layout = html.Div([
 
@@ -1345,6 +1604,17 @@ def update_score_params_button(n_clicks):
 	else:
 		return '(-) Hide Graphs'
 
+@app2.callback(
+	Output('graph-button2', 'children'),
+	[Input('graph-button2', 'n_clicks')])
+
+def update_score_params_button(n_clicks):
+
+	if n_clicks%2 != 0:
+		return '(-) Hide'
+	else:
+		return '(+) Show'
+
 
 @app.callback(
 	Output('graph-container', 'style'),
@@ -1356,6 +1626,17 @@ def update_score_params_visual(n_clicks):
 		return {'display': 'none'}
 	else:
 		return {'display': 'block'}
+
+@app2.callback(
+	Output('graph-container2', 'style'),
+	[Input('graph-button2', 'n_clicks')])
+
+def update_score_params_visual(n_clicks):
+
+	if n_clicks%2 != 0:
+		return {'display': 'block'}
+	else:
+		return {'display': 'none'}
 
 @app.callback(
     Output('buffer1', 'style'),
@@ -1679,6 +1960,130 @@ def compute_trajectories(pathname, n_clicks):
         )
     }
 
+@app2.callback(
+    Output('3d-scatter2', 'figure'),
+    [Input('precomp-dataset', 'value')])
+
+def compute_trajectories(dataset):
+
+	traces = []
+
+	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
+	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+
+	cell_label_list = []
+	with open(cell_label, 'r') as f:
+		for line in f:
+			cell_label_list.append(line.strip())
+
+	cell_label_colors_dict = {}
+	with open(cell_label_colors, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			cell_label_colors_dict[str(line[1])] = str(line[0])
+
+	color_plot = 0
+	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
+		color_plot = 1
+
+	cell_coords = '/STREAM/%s/coord_cells.csv' % dataset
+	path_coords = glob.glob('/STREAM/%s/coord_curve*csv' % dataset)
+
+	x = []
+	y = []
+	z = []
+	c = []
+	labels = []
+	with open(cell_coords, 'r') as f:
+		next(f)
+		for line in f:
+			line = line.strip().split('\t')
+			c.append(str(line[0]))
+			x.append(float(line[1]))
+			y.append(float(line[2]))
+			z.append(float(line[3]))
+			try:
+				labels.append(cell_label_colors_dict[str(line[0])])
+			except:
+				pass
+
+	cell_types = {}
+	if color_plot == 0:
+		cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+	else:
+		for label, x_c, y_c, z_c, color in zip(labels, x, y, z, c):
+			if label not in cell_types:
+				cell_types[label] = [[],[],[],[],[]]
+			cell_types[label][0].append(x_c)
+			cell_types[label][1].append(y_c)
+			cell_types[label][2].append(z_c)
+			cell_types[label][3].append(label)
+			cell_types[label][4].append(color)
+
+	for label in cell_types:
+		traces.append(
+			go.Scatter3d(
+						x=cell_types[label][0],
+						y=cell_types[label][1],
+						z=cell_types[label][2],
+						mode='markers',
+						opacity = 0.5,
+						name = label,
+						text = cell_types[label][3],
+						marker = dict(
+							size = 5,
+							color = cell_types[label][4]
+							)
+					)
+				)
+
+	roots = []
+	print path_coords
+	for path in path_coords:
+		x_p = []
+		y_p = []
+		z_p = []
+		s1 = path.strip().split('_')[-2]
+		s2 = path.strip().split('_')[-1].strip('.csv')
+		s_3 = [s1, s2]
+		path_name = '-'.join(map(str, s_3))
+		roots.append(s1)
+		roots.append(s2)
+		with open(path, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				x_p.append(float(line[0]))
+				y_p.append(float(line[1]))
+				z_p.append(float(line[2]))
+			traces.append(
+
+				go.Scatter3d(
+						    x=x_p, y=y_p, z=z_p,
+						    # text = [s1, s2],
+						    mode = 'lines',
+						    opacity = 0.7,
+						    name = path_name,
+						    line=dict(
+						        width=10
+						    ),
+						)
+
+				)
+
+	return {
+        'data': traces,
+        'layout': go.Layout(
+        	autosize = True,
+        	margin=dict(l=0,r=0,b=0,t=0),
+            hovermode='closest',
+            scene = dict(
+                    xaxis = dict(showgrid = False, zeroline=True, title = 'Dim.1', ticks='', showticklabels=False),
+                    yaxis = dict(showgrid = False, zeroline=True, title = 'Dim.2', ticks='', showticklabels=False),
+                    zaxis = dict(showgrid = False, zeroline=True, title = 'Dim.3', ticks='', showticklabels=False))
+        )
+    }
+
 @app.callback(
     Output('flat-tree-scatter', 'figure'),
     [Input('url', 'pathname'),
@@ -1748,10 +2153,6 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
 					x_values = [node_list[edge[0]][0], node_list[edge[1]][0]]
 					y_values = [node_list[edge[0]][1], node_list[edge[1]][1]]
 					path_coords[edge_name] = [x_values, y_values]
-
-				print 'NODE LIST: %s' % node_list
-				print 'EDGE LIST: %s' % edge_list
-				print 'PATH COORDS: %s' % path_coords
 
 				traces = []
 				for path in path_coords:
@@ -1834,6 +2235,137 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
         )
     }
 
+@app2.callback(
+    Output('flat-tree-scatter2', 'figure'),
+    [Input('precomp-dataset', 'value')])
+
+def compute_trajectories(dataset):
+
+	traces = []
+
+	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
+	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+
+	cell_label_list = []
+	with open(cell_label, 'r') as f:
+		for line in f:
+			cell_label_list.append(line.strip())
+
+	cell_label_colors_dict = {}
+	with open(cell_label_colors, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			cell_label_colors_dict[str(line[1])] = str(line[0])
+
+	color_plot = 0
+	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
+		color_plot = 1
+
+	cell_coords = '/STREAM/%s/flat_tree_coord_cells.csv' % dataset
+	nodes = '/STREAM/%s/nodes.tsv' % dataset
+	edges = '/STREAM/%s/edges.tsv' % dataset
+
+	node_list = {}
+	edge_list = []
+
+	with open(nodes, 'r') as f:
+		next(f)
+		for line in f:
+			line = line.strip().split('\t')
+			node_list[str(line[0])] = [float(line[1]), float(line[2])]
+
+	with open(edges, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			edge_list.append([str(line[0]), str(line[1])])
+
+	path_coords = {}
+	for edge in edge_list:
+		edge_name = '-'.join(map(str, edge))
+		x_values = [node_list[edge[0]][0], node_list[edge[1]][0]]
+		y_values = [node_list[edge[0]][1], node_list[edge[1]][1]]
+		path_coords[edge_name] = [x_values, y_values]
+
+	for path in path_coords:
+		path_name = path
+		x_p = path_coords[path][0]
+		y_p = path_coords[path][1]
+
+		text_tmp = [path.split('-')[0], path.split('-')[1]]
+
+		traces.append(
+
+			go.Scatter(
+					    x=x_p, y=y_p,
+					    text = text_tmp,
+					    mode = 'lines+markers+text',
+					    opacity = 0.7,
+					    name = path_name,
+					    line=dict(
+					        width=7
+					    ),
+					    textfont=dict(
+							size = 20
+						)
+					)
+			)
+
+	x = []
+	y = []
+	c = []
+	labels = []
+	with open(cell_coords, 'r') as f:
+		next(f)
+		for line in f:
+			line = line.strip().split('\t')
+			c.append(str(line[0]))
+			x.append(float(line[1]))
+			y.append(float(line[2]))
+			try:
+				labels.append(cell_label_colors_dict[str(line[0])])
+			except:
+				pass
+
+	cell_types = {}
+	if color_plot == 0:
+		cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+	else:
+		for label, x_c, y_c, color in zip(labels, x, y, c):
+			if label not in cell_types:
+				cell_types[label] = [[],[],[],[]]
+			cell_types[label][0].append(x_c)
+			cell_types[label][1].append(y_c)
+			cell_types[label][2].append(label)
+			cell_types[label][3].append(color)
+
+	for label in cell_types:
+		traces.append(
+
+			go.Scatter(
+					x=cell_types[label][0],
+					y=cell_types[label][1],
+					mode='markers',
+					opacity = 0.6,
+					name = label,
+					text = cell_types[label][2],
+					marker = dict(
+						size = 6,
+						color = cell_types[label][3]
+						)
+					)
+				)
+
+	return {
+        'data': traces,
+        'layout': go.Layout(
+        	autosize = True,
+        	margin=dict(l=0,r=0,b=0,t=0),
+            hovermode='closest',
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
+            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+        )
+    }
+
 @app.callback(
     Output('root', 'options'),
     [Input('3d-scatter', 'figure'),
@@ -1849,6 +2381,18 @@ def num_clicks_compute(fig_update, pathname):
 		param_dict = json.loads(json_string)
 
 	return [{'label': i, 'value': i} for i in param_dict['starting-nodes']]
+
+@app2.callback(
+    Output('root2', 'options'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	node_list_tmp = glob.glob('/STREAM/%s/S*' % dataset)
+
+	node_list = [x.split('/')[-1] for x in node_list_tmp if len(x.split('/')[-1]) == 2]
+
+	return [{'label': i, 'value': i} for i in node_list]
 
 @app.callback(
     Output('2d-subway', 'figure'),
@@ -1982,6 +2526,132 @@ def num_clicks_compute(root, figure, pathname):
         )
     }
 
+@app2.callback(
+    Output('2d-subway2', 'figure'),
+    [Input('root2', 'value'),
+    Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(root, dataset):
+
+	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
+	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
+
+	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
+	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+
+	cell_label_list = []
+	with open(cell_label, 'r') as f:
+		for line in f:
+			cell_label_list.append(line.strip())
+
+	cell_label_colors_dict = {}
+	with open(cell_label_colors, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			cell_label_colors_dict[str(line[1])] = str(line[0])
+
+	color_plot = 0
+	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
+		color_plot = 1
+
+	traces = []
+	for path in path_coords:
+		x_p = []
+		y_p = []
+		s1 = path.strip().split('_')[-2]
+		s2 = path.strip().split('_')[-1].strip('.csv')
+		s_3 = [s1, s2]
+		path_name = '-'.join(map(str, s_3))
+		with open(path, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				x_p.append(float(line[0]))
+				y_p.append(float(line[1]))
+
+			if len(x_p) == 2:
+				text_tmp = [s1, s2]
+			elif len(x_p) == 4:
+				text_tmp = [s1, None, None, s2]
+			elif len(x_p) == 6:
+				text_tmp = [s1, None, None, None, None, s2]
+
+			traces.append(
+
+				go.Scatter(
+						    x=x_p, y=y_p,
+						    text = text_tmp,
+						    mode = 'lines+markers+text',
+						    opacity = 0.7,
+						    name = path_name,
+						    line=dict(
+						        width=7
+						    ),
+						    textfont=dict(
+								size = 20
+							)
+						)
+				)
+
+	x = []
+	y = []
+	c = []
+	labels = []
+
+	try:
+		with open(cell_coords, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				c.append(str(line[0]))
+				x.append(float(line[1]))
+				y.append(float(line[2]))
+				try:
+					labels.append(cell_label_colors_dict[str(line[0])])
+				except:
+					pass
+	except:
+		pass
+
+	cell_types = {}
+	if color_plot == 0:
+		cell_types['single-cell mappings'] = [x, y, cell_label_list, 'grey']
+	else:
+		for label, x_c, y_c, color in zip(labels, x, y, c):
+			if label not in cell_types:
+				cell_types[label] = [[],[],[],[]]
+			cell_types[label][0].append(x_c)
+			cell_types[label][1].append(y_c)
+			cell_types[label][2].append(label)
+			cell_types[label][3].append(color)
+
+	for label in cell_types:
+		traces.append(
+			go.Scatter(
+						x=cell_types[label][0],
+						y=cell_types[label][1],
+						mode='markers',
+						opacity = 0.6,
+						name = label,
+						text = cell_types[label][2],
+						marker = dict(
+							size = 6,
+							color = cell_types[label][3]
+							)
+					)
+				)
+
+	return {
+        'data': traces,
+        'layout': go.Layout(
+        	autosize = True,
+        	margin=dict(l=0,r=0,b=0,t=0),
+            hovermode='closest',
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
+            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+        )
+    }
+
 @app.callback(
     Output('rainbow-plot', 'src'),
     [Input('root', 'value'),
@@ -2003,6 +2673,23 @@ def num_clicks_compute(root, figure, pathname):
 	except:
 		pass
 
+@app2.callback(
+    Output('rainbow-plot2', 'src'),
+    [Input('root2', 'value'),
+    Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(root, dataset):
+
+	try:
+
+		rainbow_plot = '/STREAM/%s/%s/stream_plot.png' % (dataset, root)
+		rainbow_plot_image = base64.b64encode(open(rainbow_plot, 'rb').read())
+
+		return 'data:image/png;base64,{}'.format(rainbow_plot_image)
+
+	except:
+		pass
+
 ############################# SINGLE GENE VISUALIZATION #############################
 @app.callback(
 	Output('sg-plot-button', 'children'),
@@ -2015,6 +2702,17 @@ def update_score_params_button(n_clicks):
 	else:
 		return '(-) Hide Graph'
 
+@app2.callback(
+	Output('sg-plot-button2', 'children'),
+	[Input('sg-plot-button2', 'n_clicks')])
+
+def update_score_params_button(n_clicks):
+
+	if n_clicks%2 != 0:
+		return '(-) Hide'
+	else:
+		return '(+) Show'
+
 @app.callback(
 	Output('sg-plot-container', 'style'),
 	[Input('sg-plot-button', 'n_clicks')])
@@ -2025,6 +2723,17 @@ def update_score_params_visual(n_clicks):
 		return {'display': 'none'}
 	else:
 		return {'display': 'block'}
+
+@app2.callback(
+	Output('sg-plot-container2', 'style'),
+	[Input('sg-plot-button2', 'n_clicks')])
+
+def update_score_params_visual(n_clicks):
+
+	if n_clicks%2 != 0:
+		return {'display': 'block'}
+	else:
+		return {'display': 'none'}
 
 @app.callback(
     Output('sg-gene', 'options'),
@@ -2043,6 +2752,18 @@ def num_clicks_compute(fig_update, pathname):
 			param_dict = json.loads(json_string)
 
 		return [{'label': i, 'value': i} for i in param_dict['sg-genes']]
+
+@app2.callback(
+    Output('sg-gene2', 'options'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	gene_list_tmp = glob.glob('/STREAM/%s/S0/stream_plot_*png' % dataset)
+
+	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
+
+	return [{'label': i, 'value': i} for i in gene_list]
 
 @app.callback(
     Output('sg-gene', 'value'),
@@ -2443,6 +3164,111 @@ def compute_trajectories(pathname, n_clicks, root, gene):
         )
     }
 
+@app2.callback(
+    Output('2d-subway-sg2', 'figure'),
+    [Input('precomp-dataset', 'value'),
+    Input('sg-gene2', 'value'),
+    Input('root2', 'value')])
+
+def compute_trajectories(dataset, gene, root):
+
+	traces = []
+
+	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
+	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
+	gene_coords = '/STREAM/%s/%s/subway_coord_%s.csv' % (dataset, root, gene)
+
+	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
+	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+
+	traces = []
+	for path in path_coords:
+		x_p = []
+		y_p = []
+		s1 = path.strip().split('_')[-2]
+		s2 = path.strip().split('_')[-1].strip('.csv')
+		s_3 = [s1, s2]
+		path_name = '-'.join(map(str, s_3))
+		with open(path, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				x_p.append(float(line[0]))
+				y_p.append(float(line[1]))
+
+			if len(x_p) == 2:
+				text_tmp = [s1, s2]
+			elif len(x_p) == 4:
+				text_tmp = [s1, None, None, s2]
+			elif len(x_p) == 6:
+				text_tmp = [s1, None, None, None, None, s2]
+
+			traces.append(
+
+				go.Scatter(
+						    x = x_p, y = y_p,
+						    text = text_tmp,
+						    mode = 'lines+markers+text',
+						    opacity = 0.7,
+						    name = path_name,
+						    line=dict(
+						        width = 3,
+						        color = 'grey'
+						    ),
+						    textfont=dict(
+								size = 20
+							)
+						)
+				)
+
+	x_c = []
+	y_c = []
+	c = []
+	exp = []
+	exp_scaled = []
+
+	try:
+		with open(gene_coords, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				c.append(str(line[0]))
+				x_c.append(float(line[1]))
+				y_c.append(float(line[2]))
+				exp_scaled.append(float(line[3]))
+				# exp_scaled.append(float(line[4]))
+	except:
+		pass
+
+	exp_labels = ['Expression: ' + str(x) for x in exp]
+	traces.append(
+		go.Scatter(
+					x = x_c,
+					y = y_c,
+					mode='markers',
+					opacity = 0.6,
+					name = 'single-cell mappings',
+					text = exp_labels,
+					marker = dict(
+						size = 6,
+						color = exp_scaled,
+						colorscale = 'RdBu'
+						)
+				)
+			)
+
+	return {
+        'data': traces,
+        'layout': go.Layout(
+        	autosize = True,
+        	margin=dict(l=0,r=0,b=0,t=0),
+            hovermode='closest',
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
+            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+        )
+    }
+
+
 @app.callback(
     Output('sg-plot', 'src'),
     [Input('2d-subway-sg', 'figure'),
@@ -2474,6 +3300,24 @@ def num_clicks_compute(figure, pathname, root, gene):
 
 				pass
 
+@app2.callback(
+    Output('sg-plot2', 'src'),
+    [Input('precomp-dataset', 'value'),
+    Input('sg-gene2', 'value'),
+    Input('root2', 'value')])
+
+def num_clicks_compute(dataset, gene, root):
+
+	try:
+
+		discovery_plot = '/STREAM/%s/%s/stream_plot_%s.png' % (dataset, root, gene)
+		discovery_plot_image = base64.b64encode(open(discovery_plot, 'rb').read())
+		return 'data:image/png;base64,{}'.format(discovery_plot_image)
+
+	except:
+
+		pass
+
 ######################################## GENE DISCOVERY ########################################
 @app.callback(
 	Output('discovery-plot-button', 'children'),
@@ -2486,6 +3330,17 @@ def update_score_params_button(n_clicks):
 	else:
 		return '(-) Hide Graph'
 
+@app2.callback(
+	Output('discovery-plot-button2', 'children'),
+	[Input('discovery-plot-button2', 'n_clicks')])
+
+def update_score_params_button(n_clicks):
+
+	if n_clicks%2 != 0:
+		return '(-) Hide'
+	else:
+		return '(+) Show'
+
 @app.callback(
 	Output('discovery-plot-container', 'style'),
 	[Input('discovery-plot-button', 'n_clicks')])
@@ -2496,6 +3351,17 @@ def update_score_params_visual(n_clicks):
 		return {'display': 'none'}
 	else:
 		return {'display': 'block'}
+
+@app2.callback(
+	Output('discovery-plot-container2', 'style'),
+	[Input('discovery-plot-button2', 'n_clicks')])
+
+def update_score_params_visual(n_clicks):
+
+	if n_clicks%2 != 0:
+		return {'display': 'block'}
+	else:
+		return {'display': 'none'}
 
 @app.callback(
     Output('discovery-gene', 'options'),
@@ -2514,6 +3380,18 @@ def num_clicks_compute(fig_update, pathname):
 			param_dict = json.loads(json_string)
 
 		return [{'label': i, 'value': i} for i in param_dict['discovery-genes']]
+
+@app2.callback(
+    Output('discovery-gene2', 'options'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	gene_list_tmp = glob.glob('/STREAM/%s/S0/stream_plot_*png' % dataset)
+
+	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
+
+	return [{'label': i, 'value': i} for i in gene_list]
 
 @app.callback(
     Output('discovery-container', 'style'),
@@ -2880,6 +3758,110 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         )
     }
 
+@app2.callback(
+    Output('2d-subway-discovery2', 'figure'),
+    [Input('precomp-dataset', 'value'),
+    Input('root2', 'value'),
+    Input('discovery-gene2', 'value')])
+
+def compute_trajectories(dataset, root, gene):
+
+	traces = []
+
+	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
+	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
+	gene_coords = '/STREAM/%s/%s/subway_coord_%s.csv' % (dataset, root, gene)
+
+	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
+	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+
+	for path in path_coords:
+		x_p = []
+		y_p = []
+		s1 = path.strip().split('_')[-2]
+		s2 = path.strip().split('_')[-1].strip('.csv')
+		s_3 = [s1, s2]
+		path_name = '-'.join(map(str, s_3))
+		with open(path, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				x_p.append(float(line[0]))
+				y_p.append(float(line[1]))
+
+			if len(x_p) == 2:
+				text_tmp = [s1, s2]
+			elif len(x_p) == 4:
+				text_tmp = [s1, None, None, s2]
+			elif len(x_p) == 6:
+				text_tmp = [s1, None, None, None, None, s2]
+
+			traces.append(
+
+				go.Scatter(
+						    x = x_p, y = y_p,
+						    text = text_tmp,
+						    mode = 'lines+markers+text',
+						    opacity = 0.7,
+						    name = path_name,
+						    line=dict(
+						        width = 3,
+						        color = 'grey'
+						    ),
+						    textfont=dict(
+								size = 20
+							)
+						)
+
+				)
+
+	x_c = []
+	y_c = []
+	c = []
+	exp = []
+	exp_scaled = []
+
+	try:
+		with open(gene_coords, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				c.append(str(line[0]))
+				x_c.append(float(line[1]))
+				y_c.append(float(line[2]))
+				exp_scaled.append(float(line[3]))
+				# exp_scaled.append(float(line[4]))
+	except:
+		pass
+
+	exp_labels = ['Expression: ' + str(x) for x in exp]
+	traces.append(
+		go.Scatter(
+					x = x_c,
+					y = y_c,
+					mode='markers',
+					opacity = 0.6,
+					name = 'single-cell mappings',
+					text = exp_labels,
+					marker = dict(
+						size = 6,
+						color = exp_scaled,
+						colorscale = 'RdBu'
+						)
+				)
+			)
+
+	return {
+        'data': traces,
+        'layout': go.Layout(
+        	autosize = True,
+        	margin=dict(l=0,r=0,b=0,t=0),
+            hovermode='closest',
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
+            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+        )
+    }
+
 @app.callback(
     Output('discovery-plot', 'src'),
     [Input('root', 'value'),
@@ -2904,6 +3886,24 @@ def num_clicks_compute(root, gene, pathname):
 
 			except:
 				pass
+
+@app2.callback(
+    Output('discovery-plot2', 'src'),
+    [Input('root2', 'value'),
+    Input('discovery-gene2', 'value'),
+    Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(root, gene, dataset):
+
+	try:
+
+		discovery_plot = '/STREAM/%s/%s/stream_plot_%s.png' % (dataset, root, gene)
+		discovery_plot_image = base64.b64encode(open(discovery_plot, 'rb').read())
+
+		return 'data:image/png;base64,{}'.format(discovery_plot_image)
+
+	except:
+		pass
 
 @app.callback(
     Output('de-branches', 'options'),
@@ -2930,9 +3930,45 @@ def num_clicks_compute(fig_update, pathname):
 
 		return [{'label': i, 'value': i} for i in combined_branches]
 
+@app2.callback(
+    Output('de-branches2', 'options'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	combined_branches = []
+	find_tables = glob.glob('/STREAM/%s/DE_Genes/*.tsv' % dataset)
+	for table in find_tables:
+		branch1 = table.split(' and ')[0].split('genes_')[1]
+		branch2 = table.split(' and ')[1].strip('.tsv')
+
+		combined_branch = branch1 + ' and ' + branch2
+
+		if combined_branch not in combined_branches:
+			combined_branches.append(combined_branch)
+
+	return [{'label': i, 'value': i} for i in combined_branches]
+
 @app.callback(
     Output('de-direction', 'options'),
     [Input('de-branches', 'value')])
+
+def num_clicks_compute(branches):
+
+	try:
+		branch1 = branches.split(' and ')[0]
+		branch2 = branches.split(' and ')[1]
+
+		branches = [branch1, branch2]
+	except:
+		branches = ['Choose branch pair above']
+		pass
+
+	return [{'label': i, 'value': i} for i in branches]
+
+@app2.callback(
+    Output('de-direction2', 'options'),
+    [Input('de-branches2', 'value')])
 
 def num_clicks_compute(branches):
 
@@ -2988,6 +4024,43 @@ def update_table(slider, branches, direction, figure, pathname):
 
 		return generate_table(dff)
 
+@app2.callback(
+	Output('discovery-table2', 'children'),
+	[Input('de-slider2', 'value'),
+	Input('de-branches2', 'value'),
+	Input('de-direction2', 'value'),
+	Input('precomp-dataset', 'value')])
+
+def update_table(slider, branches, direction, dataset):
+
+	use_this_table = ''
+
+	try:
+
+		branch1 = branches.split(' and ')[0]
+		branch2 = branches.split(' and ')[1]
+		
+		if direction == branch1:
+			direction_classify = '_up_'
+		elif direction == branch2:
+			direction_classify = '_down_'
+
+		find_table = glob.glob('/STREAM/%s/DE_Genes/*.tsv' % dataset)
+		for table in find_table:
+			if (branch1 in table) and (branch2 in table) and (direction_classify in table):
+				use_this_table = table
+				break
+	except:
+		pass
+
+	if len(use_this_table) > 0:
+
+		df = pd.read_table(use_this_table).fillna('')
+		df.columns = ['gene','z_score','U','diff','mean_up','mean_down','pval','qval']
+		dff = df.head(n = slider)[['gene', 'pval', 'qval']] # update with your own logic
+
+		return generate_table(dff)
+
 ### GENE CORRELATION
 @app.callback(
 	Output('correlation-plot-button', 'children'),
@@ -3000,6 +4073,17 @@ def update_score_params_button(n_clicks):
 	else:
 		return '(-) Hide Graph'
 
+@app2.callback(
+	Output('correlation-plot-button2', 'children'),
+	[Input('correlation-plot-button2', 'n_clicks')])
+
+def update_score_params_button(n_clicks):
+
+	if n_clicks%2 != 0:
+		return '(-) Hide'
+	else:
+		return '(-) Show'
+
 @app.callback(
 	Output('correlation-plot-container', 'style'),
 	[Input('correlation-plot-button', 'n_clicks')])
@@ -3010,6 +4094,17 @@ def update_score_params_visual(n_clicks):
 		return {'display': 'none'}
 	else:
 		return {'display': 'block'}
+
+@app2.callback(
+	Output('correlation-plot-container2', 'style'),
+	[Input('correlation-plot-button2', 'n_clicks')])
+
+def update_score_params_visual(n_clicks):
+
+	if n_clicks%2 != 0:
+		return {'display': 'block'}
+	else:
+		return {'display': 'none'}
 
 @app.callback(
     Output('correlation-gene', 'options'),
@@ -3029,6 +4124,17 @@ def num_clicks_compute(fig_update, pathname):
 
 		return [{'label': i, 'value': i} for i in param_dict['correlation-genes']]
 
+@app2.callback(
+    Output('correlation-gene2', 'options'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	gene_list_tmp = glob.glob('/STREAM/%s/S0/stream_plot_*png' % dataset)
+
+	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
+
+	return [{'label': i, 'value': i} for i in gene_list]
 
 @app.callback(
     Output('correlation-container', 'style'),
@@ -3395,6 +4501,112 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         )
     }
 
+@app2.callback(
+    Output('2d-subway-correlation2', 'figure'),
+    [Input('precomp-dataset', 'value'),
+    Input('root2', 'value'),
+    Input('correlation-gene2', 'value')])
+
+def compute_trajectories(dataset, root, gene):
+
+	traces = []
+
+	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
+	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
+	gene_coords = '/STREAM/%s/%s/subway_coord_%s.csv' % (dataset, root, gene)
+
+	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
+	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+
+	traces = []
+	for path in path_coords:
+		x_p = []
+		y_p = []
+		s1 = path.strip().split('_')[-2]
+		s2 = path.strip().split('_')[-1].strip('.csv')
+		s_3 = [s1, s2]
+		path_name = '-'.join(map(str, s_3))
+		with open(path, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				x_p.append(float(line[0]))
+				y_p.append(float(line[1]))
+
+			if len(x_p) == 2:
+				text_tmp = [s1, s2]
+			elif len(x_p) == 4:
+				text_tmp = [s1, None, None, s2]
+			elif len(x_p) == 6:
+				text_tmp = [s1, None, None, None, None, s2]
+
+			traces.append(
+
+				go.Scatter(
+						    x = x_p, y = y_p,
+						    text = text_tmp,
+						    mode = 'lines+markers+text',
+						    opacity = 0.7,
+						    name = path_name,
+						    line=dict(
+						        width = 3,
+						        color = 'grey'
+						    ),
+						    textfont=dict(
+								size = 20
+							)
+						)
+
+				)
+
+	x_c = []
+	y_c = []
+	c = []
+	exp = []
+	exp_scaled = []
+
+	try:
+		with open(gene_coords, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				c.append(str(line[0]))
+				x_c.append(float(line[1]))
+				y_c.append(float(line[2]))
+				exp_scaled.append(float(line[3]))
+				# exp_scaled.append(float(line[4]))
+	except:
+		pass
+
+	exp_labels = ['Expression: ' + str(x) for x in exp]
+
+	traces.append(
+		go.Scatter(
+					x = x_c,
+					y = y_c,
+					mode='markers',
+					opacity = 0.6,
+					name = 'single-cell mappings',
+					text = exp_labels,
+					marker = dict(
+						size = 6,
+						color = exp_scaled,
+						colorscale = 'RdBu'
+						)
+				)
+			)
+
+	return {
+        'data': traces,
+        'layout': go.Layout(
+        	autosize = True,
+        	margin=dict(l=0,r=0,b=0,t=0),
+            hovermode='closest',
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
+            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+        )
+    }
+
 @app.callback(
     Output('correlation-plot', 'src'),
     [Input('root', 'value'),
@@ -3418,6 +4630,24 @@ def num_clicks_compute(root, gene, pathname):
 		except:
 			pass
 
+@app2.callback(
+    Output('correlation-plot2', 'src'),
+    [Input('root2', 'value'),
+    Input('correlation-gene2', 'value'),
+    Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(root, gene, dataset):
+
+	try:
+
+		discovery_plot = '/STREAM/%s/%s/stream_plot_%s.png' % (dataset, root, gene)
+		discovery_plot_image = base64.b64encode(open(discovery_plot, 'rb').read())
+
+		return 'data:image/png;base64,{}'.format(discovery_plot_image)
+
+	except:
+		pass
+
 @app.callback(
     Output('corr-branches', 'options'),
     [Input('2d-subway-correlation', 'figure'),
@@ -3430,6 +4660,22 @@ def num_clicks_compute(fig_update, pathname):
 
 	branches = []
 	find_tables = glob.glob(RESULTS_FOLDER + '/Transition_Genes/*.tsv')
+	for table in find_tables:
+		branch = table.split('_Genes_')[1].strip('.tsv')
+
+		if branch not in branches:
+			branches.append(branch)
+
+	return [{'label': i, 'value': i} for i in branches]
+
+@app2.callback(
+    Output('corr-branches2', 'options'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	branches = []
+	find_tables = glob.glob('/STREAM/%s/Transition_Genes/*.tsv' % dataset)
 	for table in find_tables:
 		branch = table.split('_Genes_')[1].strip('.tsv')
 
@@ -3453,6 +4699,30 @@ def update_table(slider, branch, figure, pathname):
 	use_this_table = ''
 
 	find_table = glob.glob(RESULTS_FOLDER + '/Transition_Genes/*.tsv')
+	for table in find_table:
+		if branch in table:
+			use_this_table = table
+			break
+
+	if len(use_this_table) > 0:
+
+		df = pd.read_table(use_this_table).fillna('')
+		df.columns = ['gene','stat','diff','pval','qval']
+		dff = df.head(n = slider)[['gene', 'pval', 'qval']] # update with your own logic
+
+		return generate_table(dff)
+
+@app2.callback(
+	Output('correlation-table2', 'children'),
+	[Input('corr-slider2', 'value'),
+	Input('corr-branches2', 'value'),
+	Input('precomp-dataset', 'value')])
+
+def update_table(slider, branch, dataset):
+
+	use_this_table = ''
+
+	find_table = glob.glob('/STREAM/%s/Transition_Genes/*.tsv' % dataset)
 	for table in find_table:
 		if branch in table:
 			use_this_table = table
