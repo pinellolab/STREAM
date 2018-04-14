@@ -1,54 +1,29 @@
 # STREAM
 
-STREAM is a powerful computational pipeline implemented in python for reconstructing complex celluar developmental trajectories from scPCR, scRNA-seq or scATAC-seq data.
+STREAM (**S**ingle-cell **T**rajectories **R**econstruction, **E**xploration **A**nd **M**apping) is an interactive pipeline capable of disentangling and visualizing complex branching trajectories from both single-cell transcriptomic and epigenomic data.
 
-Ariade provides two different informative and intuitive ways of visulizing celluar trajectories, including flat tree at single-cell level and rainbow plot at density level. It also provides a set of analytic tools that help automatically detect gene markers, which is important in defining cell subpopulations or deciding cell fates.
+STREAM is available as user-friendly open source software and can be used interactively as a web-application at [stream.pinellolab.org](http://stream.pinellolab.org/) or as a standalone command-line tool with Docker [https://github.com/pinellolab/STREAM](https://github.com/pinellolab/STREAM)
 
-For given gene, Ariade can present its expression pattern in subway map plot, which is a re-layout of flat tree by choosing a start state, and rainbow plot.
+Installation with Docker
+------------------------
+
+With Docker no installation is required, the only dependence is Docker itself. Users will completely get rid of all the installation and configuration issues. Docker will do all the dirty work for you!
+
+Docker can be downloaded freely from here: [https://store.docker.com/search?offering=community&type=edition](https://store.docker.com/search?offering=community&type=edition)
 
 
-Installation
+To get a local copy of STREAM, simply execute the following command:
+
+* ```$docker pull pinellolab/stream```
+
+
+STREAM usage
 ------------
 
-Make sure that all the input files are in the same directory
+To run STREAM at the command-line interface:
 
-Input file format
-----------------
-
-The input file is a log2-transformed tab-separated gene expression matrix in tsv file format. Each row represents an unique gene and each column is one cell.  
-
-For example, in python
-```R
->import pandas as pd
->input_data = pd.read_csv('data_guoji.tsv',sep='\t',header=0,index_col=0)
->input_data.iloc[0:5,0:5]
-```
-
-|        | HSC1      | HSC1.1    | HSC1.2    | HSC1.3    | HSC1.4   |
-|--------|-----------|-----------|-----------|-----------|----------|
-| CD52   | 6.479620  | 0.000000  | 0.000000  | 5.550051  | 0.000000 |
-| Ifitm1 | 11.688533 | 11.390682 | 10.561844 | 11.874295 | 8.976571 |
-| Cdkn3  | 0.000000  | 0.000000  | 0.000000  | 0.000000  | 8.293616 |
-| Ly6a   | 10.417026 | 11.452145 | 0.000000  | 8.158840  | 8.945882 |
-| Bax    | 6.911608  | 10.201157 | 0.000000  | 9.396073  | 0.000000 |
-
-Other optionally provided files format:
-
-**cell_labels** file: tsv format. Cell labels are listed in one column. The order of labels should be consistent with cell order in gene expression matrix. No index names or column names are included.
-
-**cell_label_color** file: tsv format. The first column is cell labels, the second column is color. The order of labels should be consistent with cell order in gene expression matrix. No index names or column names are included
-
-**gene_list**, **feature_genes** file: tsv format. Genes are listed in one column. No index names or column names are included
-
-**precomputed_DR** file: tsv format. Each row represents one component and each column is one cell. The columns should be the same with gene expression matrix.
-
-
-Usage
------
-
-To run Ariadne python script at the command-line interface:
 * start a terminal session;
-* enter ```$ python Ariadne.py [options] ```.
+* enter ```docker run pinellolab/stream [options]```
 
 Users can specify the following options:
 ```
@@ -123,6 +98,52 @@ Output format the figures for the web interface
 -o, --output_folder  
 Output folder (default: Ariadne_Result)
 ```
+
+
+
+
+
+For **transcriptomic data**, the main and required input file is a tab-separated gene expression matrix (raw counts or normalized values) in tsv file format. Each row represents a unique gene and each column is one cell.
+
+
+Input file format
+-----------------
+
+The input file is a log2-transformed tab-separated gene expression matrix in tsv file format. Each row represents an unique gene and each column is one cell.  
+
+For example, in python
+```R
+>import pandas as pd
+>input_data = pd.read_csv('data_guoji.tsv',sep='\t',header=0,index_col=0)
+>input_data.iloc[0:5,0:5]
+```
+
+|        | HSC1      | HSC1.1    | HSC1.2    | HSC1.3    | HSC1.4   |
+|--------|-----------|-----------|-----------|-----------|----------|
+| CD52   | 6.479620  | 0.000000  | 0.000000  | 5.550051  | 0.000000 |
+| Ifitm1 | 11.688533 | 11.390682 | 10.561844 | 11.874295 | 8.976571 |
+| Cdkn3  | 0.000000  | 0.000000  | 0.000000  | 0.000000  | 8.293616 |
+| Ly6a   | 10.417026 | 11.452145 | 0.000000  | 8.158840  | 8.945882 |
+| Bax    | 6.911608  | 10.201157 | 0.000000  | 9.396073  | 0.000000 |
+
+Other optionally provided files format:
+
+**cell_labels** file: tsv format. Cell labels are listed in one column. The order of labels should be consistent with cell order in gene expression matrix. No index names or column names are included.
+
+**cell_label_color** file: tsv format. The first column is cell labels, the second column is color. The order of labels should be consistent with cell order in gene expression matrix. No index names or column names are included
+
+**gene_list**, **feature_genes** file: tsv format. Genes are listed in one column. No index names or column names are included
+
+**precomputed_DR** file: tsv format. Each row represents one component and each column is one cell. The columns should be the same with gene expression matrix.
+
+
+Usage
+-----
+
+To run Ariadne python script at the command-line interface:
+* start a terminal session;
+* enter ```$ python Ariadne.py [options] ```.
+
 
 Example
 --------

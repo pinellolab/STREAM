@@ -679,20 +679,36 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
     EPG_edges = np.array(MS.edges())
     EPG_n_nodes = max(EPG_n_nodes,XC.shape[0]+30)
     print('Elastic Principal Graph...')
-    R.pdf(file_path + '/'+'Initial_ElPigraph.pdf')
-    TreeEPG_obj = ElPiGraph.computeElasticPrincipalTree(X=X,
-                                                        NumNodes = EPG_n_nodes, 
-                                                        Lambda=EPG_lambda, Mu=EPG_mu,
-                                                        TrimmingRadius= EPG_trimmingradius,
-                                                        InitNodePositions = EPG_nodes_pos,
-                                                        InitEdges=EPG_edges + 1,
-                                                        Do_PCA=False,CenterData=False,
-                                                        n_cores = n_processes,
-                                                        nReps=EPG_n_rep,
-                                                        ProbPoint=EPG_prob,
-                                                        FinalEnergy = EPG_finalenergy,
-                                                        alpha = EPG_alpha)
-    R('dev.off()')
+
+    if(flag_web):
+        TreeEPG_obj = ElPiGraph.computeElasticPrincipalTree(X=X,
+                                                            NumNodes = EPG_n_nodes, 
+                                                            Lambda=EPG_lambda, Mu=EPG_mu,
+                                                            TrimmingRadius= EPG_trimmingradius,
+                                                            InitNodePositions = EPG_nodes_pos,
+                                                            InitEdges=EPG_edges + 1,
+                                                            Do_PCA=False,CenterData=False,
+                                                            n_cores = n_processes,
+                                                            nReps=EPG_n_rep,
+                                                            ProbPoint=EPG_prob,
+                                                            drawAccuracyComplexity = False, drawEnergy = False,drawPCAView = False,
+                                                            FinalEnergy = EPG_finalenergy,
+                                                            alpha = EPG_alpha)   
+    else:     
+        R.pdf(file_path + '/'+'Initial_ElPigraph.pdf')
+        TreeEPG_obj = ElPiGraph.computeElasticPrincipalTree(X=X,
+                                                            NumNodes = EPG_n_nodes, 
+                                                            Lambda=EPG_lambda, Mu=EPG_mu,
+                                                            TrimmingRadius= EPG_trimmingradius,
+                                                            InitNodePositions = EPG_nodes_pos,
+                                                            InitEdges=EPG_edges + 1,
+                                                            Do_PCA=False,CenterData=False,
+                                                            n_cores = n_processes,
+                                                            nReps=EPG_n_rep,
+                                                            ProbPoint=EPG_prob,
+                                                            FinalEnergy = EPG_finalenergy,
+                                                            alpha = EPG_alpha)
+        R('dev.off()')
 
 
     #Initial Tree structure
@@ -713,8 +729,9 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
     sns_palette = sns.color_palette("hls", len(dict_branches))
     curves_color = {x:sns_palette[i] for i,x in enumerate(dict_branches.keys())}
     print('Number of branches after initial ElPiGraph: ' + str(len(dict_branches)))
-    Plot_Extract_Branches(EPG,X,dict_branches,curves_color,file_path,file_name='Init_EPG_Branches')
-    Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,file_name = 'Init_EPG') 
+    if(not flag_web):
+        Plot_Extract_Branches(EPG,X,dict_branches,curves_color,file_path,file_name='Init_EPG_Branches')
+        Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,file_name = 'Init_EPG') 
 
 
     #Filtering branches with cells fewer than cutoff
@@ -794,9 +811,10 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
     dict_branches = Extract_Branches(EPG)
     sns_palette = sns.color_palette("hls", len(dict_branches))
     curves_color = {x:sns_palette[i] for i,x in enumerate(dict_branches.keys())}
-    Plot_Extract_Branches(EPG,X,dict_branches,curves_color,file_path)
     print('Number of branches after optimization: ' + str(len(dict_branches)))
-    Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web)    
+    if(not flag_web):
+        Plot_Extract_Branches(EPG,X,dict_branches,curves_color,file_path)
+        Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web)    
 
     dict_branches_ori = deepcopy(dict_branches)
 
@@ -829,15 +847,16 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
         dict_branches = Extract_Branches(EPG)
         sns_palette = sns.color_palette("hls", len(dict_branches))
         curves_color = {x:sns_palette[i] for i,x in enumerate(dict_branches.keys())}
-        Plot_Extract_Branches(EPG,X,dict_branches,curves_color,file_path,file_name='Ext_EPG_Branches')
         print('Number of branches after extension: ' + str(len(dict_branches)))
-        Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,
-                file_name = 'Ext_EPG')
+        if(not flag_web):
+            Plot_Extract_Branches(EPG,X,dict_branches,curves_color,file_path,file_name='Ext_EPG_Branches')
+            Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,file_name = 'Ext_EPG')
     df_cells = Project_Cells_To_Tree(EPG,X,dict_branches)
     flat_tree = Contruct_Tree(dict_branches)
     dict_node_state = Construct_Node_State(flat_tree)
-    Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,
-            file_name = 'Final_EPG',dict_node_state=dict_node_state)
+    if(not flag_web):
+        Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,
+                file_name = 'Final_EPG',dict_node_state=dict_node_state)
 
     for x_br in dict_branches.keys():
         x_nodes = dict_branches[x_br]['nodes']
@@ -1054,14 +1073,16 @@ def Flat_Tree_Plot(df_flat_tree,flat_tree,dict_branches,dict_node_state,input_ce
     if(mode == 'normal'):
         X_plot = np.array(df_flat_tree['pos_ft'].sample(frac=1,random_state=100).tolist())
         X_color = df_color.sample(frac=1,random_state=100)['color']
-        ax.scatter(X_plot[:, 0], X_plot[:, 1], c=X_color,s=50,linewidth=0,alpha=0.8)  
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
-                  ncol=int(ceil(len(input_cell_label_uni)/2.0)), fancybox=True, shadow=True,markerscale=2.5)        
-        if((flag_web)):
+        if(not flag_web):
+            ax.scatter(X_plot[:, 0], X_plot[:, 1], c=X_color,s=50,linewidth=0,alpha=0.8)  
+            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
+                      ncol=int(ceil(len(input_cell_label_uni)/2.0)), fancybox=True, shadow=True,markerscale=2.5) 
+            plt.savefig(file_path + '/flat_tree.pdf',pad_inches=1,bbox_inches='tight')
+            plt.close(fig)       
+        else:
             pd.DataFrame(X_plot,index=X_color,columns=['D'+str(x) for x in range(X_plot.shape[1])]).to_csv\
             (file_path + '/flat_tree_coord_cells.csv',sep='\t')
-        plt.savefig(file_path + '/flat_tree.pdf',pad_inches=1,bbox_inches='tight')
-        plt.close(fig)
+
 
     if(mode == 'contracted'):
         X_plot = np.array(df_flat_tree['pos_cft'].sample(frac=1,random_state=100).tolist())
@@ -2480,9 +2501,10 @@ def Subway_Map_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start
             df_subway_gene['Scaled_Expr'] = ((gene_values/max_gene_values)**2).values
             # sizes = 50*((gene_values/max_gene_values)**2)
             X_plot = pd.DataFrame(pos).sample(frac=1,random_state=100)
-            gene_values = gene_values.sample(frac=1,random_state=100)           
-            sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=0, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
-            if(flag_web):
+            gene_values = gene_values.sample(frac=1,random_state=100)  
+            if(not flag_web):         
+                sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=0, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
+            else:
                 X_plot_for_web = deepcopy(X_plot)
                 X_plot_for_web[gene_list[idx]] = gene_values
                 X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + gene_list[idx] + '.csv',sep='\t')    
@@ -2495,24 +2517,29 @@ def Subway_Map_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start
             # sizes = 50*((gene_values/max_gene_values)**2)
             v_limit = max(abs(min_gene_values),max_gene_values)
             X_plot = pd.DataFrame(pos).sample(frac=1,random_state=100)
-            gene_values = gene_values.sample(frac=1,random_state=100)                
-            sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=-v_limit, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
-            if(flag_web):
+            gene_values = gene_values.sample(frac=1,random_state=100)    
+            if(not flag_web):            
+                sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=-v_limit, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
+            else:
                 X_plot_for_web = deepcopy(X_plot)
                 X_plot_for_web[gene_list[idx]] = gene_values
                 X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + gene_list[idx] + '.csv',sep='\t')
+                plt.close(fig)
             
-        cbar=plt.colorbar(sc)
-        cbar.ax.tick_params(labelsize=20)
-        tick_locator = ticker.MaxNLocator(nbins=5)
-        cbar.locator = tick_locator
-        cbar.set_alpha(1)
-        cbar.draw_all()
-        ax.set_title(gene_list[idx],size=15)
-        if(mode == 'normal'):
-            plt.savefig(file_path_S + '/subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
-        if(mode == 'contracted'):
-            plt.savefig(file_path_S + '/contracted_subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
+        if(not flag_web):
+            cbar=plt.colorbar(sc)
+            cbar.ax.tick_params(labelsize=20)
+            tick_locator = ticker.MaxNLocator(nbins=5)
+            cbar.locator = tick_locator
+            cbar.set_alpha(1)
+            cbar.draw_all()
+            ax.set_title(gene_list[idx],size=15)
+            if(mode == 'normal'):
+                plt.savefig(file_path_S + '/subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
+                plt.close(fig)
+            if(mode == 'contracted'):
+                plt.savefig(file_path_S + '/contracted_subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
+                plt.close(fig)
 
 def Stream_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start,dict_node_state,gene_list,flag_stream_log_view,flag_atac,file_path,flag_web,mode='normal'):
     file_path_S = file_path + '/'+dict_node_state[node_start]
