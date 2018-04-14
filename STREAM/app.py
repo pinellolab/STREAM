@@ -126,28 +126,31 @@ def save_files1():
 
 app2.layout = html.Div([
 
+	dcc.Location(id='url2', refresh=False),
+
 	html.Img(src='data:image/png;base64,{}'.format(stream_logo_image), width = '50%'),
 	html.H2('Single-cell Trajectory Reconstruction Exploration And Mapping'),
 
-	html.Br(),
 	html.Hr(),
 
-	html.H3('Choose Pre-Computed Data Set'),
+	html.H3('Choose Precomputed Data Set'),
 
 	dcc.Dropdown(
 		id = 'precomp-dataset',
 	    options=[
-	        {'label': 'Nestorowa et al. (2016)', 'value': 'Nestorowa_et_al'},
+	        {'label': 'Nestorowa, S. et al. 2016', 'value': 'Nestorowa'},
 	    ],
-	    value = 'Nestorowa_et_al'
+	    value = 'Nestorowa'
 	),
+
+	html.Label(id = 'description', children = 'This scRNA-seq dataset contains 1656 cells and 4768 genes from mouse hematopoietic stem and progenitor cell differentiation. A single-cell resolution map of mouse hematopoietic stem and progenitor cell differentiation. Blood 128, e20-31 (2016).'),
 
 	html.Br(),
 	html.Hr(),
 
 	html.H3('Visualize Trajectories'),
 
-	html.Button(id = 'graph-button2', children = '(+) Show', n_clicks = 0),
+	# html.Button(id = 'graph-button2', children = '(+) Show', n_clicks = 0),
 
 	html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
 	dcc.Dropdown(
@@ -168,10 +171,10 @@ app2.layout = html.Div([
 			id = '3d-scatter-container',
 			children = [
 
-				html.H3('3D Scatter Plot'),
+				html.H4('3D Scatter Plot'),
 				dcc.Graph(id='3d-scatter2', animate=False),
 
-				html.H3('Flat Tree Plot'),
+				html.H4('Flat Tree Plot'),
 				dcc.Graph(id='flat-tree-scatter2', animate=False),
 
 			], className = 'six columns'),
@@ -181,10 +184,10 @@ app2.layout = html.Div([
 			id = '2d-subway-container',
 			children = [
 
-				html.H3('2D Subway Map'),
+				html.H4('2D Subway Map'),
 				dcc.Graph(id='2d-subway2', animate=False),
 
-				html.H3('Stream Plot'),
+				html.H4('Stream Plot'),
 				html.Img(id = 'rainbow-plot2', src = None, width = '70%', style = {'align':'middle'}),
 
 			], className = 'six columns'),
@@ -224,6 +227,7 @@ app2.layout = html.Div([
 
 			html.Div([
 
+				html.H4('2D Subway Plot'),
 				dcc.Graph(id='2d-subway-sg2', animate=False)
 
 				], className = 'six columns'),
@@ -231,6 +235,7 @@ app2.layout = html.Div([
 
 			html.Div([
 
+				html.H4('Stream Plot'),
 				html.Img(id = 'sg-plot2', src = None, width = '100%', style = {'align':'middle'}),
 
 				], className = 'six columns'),
@@ -306,8 +311,10 @@ app2.layout = html.Div([
 					    value = 'False'
 					),
 
+				html.H4('2D Subway Map'),
 				dcc.Graph(id='2d-subway-discovery2', animate=False),
 
+				html.H4('Stream Plot'),
 				html.Img(id = 'discovery-plot2', src = None, width = '70%', style = {'align':'middle'}),
 
 				], className = 'seven columns'),
@@ -316,7 +323,6 @@ app2.layout = html.Div([
 
 		]),
 
-	html.Br(),
 	html.Hr(),
 
 	html.H3('Visualize Transition Genes'),
@@ -374,8 +380,10 @@ app2.layout = html.Div([
 					    value = 'False'
 					),
 
+				html.H4('2D Subway Map'),
 				dcc.Graph(id='2d-subway-correlation2', animate=False),
 
+				html.H4('Stream Plot'),
 				html.Img(id = 'correlation-plot2', src = None, width = '70%', style = {'align':'middle'}),
 
 				], className = 'seven columns'),
@@ -512,7 +520,7 @@ app.layout = html.Div([
 				        value = 'False',
 				        labelStyle={'display': 'inline-block'}),
 
-					html.Label('Variable Gene Selection', style = {'font-weight':'bold', 'padding-right':'10px'}),
+					html.Label('Feature Selection', style = {'font-weight':'bold', 'padding-right':'10px'}),
 					dcc.RadioItems(
 				    	id = 'select',
 				        options=[
@@ -1037,6 +1045,33 @@ app.layout = html.Div([
 
 	])
 
+# Precomputed folders
+@app2.callback(
+    Output('precomp-dataset', 'options'),
+    [Input('url2', 'pathname')])
+
+def num_clicks_compute(pathname):
+
+	json_list = glob.glob('/STREAM/precomputed/*/*json')
+
+	dataset_list = []
+	for json_entry in json_list:
+		data = json.load(open(json_entry))
+		dataset_list.append([data['title'], json_entry.split('/')[-1].replace('.json', '')])
+
+	return [{'label': i[0], 'value': i[1]} for i in dataset_list]
+
+@app2.callback(
+    Output('description', 'children'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	json_entry = '/STREAM/precomputed/%s/%s.json' % (dataset, dataset)
+	data = json.load(open(json_entry))
+
+	return data['description']
+
 #### INPUT FILES ######
 @app.callback(
     Output('required-files', 'label'),
@@ -1044,7 +1079,7 @@ app.layout = html.Div([
 
 def update_input_files(pathname):
 
-	file_names = ['Gene Expression Matrix', 'Cell Labels', 'Cell Label Colors']
+	file_names = ['Data Matrix', 'Cell Labels', 'Cell Label Colors']
 
 	return ','.join(file_names)
 
@@ -1604,16 +1639,16 @@ def update_score_params_button(n_clicks):
 	else:
 		return '(-) Hide Graphs'
 
-@app2.callback(
-	Output('graph-button2', 'children'),
-	[Input('graph-button2', 'n_clicks')])
+# @app2.callback(
+# 	Output('graph-button2', 'children'),
+# 	[Input('graph-button2', 'n_clicks')])
 
-def update_score_params_button(n_clicks):
+# def update_score_params_button(n_clicks):
 
-	if n_clicks%2 != 0:
-		return '(-) Hide'
-	else:
-		return '(+) Show'
+# 	if n_clicks%2 != 0:
+# 		return '(-) Hide'
+# 	else:
+# 		return '(+) Show'
 
 
 @app.callback(
@@ -1627,16 +1662,16 @@ def update_score_params_visual(n_clicks):
 	else:
 		return {'display': 'block'}
 
-@app2.callback(
-	Output('graph-container2', 'style'),
-	[Input('graph-button2', 'n_clicks')])
+# @app2.callback(
+# 	Output('graph-container2', 'style'),
+# 	[Input('graph-button2', 'n_clicks')])
 
-def update_score_params_visual(n_clicks):
+# def update_score_params_visual(n_clicks):
 
-	if n_clicks%2 != 0:
-		return {'display': 'block'}
-	else:
-		return {'display': 'none'}
+# 	if n_clicks%2 != 0:
+# 		return {'display': 'block'}
+# 	else:
+# 		return {'display': 'none'}
 
 @app.callback(
     Output('buffer1', 'style'),
@@ -1968,108 +2003,112 @@ def compute_trajectories(dataset):
 
 	traces = []
 
-	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
-	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+	try:
 
-	cell_label_list = []
-	with open(cell_label, 'r') as f:
-		for line in f:
-			cell_label_list.append(line.strip())
+		cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
+		cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
-	cell_label_colors_dict = {}
-	with open(cell_label_colors, 'r') as f:
-		for line in f:
-			line = line.strip().split('\t')
-			cell_label_colors_dict[str(line[1])] = str(line[0])
+		cell_label_list = []
+		with gzip.open(cell_label, 'r') as f:
+			for line in f:
+				cell_label_list.append(line.strip())
 
-	color_plot = 0
-	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
-		color_plot = 1
+		cell_label_colors_dict = {}
+		with gzip.open(cell_label_colors, 'r') as f:
+			for line in f:
+				line = line.strip().split('\t')
+				cell_label_colors_dict[str(line[1])] = str(line[0])
 
-	cell_coords = '/STREAM/%s/coord_cells.csv' % dataset
-	path_coords = glob.glob('/STREAM/%s/coord_curve*csv' % dataset)
+		color_plot = 0
+		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
+			color_plot = 1
 
-	x = []
-	y = []
-	z = []
-	c = []
-	labels = []
-	with open(cell_coords, 'r') as f:
-		next(f)
-		for line in f:
-			line = line.strip().split('\t')
-			c.append(str(line[0]))
-			x.append(float(line[1]))
-			y.append(float(line[2]))
-			z.append(float(line[3]))
-			try:
-				labels.append(cell_label_colors_dict[str(line[0])])
-			except:
-				pass
+		cell_coords = '/STREAM/precomputed/%s/STREAM_result/coord_cells.csv' % dataset
+		path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/coord_curve*csv' % dataset)
 
-	cell_types = {}
-	if color_plot == 0:
-		cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
-	else:
-		for label, x_c, y_c, z_c, color in zip(labels, x, y, z, c):
-			if label not in cell_types:
-				cell_types[label] = [[],[],[],[],[]]
-			cell_types[label][0].append(x_c)
-			cell_types[label][1].append(y_c)
-			cell_types[label][2].append(z_c)
-			cell_types[label][3].append(label)
-			cell_types[label][4].append(color)
-
-	for label in cell_types:
-		traces.append(
-			go.Scatter3d(
-						x=cell_types[label][0],
-						y=cell_types[label][1],
-						z=cell_types[label][2],
-						mode='markers',
-						opacity = 0.5,
-						name = label,
-						text = cell_types[label][3],
-						marker = dict(
-							size = 5,
-							color = cell_types[label][4]
-							)
-					)
-				)
-
-	roots = []
-	print path_coords
-	for path in path_coords:
-		x_p = []
-		y_p = []
-		z_p = []
-		s1 = path.strip().split('_')[-2]
-		s2 = path.strip().split('_')[-1].strip('.csv')
-		s_3 = [s1, s2]
-		path_name = '-'.join(map(str, s_3))
-		roots.append(s1)
-		roots.append(s2)
-		with open(path, 'r') as f:
+		x = []
+		y = []
+		z = []
+		c = []
+		labels = []
+		with open(cell_coords, 'r') as f:
 			next(f)
 			for line in f:
 				line = line.strip().split('\t')
-				x_p.append(float(line[0]))
-				y_p.append(float(line[1]))
-				z_p.append(float(line[2]))
+				c.append(str(line[0]))
+				x.append(float(line[1]))
+				y.append(float(line[2]))
+				z.append(float(line[3]))
+				try:
+					labels.append(cell_label_colors_dict[str(line[0])])
+				except:
+					pass
+
+		cell_types = {}
+		if color_plot == 0:
+			cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+		else:
+			for label, x_c, y_c, z_c, color in zip(labels, x, y, z, c):
+				if label not in cell_types:
+					cell_types[label] = [[],[],[],[],[]]
+				cell_types[label][0].append(x_c)
+				cell_types[label][1].append(y_c)
+				cell_types[label][2].append(z_c)
+				cell_types[label][3].append(label)
+				cell_types[label][4].append(color)
+
+		for label in cell_types:
 			traces.append(
-
 				go.Scatter3d(
-						    x=x_p, y=y_p, z=z_p,
-						    # text = [s1, s2],
-						    mode = 'lines',
-						    opacity = 0.7,
-						    name = path_name,
-						    line=dict(
-						        width=10
-						    ),
+							x=cell_types[label][0],
+							y=cell_types[label][1],
+							z=cell_types[label][2],
+							mode='markers',
+							opacity = 0.5,
+							name = label,
+							text = cell_types[label][3],
+							marker = dict(
+								size = 5,
+								color = cell_types[label][4]
+								)
 						)
+					)
 
-				)
+		roots = []
+		for path in path_coords:
+			x_p = []
+			y_p = []
+			z_p = []
+			s1 = path.strip().split('_')[-2]
+			s2 = path.strip().split('_')[-1].strip('.csv')
+			s_3 = [s1, s2]
+			path_name = '-'.join(map(str, s_3))
+			roots.append(s1)
+			roots.append(s2)
+			with open(path, 'r') as f:
+				next(f)
+				for line in f:
+					line = line.strip().split('\t')
+					x_p.append(float(line[0]))
+					y_p.append(float(line[1]))
+					z_p.append(float(line[2]))
+				traces.append(
+
+					go.Scatter3d(
+							    x=x_p, y=y_p, z=z_p,
+							    # text = [s1, s2],
+							    mode = 'lines',
+							    opacity = 0.7,
+							    name = path_name,
+							    line=dict(
+							        width=10
+							    ),
+							)
+
+					)
+
+	except:
+		pass
 
 	return {
         'data': traces,
@@ -2243,117 +2282,121 @@ def compute_trajectories(dataset):
 
 	traces = []
 
-	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
-	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+	try:
 
-	cell_label_list = []
-	with open(cell_label, 'r') as f:
-		for line in f:
-			cell_label_list.append(line.strip())
+		cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
+		cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
-	cell_label_colors_dict = {}
-	with open(cell_label_colors, 'r') as f:
-		for line in f:
-			line = line.strip().split('\t')
-			cell_label_colors_dict[str(line[1])] = str(line[0])
+		cell_label_list = []
+		with gzip.open(cell_label, 'r') as f:
+			for line in f:
+				cell_label_list.append(line.strip())
 
-	color_plot = 0
-	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
-		color_plot = 1
+		cell_label_colors_dict = {}
+		with gzip.open(cell_label_colors, 'r') as f:
+			for line in f:
+				line = line.strip().split('\t')
+				cell_label_colors_dict[str(line[1])] = str(line[0])
 
-	cell_coords = '/STREAM/%s/flat_tree_coord_cells.csv' % dataset
-	nodes = '/STREAM/%s/nodes.tsv' % dataset
-	edges = '/STREAM/%s/edges.tsv' % dataset
+		color_plot = 0
+		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
+			color_plot = 1
 
-	node_list = {}
-	edge_list = []
+		cell_coords = '/STREAM/precomputed/%s/STREAM_result/flat_tree_coord_cells.csv' % dataset
+		nodes = '/STREAM/precomputed/%s/STREAM_result/nodes.tsv' % dataset
+		edges = '/STREAM/precomputed/%s/STREAM_result/edges.tsv' % dataset
 
-	with open(nodes, 'r') as f:
-		next(f)
-		for line in f:
-			line = line.strip().split('\t')
-			node_list[str(line[0])] = [float(line[1]), float(line[2])]
+		node_list = {}
+		edge_list = []
 
-	with open(edges, 'r') as f:
-		for line in f:
-			line = line.strip().split('\t')
-			edge_list.append([str(line[0]), str(line[1])])
+		with open(nodes, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				node_list[str(line[0])] = [float(line[1]), float(line[2])]
 
-	path_coords = {}
-	for edge in edge_list:
-		edge_name = '-'.join(map(str, edge))
-		x_values = [node_list[edge[0]][0], node_list[edge[1]][0]]
-		y_values = [node_list[edge[0]][1], node_list[edge[1]][1]]
-		path_coords[edge_name] = [x_values, y_values]
+		with open(edges, 'r') as f:
+			for line in f:
+				line = line.strip().split('\t')
+				edge_list.append([str(line[0]), str(line[1])])
 
-	for path in path_coords:
-		path_name = path
-		x_p = path_coords[path][0]
-		y_p = path_coords[path][1]
+		path_coords = {}
+		for edge in edge_list:
+			edge_name = '-'.join(map(str, edge))
+			x_values = [node_list[edge[0]][0], node_list[edge[1]][0]]
+			y_values = [node_list[edge[0]][1], node_list[edge[1]][1]]
+			path_coords[edge_name] = [x_values, y_values]
 
-		text_tmp = [path.split('-')[0], path.split('-')[1]]
+		for path in path_coords:
+			path_name = path
+			x_p = path_coords[path][0]
+			y_p = path_coords[path][1]
 
-		traces.append(
+			text_tmp = [path.split('-')[0], path.split('-')[1]]
 
-			go.Scatter(
-					    x=x_p, y=y_p,
-					    text = text_tmp,
-					    mode = 'lines+markers+text',
-					    opacity = 0.7,
-					    name = path_name,
-					    line=dict(
-					        width=7
-					    ),
-					    textfont=dict(
-							size = 20
+			traces.append(
+
+				go.Scatter(
+						    x=x_p, y=y_p,
+						    text = text_tmp,
+						    mode = 'lines+markers+text',
+						    opacity = 0.7,
+						    name = path_name,
+						    line=dict(
+						        width=7
+						    ),
+						    textfont=dict(
+								size = 20
+							)
 						)
-					)
-			)
-
-	x = []
-	y = []
-	c = []
-	labels = []
-	with open(cell_coords, 'r') as f:
-		next(f)
-		for line in f:
-			line = line.strip().split('\t')
-			c.append(str(line[0]))
-			x.append(float(line[1]))
-			y.append(float(line[2]))
-			try:
-				labels.append(cell_label_colors_dict[str(line[0])])
-			except:
-				pass
-
-	cell_types = {}
-	if color_plot == 0:
-		cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
-	else:
-		for label, x_c, y_c, color in zip(labels, x, y, c):
-			if label not in cell_types:
-				cell_types[label] = [[],[],[],[]]
-			cell_types[label][0].append(x_c)
-			cell_types[label][1].append(y_c)
-			cell_types[label][2].append(label)
-			cell_types[label][3].append(color)
-
-	for label in cell_types:
-		traces.append(
-
-			go.Scatter(
-					x=cell_types[label][0],
-					y=cell_types[label][1],
-					mode='markers',
-					opacity = 0.6,
-					name = label,
-					text = cell_types[label][2],
-					marker = dict(
-						size = 6,
-						color = cell_types[label][3]
-						)
-					)
 				)
+
+		x = []
+		y = []
+		c = []
+		labels = []
+		with open(cell_coords, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip().split('\t')
+				c.append(str(line[0]))
+				x.append(float(line[1]))
+				y.append(float(line[2]))
+				try:
+					labels.append(cell_label_colors_dict[str(line[0])])
+				except:
+					pass
+
+		cell_types = {}
+		if color_plot == 0:
+			cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+		else:
+			for label, x_c, y_c, color in zip(labels, x, y, c):
+				if label not in cell_types:
+					cell_types[label] = [[],[],[],[]]
+				cell_types[label][0].append(x_c)
+				cell_types[label][1].append(y_c)
+				cell_types[label][2].append(label)
+				cell_types[label][3].append(color)
+
+		for label in cell_types:
+			traces.append(
+
+				go.Scatter(
+						x=cell_types[label][0],
+						y=cell_types[label][1],
+						mode='markers',
+						opacity = 0.6,
+						name = label,
+						text = cell_types[label][2],
+						marker = dict(
+							size = 6,
+							color = cell_types[label][3]
+							)
+						)
+					)
+	except:
+		pass
 
 	return {
         'data': traces,
@@ -2388,11 +2431,22 @@ def num_clicks_compute(fig_update, pathname):
 
 def num_clicks_compute(dataset):
 
-	node_list_tmp = glob.glob('/STREAM/%s/S*' % dataset)
+	node_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S*' % dataset)
 
 	node_list = [x.split('/')[-1] for x in node_list_tmp if len(x.split('/')[-1]) == 2]
 
 	return [{'label': i, 'value': i} for i in node_list]
+
+@app2.callback(
+    Output('root2', 'value'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	json_entry = '/STREAM/precomputed/%s/%s.json' % (dataset, dataset)
+	data = json.load(open(json_entry))
+
+	return data['starting_node']
 
 @app.callback(
     Output('2d-subway', 'figure'),
@@ -2533,113 +2587,118 @@ def num_clicks_compute(root, figure, pathname):
 
 def num_clicks_compute(root, dataset):
 
-	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
-	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
-
-	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
-	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
-
-	cell_label_list = []
-	with open(cell_label, 'r') as f:
-		for line in f:
-			cell_label_list.append(line.strip())
-
-	cell_label_colors_dict = {}
-	with open(cell_label_colors, 'r') as f:
-		for line in f:
-			line = line.strip().split('\t')
-			cell_label_colors_dict[str(line[1])] = str(line[0])
-
-	color_plot = 0
-	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
-		color_plot = 1
-
 	traces = []
-	for path in path_coords:
-		x_p = []
-		y_p = []
-		s1 = path.strip().split('_')[-2]
-		s2 = path.strip().split('_')[-1].strip('.csv')
-		s_3 = [s1, s2]
-		path_name = '-'.join(map(str, s_3))
-		with open(path, 'r') as f:
-			next(f)
-			for line in f:
-				line = line.strip().split('\t')
-				x_p.append(float(line[0]))
-				y_p.append(float(line[1]))
-
-			if len(x_p) == 2:
-				text_tmp = [s1, s2]
-			elif len(x_p) == 4:
-				text_tmp = [s1, None, None, s2]
-			elif len(x_p) == 6:
-				text_tmp = [s1, None, None, None, None, s2]
-
-			traces.append(
-
-				go.Scatter(
-						    x=x_p, y=y_p,
-						    text = text_tmp,
-						    mode = 'lines+markers+text',
-						    opacity = 0.7,
-						    name = path_name,
-						    line=dict(
-						        width=7
-						    ),
-						    textfont=dict(
-								size = 20
-							)
-						)
-				)
-
-	x = []
-	y = []
-	c = []
-	labels = []
 
 	try:
-		with open(cell_coords, 'r') as f:
-			next(f)
+
+		cell_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_cells.csv' % (dataset, root)
+		path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_line*csv' % (dataset, root))
+
+		cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
+		cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
+
+		cell_label_list = []
+		with gzip.open(cell_label, 'r') as f:
+			for line in f:
+				cell_label_list.append(line.strip())
+
+		cell_label_colors_dict = {}
+		with gzip.open(cell_label_colors, 'r') as f:
 			for line in f:
 				line = line.strip().split('\t')
-				c.append(str(line[0]))
-				x.append(float(line[1]))
-				y.append(float(line[2]))
-				try:
-					labels.append(cell_label_colors_dict[str(line[0])])
-				except:
-					pass
-	except:
-		pass
+				cell_label_colors_dict[str(line[1])] = str(line[0])
 
-	cell_types = {}
-	if color_plot == 0:
-		cell_types['single-cell mappings'] = [x, y, cell_label_list, 'grey']
-	else:
-		for label, x_c, y_c, color in zip(labels, x, y, c):
-			if label not in cell_types:
-				cell_types[label] = [[],[],[],[]]
-			cell_types[label][0].append(x_c)
-			cell_types[label][1].append(y_c)
-			cell_types[label][2].append(label)
-			cell_types[label][3].append(color)
+		color_plot = 0
+		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
+			color_plot = 1
 
-	for label in cell_types:
-		traces.append(
-			go.Scatter(
-						x=cell_types[label][0],
-						y=cell_types[label][1],
-						mode='markers',
-						opacity = 0.6,
-						name = label,
-						text = cell_types[label][2],
-						marker = dict(
-							size = 6,
-							color = cell_types[label][3]
+		for path in path_coords:
+			x_p = []
+			y_p = []
+			s1 = path.strip().split('_')[-2]
+			s2 = path.strip().split('_')[-1].strip('.csv')
+			s_3 = [s1, s2]
+			path_name = '-'.join(map(str, s_3))
+			with open(path, 'r') as f:
+				next(f)
+				for line in f:
+					line = line.strip().split('\t')
+					x_p.append(float(line[0]))
+					y_p.append(float(line[1]))
+
+				if len(x_p) == 2:
+					text_tmp = [s1, s2]
+				elif len(x_p) == 4:
+					text_tmp = [s1, None, None, s2]
+				elif len(x_p) == 6:
+					text_tmp = [s1, None, None, None, None, s2]
+
+				traces.append(
+
+					go.Scatter(
+							    x=x_p, y=y_p,
+							    text = text_tmp,
+							    mode = 'lines+markers+text',
+							    opacity = 0.7,
+							    name = path_name,
+							    line=dict(
+							        width=7
+							    ),
+							    textfont=dict(
+									size = 20
+								)
 							)
 					)
-				)
+
+		x = []
+		y = []
+		c = []
+		labels = []
+
+		try:
+			with open(cell_coords, 'r') as f:
+				next(f)
+				for line in f:
+					line = line.strip().split('\t')
+					c.append(str(line[0]))
+					x.append(float(line[1]))
+					y.append(float(line[2]))
+					try:
+						labels.append(cell_label_colors_dict[str(line[0])])
+					except:
+						pass
+		except:
+			pass
+
+		cell_types = {}
+		if color_plot == 0:
+			cell_types['single-cell mappings'] = [x, y, cell_label_list, 'grey']
+		else:
+			for label, x_c, y_c, color in zip(labels, x, y, c):
+				if label not in cell_types:
+					cell_types[label] = [[],[],[],[]]
+				cell_types[label][0].append(x_c)
+				cell_types[label][1].append(y_c)
+				cell_types[label][2].append(label)
+				cell_types[label][3].append(color)
+
+		for label in cell_types:
+			traces.append(
+				go.Scatter(
+							x=cell_types[label][0],
+							y=cell_types[label][1],
+							mode='markers',
+							opacity = 0.6,
+							name = label,
+							text = cell_types[label][2],
+							marker = dict(
+								size = 6,
+								color = cell_types[label][3]
+								)
+						)
+					)
+	except:
+		pass
 
 	return {
         'data': traces,
@@ -2682,7 +2741,7 @@ def num_clicks_compute(root, dataset):
 
 	try:
 
-		rainbow_plot = '/STREAM/%s/%s/stream_plot.png' % (dataset, root)
+		rainbow_plot = '/STREAM/precomputed/%s/STREAM_result/%s/stream_plot.png' % (dataset, root)
 		rainbow_plot_image = base64.b64encode(open(rainbow_plot, 'rb').read())
 
 		return 'data:image/png;base64,{}'.format(rainbow_plot_image)
@@ -2759,7 +2818,7 @@ def num_clicks_compute(fig_update, pathname):
 
 def num_clicks_compute(dataset):
 
-	gene_list_tmp = glob.glob('/STREAM/%s/S0/stream_plot_*png' % dataset)
+	gene_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S0/stream_plot_*png' % dataset)
 
 	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
 
@@ -3174,12 +3233,12 @@ def compute_trajectories(dataset, gene, root):
 
 	traces = []
 
-	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
-	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
-	gene_coords = '/STREAM/%s/%s/subway_coord_%s.csv' % (dataset, root, gene)
+	cell_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_cells.csv' % (dataset, root)
+	path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_line*csv' % (dataset, root))
+	gene_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_%s.csv' % (dataset, root, gene)
 
-	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
-	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+	cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
+	cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
 	traces = []
 	for path in path_coords:
@@ -3310,7 +3369,7 @@ def num_clicks_compute(dataset, gene, root):
 
 	try:
 
-		discovery_plot = '/STREAM/%s/%s/stream_plot_%s.png' % (dataset, root, gene)
+		discovery_plot = '/STREAM/precomputed/%s/STREAM_result/%s/stream_plot_%s.png' % (dataset, root, gene)
 		discovery_plot_image = base64.b64encode(open(discovery_plot, 'rb').read())
 		return 'data:image/png;base64,{}'.format(discovery_plot_image)
 
@@ -3387,7 +3446,7 @@ def num_clicks_compute(fig_update, pathname):
 
 def num_clicks_compute(dataset):
 
-	gene_list_tmp = glob.glob('/STREAM/%s/S0/stream_plot_*png' % dataset)
+	gene_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S0/stream_plot_*png' % dataset)
 
 	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
 
@@ -3768,12 +3827,12 @@ def compute_trajectories(dataset, root, gene):
 
 	traces = []
 
-	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
-	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
-	gene_coords = '/STREAM/%s/%s/subway_coord_%s.csv' % (dataset, root, gene)
+	cell_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_cells.csv' % (dataset, root)
+	path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_line*csv' % (dataset, root))
+	gene_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_%s.csv' % (dataset, root, gene)
 
-	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
-	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+	cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
+	cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
 	for path in path_coords:
 		x_p = []
@@ -3897,7 +3956,7 @@ def num_clicks_compute(root, gene, dataset):
 
 	try:
 
-		discovery_plot = '/STREAM/%s/%s/stream_plot_%s.png' % (dataset, root, gene)
+		discovery_plot = '/STREAM/precomputed/%s/STREAM_result/%s/stream_plot_%s.png' % (dataset, root, gene)
 		discovery_plot_image = base64.b64encode(open(discovery_plot, 'rb').read())
 
 		return 'data:image/png;base64,{}'.format(discovery_plot_image)
@@ -3937,7 +3996,7 @@ def num_clicks_compute(fig_update, pathname):
 def num_clicks_compute(dataset):
 
 	combined_branches = []
-	find_tables = glob.glob('/STREAM/%s/DE_Genes/*.tsv' % dataset)
+	find_tables = glob.glob('/STREAM/precomputed/%s/STREAM_result/DE_Genes/*.tsv' % dataset)
 	for table in find_tables:
 		branch1 = table.split(' and ')[0].split('genes_')[1]
 		branch2 = table.split(' and ')[1].strip('.tsv')
@@ -4045,7 +4104,7 @@ def update_table(slider, branches, direction, dataset):
 		elif direction == branch2:
 			direction_classify = '_down_'
 
-		find_table = glob.glob('/STREAM/%s/DE_Genes/*.tsv' % dataset)
+		find_table = glob.glob('/STREAM/precomputed/%s/STREAM_result/DE_Genes/*.tsv' % dataset)
 		for table in find_table:
 			if (branch1 in table) and (branch2 in table) and (direction_classify in table):
 				use_this_table = table
@@ -4130,7 +4189,7 @@ def num_clicks_compute(fig_update, pathname):
 
 def num_clicks_compute(dataset):
 
-	gene_list_tmp = glob.glob('/STREAM/%s/S0/stream_plot_*png' % dataset)
+	gene_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S0/stream_plot_*png' % dataset)
 
 	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
 
@@ -4511,12 +4570,12 @@ def compute_trajectories(dataset, root, gene):
 
 	traces = []
 
-	cell_coords = '/STREAM/%s/%s/subway_coord_cells.csv' % (dataset, root)
-	path_coords = glob.glob('/STREAM/%s/%s/subway_coord_line*csv' % (dataset, root))
-	gene_coords = '/STREAM/%s/%s/subway_coord_%s.csv' % (dataset, root, gene)
+	cell_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_cells.csv' % (dataset, root)
+	path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_line*csv' % (dataset, root))
+	gene_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_%s.csv' % (dataset, root, gene)
 
-	cell_label = '/STREAM/%s/cell_labels.tsv' % dataset
-	cell_label_colors = '/STREAM/%s/cell_label_colors.tsv' % dataset
+	cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
+	cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
 	traces = []
 	for path in path_coords:
@@ -4640,7 +4699,7 @@ def num_clicks_compute(root, gene, dataset):
 
 	try:
 
-		discovery_plot = '/STREAM/%s/%s/stream_plot_%s.png' % (dataset, root, gene)
+		discovery_plot = '/STREAM/precomputed/%s/STREAM_result/%s/stream_plot_%s.png' % (dataset, root, gene)
 		discovery_plot_image = base64.b64encode(open(discovery_plot, 'rb').read())
 
 		return 'data:image/png;base64,{}'.format(discovery_plot_image)
@@ -4675,7 +4734,7 @@ def num_clicks_compute(fig_update, pathname):
 def num_clicks_compute(dataset):
 
 	branches = []
-	find_tables = glob.glob('/STREAM/%s/Transition_Genes/*.tsv' % dataset)
+	find_tables = glob.glob('/STREAM/precomputed/%s/STREAM_result/Transition_Genes/*.tsv' % dataset)
 	for table in find_tables:
 		branch = table.split('_Genes_')[1].strip('.tsv')
 
@@ -4722,7 +4781,7 @@ def update_table(slider, branch, dataset):
 
 	use_this_table = ''
 
-	find_table = glob.glob('/STREAM/%s/Transition_Genes/*.tsv' % dataset)
+	find_table = glob.glob('/STREAM/precomputed/%s/STREAM_result/Transition_Genes/*.tsv' % dataset)
 	for table in find_table:
 		if branch in table:
 			use_this_table = table
