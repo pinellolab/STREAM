@@ -688,7 +688,8 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
                                                             InitNodePositions = EPG_nodes_pos,
                                                             InitEdges=EPG_edges + 1,
                                                             Do_PCA=False,CenterData=False,
-                                                            n_cores = n_processes,
+                                                            # n_cores = n_processes,
+                                                            n_cores = 1,
                                                             nReps=EPG_n_rep,
                                                             ProbPoint=EPG_prob,
                                                             drawAccuracyComplexity = False, drawEnergy = False,drawPCAView = False,
@@ -703,7 +704,8 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
                                                             InitNodePositions = EPG_nodes_pos,
                                                             InitEdges=EPG_edges + 1,
                                                             Do_PCA=False,CenterData=False,
-                                                            n_cores = n_processes,
+                                                            # n_cores = n_processes,
+                                                            n_cores = 1,
                                                             nReps=EPG_n_rep,
                                                             ProbPoint=EPG_prob,
                                                             FinalEnergy = EPG_finalenergy,
@@ -754,7 +756,8 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
                                         InitNodePositions = EPG_nodes_pos,
                                         InitEdges = EPG_edges + 1,
                                         Do_PCA = False, CenterData = False,
-                                        n_cores = n_processes, 
+                                        # n_cores = n_processes, 
+                                        n_cores = 1,
                                         nReps=EPG_n_rep,
                                         ProbPoint=EPG_prob,                                    
                                         MaxSteps = 50, Mode = 2,
@@ -788,7 +791,8 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
                                                             InitNodePositions = EPG_nodes_pos,
                                                             InitEdges = EPG_edges + 1,
                                                             Do_PCA = False, CenterData = False,
-                                                            n_cores = n_processes, 
+                                                            # n_cores = n_processes,
+                                                            n_cores = 1, 
                                                             nReps=EPG_n_rep,
                                                             ProbPoint=EPG_prob,       
                                                             drawAccuracyComplexity = False, drawEnergy = False,drawPCAView = False,
@@ -854,9 +858,8 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
     df_cells = Project_Cells_To_Tree(EPG,X,dict_branches)
     flat_tree = Contruct_Tree(dict_branches)
     dict_node_state = Construct_Node_State(flat_tree)
-    if(not flag_web):
-        Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,
-                file_name = 'Final_EPG',dict_node_state=dict_node_state)
+    Plot_EPG(EPG,df_flat_tree,dict_branches,input_cell_label_uni,input_cell_label_uni_color,curves_color,file_path,flag_web,
+            file_name = 'Final_EPG',dict_node_state=dict_node_state)
 
     for x_br in dict_branches.keys():
         x_nodes = dict_branches[x_br]['nodes']
@@ -2502,12 +2505,27 @@ def Subway_Map_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start
             # sizes = 50*((gene_values/max_gene_values)**2)
             X_plot = pd.DataFrame(pos).sample(frac=1,random_state=100)
             gene_values = gene_values.sample(frac=1,random_state=100)  
-            if(not flag_web):         
-                sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=0, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
-            else:
+            if(flag_web):    
                 X_plot_for_web = deepcopy(X_plot)
                 X_plot_for_web[gene_list[idx]] = gene_values
                 X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + gene_list[idx] + '.csv',sep='\t')    
+                plt.close(fig)
+            else:
+                sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=0, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
+                cbar=plt.colorbar(sc)
+                cbar.ax.tick_params(labelsize=20)
+                tick_locator = ticker.MaxNLocator(nbins=5)
+                cbar.locator = tick_locator
+                cbar.set_alpha(1)
+                cbar.draw_all()
+                ax.set_title(gene_list[idx],size=15)
+                if(mode == 'normal'):
+                    plt.savefig(file_path_S + '/subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
+                    plt.close(fig)
+                if(mode == 'contracted'):
+                    plt.savefig(file_path_S + '/contracted_subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
+                    plt.close(fig)     
+
         else:
             min_gene_values = np.percentile(gene_values[gene_values<0],10)
             max_gene_values = np.percentile(gene_values[gene_values>0],90)
@@ -2518,28 +2536,28 @@ def Subway_Map_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start
             v_limit = max(abs(min_gene_values),max_gene_values)
             X_plot = pd.DataFrame(pos).sample(frac=1,random_state=100)
             gene_values = gene_values.sample(frac=1,random_state=100)    
-            if(not flag_web):            
-                sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=-v_limit, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
-            else:
+            if(flag_web): 
                 X_plot_for_web = deepcopy(X_plot)
                 X_plot_for_web[gene_list[idx]] = gene_values
                 X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + gene_list[idx] + '.csv',sep='\t')
                 plt.close(fig)
+            else:                                       
+                sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=-v_limit, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
+                cbar=plt.colorbar(sc)
+                cbar.ax.tick_params(labelsize=20)
+                tick_locator = ticker.MaxNLocator(nbins=5)
+                cbar.locator = tick_locator
+                cbar.set_alpha(1)
+                cbar.draw_all()
+                ax.set_title(gene_list[idx],size=15)
+                if(mode == 'normal'):
+                    plt.savefig(file_path_S + '/subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
+                    plt.close(fig)
+                if(mode == 'contracted'):
+                    plt.savefig(file_path_S + '/contracted_subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
+                    plt.close(fig)                
+
             
-        if(not flag_web):
-            cbar=plt.colorbar(sc)
-            cbar.ax.tick_params(labelsize=20)
-            tick_locator = ticker.MaxNLocator(nbins=5)
-            cbar.locator = tick_locator
-            cbar.set_alpha(1)
-            cbar.draw_all()
-            ax.set_title(gene_list[idx],size=15)
-            if(mode == 'normal'):
-                plt.savefig(file_path_S + '/subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
-                plt.close(fig)
-            if(mode == 'contracted'):
-                plt.savefig(file_path_S + '/contracted_subway_map_' + slugify(gene_list[idx]) + '.pdf',pad_inches=1,bbox_inches='tight')
-                plt.close(fig)
 
 def Stream_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start,dict_node_state,gene_list,flag_stream_log_view,flag_atac,file_path,flag_web,mode='normal'):
     file_path_S = file_path + '/'+dict_node_state[node_start]
