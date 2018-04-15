@@ -74,8 +74,9 @@ def index():
 
 	param_dict = {'compute-clicks':0, 'sg-clicks':0, 'discovery-clicks':0, 'correlation-clicks':0, 'starting-nodes':['S0'],
 	'sg-genes':['False'], 'discovery-genes':['False'], 'correlation-genes':['False'], 'sg-gene':'False', 'discovery-gene':'False', 'correlation-gene':'False',
-	'compute-run':False,'sg-run':False,'discovery-run':False, 'correlation-run':False, 'required_files': ['Gene Expression Matrix', 'Cell Labels', 'Cell Label Colors'],
-	'checkbutton1':1, 'checkpoint1':True,'checkbutton2':1, 'checkpoint2':True,'checkbutton3':1, 'checkpoint3':True,'checkbutton4':1, 'checkpoint4':True}
+	'compute-run':False,'sg-run':False,'discovery-run':False, 'correlation-run':False, 'required_files': ['Data Matrix', 'Cell Labels', 'Cell Label Colors'],
+	'checkbutton1':1, 'checkpoint1':True,'checkbutton2':1, 'checkpoint2':True,'checkbutton3':1, 'checkpoint3':True,'checkbutton4':1, 'checkpoint4':True,
+	'matrix-update':'Data Matrix: No upload', 'cl-update':'Cell Labels File: No upload', 'clc-update':'Cell Label Colors File: No upload', 'compute-disable':True, 'compute-update':'Load Personal or Example Data (Step 1)'}
 
 	with open(UPLOADS_FOLDER + '/params.json', 'w') as f:
 		json_string = json.dumps(param_dict)
@@ -98,7 +99,6 @@ def generate_table(dataframe, max_rows = 100):
     )
 
 # Upload file
-
 upload_url1='/uploadajax1'
 
 @app.server.route(upload_url1, methods = ['POST'])
@@ -122,7 +122,157 @@ def save_files1():
 	for i in rem_files:
 		sb.call('rm %s' % i, shell = True)
 
-	return upload_files(param_dict['required_files'], UPLOADS_FOLDER)
+	upload_files(param_dict['required_files'], UPLOADS_FOLDER)
+
+	# Detect files
+	matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
+	cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
+	cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
+
+	# Matrix reporting
+	matrix_update = 'initialize'
+	if len(matrix) > 0:
+
+		if matrix[0].endswith('tsv') or matrix[0].endswith('tsv.gz'):
+
+			df = pd.read_table(matrix[0], sep = '\t', header = None, low_memory = False)
+			if str(df.get_value(0,0)) == 'nan':
+
+				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
+
+			else:
+				matrix_update = 'Data Matrix: [ERROR] Column and row IDs must be present ...'
+
+		elif matrix[0].endswith('txt') or matrix[0].endswith('txt.gz'):
+
+			df = pd.read_table(matrix[0], sep = '\t', header = None, low_memory = False)
+			if str(df.get_value(0,0)) == 'nan':
+
+				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
+
+			else:
+				matrix_update = 'Data Matrix: [ERROR] Column and row IDs must be present ...'
+
+		elif matrix[0].endswith('csv') or matrix[0].endswith('csv.gz'):
+
+			df = pd.read_table(matrix[0], sep = ',', header = None, low_memory = False)
+			if str(df.get_value(0,0)) == 'nan':
+
+				df = pd.read_table(matrix[0], index_col = 0, sep = ',')
+
+			else:
+				matrix_update = 'Data Matrix: [ERROR] Column and row IDs must be present ...'
+
+		else:
+			matrix_update = 'Data Matrix: [ERROR] File format needs to be .tsv, .csv, or .txt ...'
+
+		if '[ERROR]' not in matrix_update:
+
+			if len(df.columns) > 1000:
+				matrix_update = 'Data Matrix: [ERROR] Limit of 1000 cells (Detected %s Cells) ...' % len(df.columns)
+
+			elif df.isnull().values.any():
+				matrix_update = 'Data Matrix: [ERROR] NaN values detected in matrix ...'
+
+			elif df._get_numeric_data().size != df.size:
+				matrix_update = 'Data Matrix: [ERROR] Matrix contains non-numeric values ...'
+
+			else:
+				matrix_update = 'Data Matrix: Upload Successful'
+
+	else:
+		matrix_update = 'Data Matrix: No Upload'
+
+	# Cell Labels File and Cell Label Colors File reporting
+	if len(cell_label) > 0:
+
+		if len(matrix) > 0:
+
+			if len(cell_label_colors) > 0:
+				cl = pd.read_table(cell_label[0], header = None, low_memory = False)
+				clc = pd.read_table(cell_label_colors[0], header = None, low_memory = False)
+				if len(cl.columns) == 1 and cl.size == len(df.columns):
+					matches = []
+					for i in clc.iloc[:,1].tolist():
+						if re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', i):
+							matches.append(1)
+
+					if list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])) and sum(matches) == len(clc.iloc[:,1].tolist()):
+						cl_update = 'Cell Labels File: Upload Successful'
+						clc_update = 'Cell Label Colors File: Upload Successful'
+
+					elif list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])):
+						cl_update = 'Cell Labels File: Upload Successful'
+						clc_update = 'Cell Label Colors File: [ERROR] Cell Label Colors file does not provide HEX color code ...'
+
+					else:
+						cl_update = 'Cell Labels File: [ERROR] Disagreement between number of Cell Labels and Cell Label Colors ...'
+						clc_update = 'Cell Label Colors File: [ERROR] Disagreement between number of Cell Labels and Cell Label Colors ...'
+
+				else:
+					cl_update = 'Cell Labels File: [ERROR] Cell Labels file contains incorrect number of labels (%s Labels for %s Cells) ...' % (cl.size, len(df.columns))
+
+					matches = []
+					for i in clc.iloc[:,1].tolist():
+						if re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', i):
+							matches.append(1)
+
+					if list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])) and sum(matches) == len(clc.iloc[:,1].tolist()):
+						clc_update = 'Cell Label Colors File: Upload Successful'
+
+					elif list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])):
+						clc_update = 'Cell Label Colors File: [ERROR] Cell Label Colors file does not provide HEX color code ...'
+
+					else:
+						clc_update = 'Cell Label Colors File: [ERROR] Disagreement between number of Cell Labels and Cell Label Colors ...'
+
+			else:
+				clc_update = 'Cell Label Colors File: No Upload'
+
+				cl = pd.read_table(cell_label[0], header = None, low_memory = False)
+				if len(cl.columns) == 1 and cl.size == len(df.columns):
+					cl_update = 'Cell Labels File: Upload Successful'
+
+				else:
+					cl_update = 'Cell Labels File: [ERROR] Cell Labels file contains incorrect number of labels (%s Labels for %s Cells)' % (cl.size, len(df.columns))
+
+		else:
+			cl_update = 'Cell Labels File: [ERROR] No input Data Matrix ...'
+
+			if len(cell_label_colors) > 0:
+				clc_update = 'Cell Label Colors File: [ERROR] No input Data Matrix ...'
+			else:
+				clc_update = 'Cell Label Colors File: No Upload'
+
+	elif len(cell_label_colors) > 0:
+		cl_update = 'Cell Labels File: No Upload'
+		clc_update = 'Cell Label Colors File: [ERROR] No associated Cell Labels File ...'
+
+	else:
+		cl_update = 'Cell Labels File: No Upload'
+		clc_update = 'Cell Label Colors File: No Upload'
+
+	# Update JSON
+	with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+			json_string = f.readline().strip()
+			param_dict = json.loads(json_string)
+
+	param_dict['matrix-update'] = matrix_update
+	param_dict['cl-update'] = cl_update
+	param_dict['clc-update'] = clc_update
+
+	if matrix_update == 'Data Matrix: Upload Successful' and ('[ERROR]' not in cl_update) and ('[ERROR]' not in clc_update):
+		param_dict['compute-disable'] = False
+		param_dict['compute-update'] = 'Compute'
+	else:
+		param_dict['compute-disable'] = True
+		param_dict['compute-update'] = 'Load Personal or Example Data (Step 1)'
+
+	with open(UPLOADS_FOLDER + '/params.json', 'w') as f:
+		new_json_string = json.dumps(param_dict)
+		f.write(new_json_string + '\n')
+
+	return 'Completed upload ...'
 
 app2.layout = html.Div([
 
@@ -469,9 +619,13 @@ app.layout = html.Div([
 
 			html.Hr(),
 
-			html.Label(id = 'matrix-upload', children = 'Gene Expression Matrix: None', style = {'font-weight':'bold'}),
-			html.Label(id = 'cl-upload', children = 'Cell Labels File: None', style = {'font-weight':'bold'}),
-			html.Label(id = 'clc-upload', children = 'Cell Label Colors File: None', style = {'font-weight':'bold'}),
+			# html.Label(id = 'matrix-upload', children = 'Data Matrix: None', style = {'font-weight':'bold'}),
+			# html.Label(id = 'cl-upload', children = 'Cell Labels File: None', style = {'font-weight':'bold'}),
+			# html.Label(id = 'clc-upload', children = 'Cell Label Colors File: None', style = {'font-weight':'bold'}),
+
+			html.Label(id = 'matrix-update', children = 'Data Matrix: No Upload', style = {'font-weight':'bold'}),
+			html.Label(id = 'cl-update', children = 'Cell Labels File: No Upload', style = {'font-weight':'bold'}),
+			html.Label(id = 'clc-update', children = 'Cell Label Colors File: No Upload', style = {'font-weight':'bold'}),
 
 			html.Hr(),
 
@@ -1098,19 +1252,15 @@ def update_select_features(pathname, n_clicks, atac):
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
 		if n_clicks > 0:
-
 			return 'all'
 
 		elif str(atac) == 'True':
-
 			return 'PCA'
 
 		else:
-
 			return 'LOESS'
 
 	else:
-
 		return 'LOESS'
 
 @app.callback(
@@ -1126,20 +1276,43 @@ def update_input_files(pathname, n_clicks):
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
 		if n_clicks > 0:
-
-			sb.call('cp /STREAM/exampleDataset/data_guoji.tsv %s/Gene_Expression_Matrix_data_guoji.tsv' % (UPLOADS_FOLDER), shell = True)
+			sb.call('cp /STREAM/exampleDataset/data_guoji.tsv %s/Data_Matrix_data_guoji.tsv' % (UPLOADS_FOLDER), shell = True)
 			sb.call('cp /STREAM/exampleDataset/cell_label.tsv %s/Cell_Labels_cell_label.tsv' % (UPLOADS_FOLDER), shell = True)
 			sb.call('cp /STREAM/exampleDataset/cell_label_color.tsv %s/Cell_Label_Colors_cell_label_color.tsv' % (UPLOADS_FOLDER), shell = True)
-
-			return 'Example Data Loaded!'
+			return 'Example Data Loaded'
 
 		else:
-
 			return 'Load Example Data'
 
 	else:
-
 		return 'Load Example Data'
+
+@app.callback(
+    Output('buffer5', 'style'),
+    [Input('url', 'pathname'),
+    Input('load_example_data', 'n_clicks')])
+
+def update_input_files(pathname, n_clicks):
+
+	if pathname:
+
+		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+		with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+			json_string = f.readline().strip()
+			param_dict = json.loads(json_string)
+
+		if n_clicks > 0:
+			param_dict['compute-update'] = 'Compute'
+			param_dict['compute-disable'] = False
+
+			with open(UPLOADS_FOLDER + '/params.json', 'w') as f:
+				new_json_string = json.dumps(param_dict)
+				f.write(new_json_string + '\n')
+
+	return {'display': 'block'}
+
 
 # Advanced parameters
 @app.callback(
@@ -1190,7 +1363,7 @@ def smoothing_container(fig_update, pathname):
 		return {'display': 'none'}
 
 @app.callback(
-	Output('matrix-upload', 'children'),
+	Output('matrix-update', 'children'),
 	[Input('url', 'pathname')],
 	events=[Event('common-interval', 'interval')])
 
@@ -1201,62 +1374,14 @@ def update_matrix_log(pathname):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
-		cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
-		cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
+		with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+			json_string = f.readline().strip()
+			param_dict = json.loads(json_string)
 
-		if len(matrix) > 0:
-
-			if matrix[0].endswith('tsv'):
-
-				df = pd.read_table(matrix[0], sep = '\t', header = None)
-				if str(df.get_value(0,0)) == 'nan':
-
-					df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-				else:
-					return 'Gene Expression Matrix: [ERROR] Column and row IDs must be present ...'
-
-			elif matrix[0].endswith('txt'):
-
-				df = pd.read_table(matrix[0], sep = '\t', header = None)
-				if str(df.get_value(0,0)) == 'nan':
-
-					df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-				else:
-					return 'Gene Expression Matrix: [ERROR] Column and row IDs must be present ...'
-
-			elif matrix[0].endswith('csv'):
-
-				df = pd.read_table(matrix[0], sep = ',', header = None)
-				if str(df.get_value(0,0)) == 'nan':
-
-					df = pd.read_table(matrix[0], index_col = 0, sep = ',')
-
-				else:
-					return 'Gene Expression Matrix: [ERROR] Column and row IDs must be present ...'
-
-			else:
-				return 'Gene Expression Matrix: [ERROR] File format needs to be .tsv, .csv, or .txt ...'
-
-			if len(df.columns) > 1000:
-					return 'Gene Expression Matrix: [ERROR] Limit of 1000 cells (Detected %s Cells) ...' % len(df.columns)
-
-			elif df.isnull().values.any():
-				return 'Gene Expression Matrix: [ERROR] NaN values detected in matrix ...'
-
-			elif df._get_numeric_data().size != df.size:
-				return 'Gene Expression Matrix: [ERROR] Matrix contains non-numeric values ...'
-
-			else:
-				return 'Gene Expression Matrix: Upload successful!'
-
-		else:
-			return 'Gene Expression Matrix: No upload'
+		return param_dict['matrix-update']
 
 @app.callback(
-	Output('cl-upload', 'children'),
+	Output('cl-update', 'children'),
 	[Input('url', 'pathname')],
 	events=[Event('common-interval', 'interval')])
 
@@ -1267,70 +1392,14 @@ def update_cl_log(pathname):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
-		cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
-		cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
+		with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+			json_string = f.readline().strip()
+			param_dict = json.loads(json_string)
 
-		if len(matrix) > 0:
-
-			if matrix[0].endswith('tsv'):
-
-				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-			elif matrix[0].endswith('txt'):
-
-				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-			elif matrix[0].endswith('csv'):
-
-				df = pd.read_table(matrix[0], index_col = 0, sep = ',')
-
-			if len(cell_label) > 0 and len(cell_label_colors) == 0:
-
-				cl = pd.read_table(cell_label[0], header = None)
-				if len(cl.columns) == 1 and cl.size == len(df.columns):
-					return 'Cell Labels File: Upload successful!'
-
-				else:
-					return 'Cell Labels File: [ERROR] Cell Labels file contains incorrect number of labels (%s Labels for %s Cells)' % (cl.size, len(df.columns))
-
-			elif len(cell_label) > 0 and len(cell_label_colors) > 0:
-
-				try:
-					cl = pd.read_table(cell_label[0], header = None)
-					clc = pd.read_table(cell_label_colors[0], header = None)
-					if len(cl.columns) == 1 and cl.size == len(df.columns):
-						matches = []
-						for i in clc.iloc[:,1].tolist():
-							if re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', i):
-								matches.append(1)
-
-						if list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])) and sum(matches) == len(clc.iloc[:,1].tolist()):
-							return 'Cell Labels File: Upload successful!'
-
-						elif list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])):
-							return 'Cell Labels File: Upload successful!'
-
-						else:
-							return 'Cell Labels File: [ERROR] Disagreement between number of Cell Labels and Cell Label Colors ...'
-
-					else:
-						return 'Cell Labels File: [ERROR] Cell Labels file contains incorrect number of labels (%s Labels for %s Cells) ...' % (cl.size, len(df.columns))
-
-				except:
-					return 'Cell Labels File: [ERROR] Disagreement between Cell Labels and Cell Label Colors files ...'
-
-			return 'Cell Labels File: No upload'
-
-		else:
-
-			if len(cell_label) > 0:
-				return 'Cell Labels File: Upload successful, but no input gene expression matrix ...'
-			else:
-				return 'Cell Labels File: No upload'
+		return param_dict['cl-update']
 
 @app.callback(
-	Output('clc-upload', 'children'),
+	Output('clc-update', 'children'),
 	[Input('url', 'pathname')],
 	events=[Event('common-interval', 'interval')])
 
@@ -1341,63 +1410,11 @@ def update_clc_log(pathname):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
-		cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
-		cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
+		with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+			json_string = f.readline().strip()
+			param_dict = json.loads(json_string)
 
-		if len(matrix) > 0:
-
-			if matrix[0].endswith('tsv'):
-
-				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-			elif matrix[0].endswith('txt'):
-
-				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-			elif matrix[0].endswith('csv'):
-
-				df = pd.read_table(matrix[0], index_col = 0, sep = ',')
-
-			if len(cell_label) == 0 and len(cell_label_colors) > 0:
-				return 'Cell Label Colors File: [ERROR] Needs to be accompanied with a Cell Labels file'
-
-			elif len(cell_label) > 0 and len(cell_label_colors) > 0:
-
-				try:
-					cl = pd.read_table(cell_label[0], header = None)
-					clc = pd.read_table(cell_label_colors[0], header = None)
-					if len(cl.columns) == 1 and cl.size == len(df.columns):
-						matches = []
-						for i in clc.iloc[:,1].tolist():
-							if re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', i):
-								matches.append(1)
-
-						if list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])) and sum(matches) == len(clc.iloc[:,1].tolist()):
-							return 'Cell Label Colors File: Upload successful!'
-
-						elif list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])):
-							return 'Cell Label Colors File: [ERROR] Does not provide HEX color code ...'
-
-						else:
-							return 'Cell Label Colors File: [ERROR] Disagreement between number of Cell Labels and Cell Label Colors ...'
-
-					else:
-						return 'Cell Label Colors File: Upload successful!'
-
-				except:
-					return 'Cell Label Colors File: [ERROR] Disagreement between Cell Labels and Cell Label Colors files ...'
-
-			return 'Cell Label Colors File: No upload'
-
-		else:
-
-			if len(cell_label) > 0 and len(cell_label_colors) > 0:
-				return 'Cell Labels Colors File: Upload successful, but no input gene expression matrix ...'
-			elif len(cell_label_colors) > 0:
-				return 'Cell Labels Colors File: Upload successful, but no input gene expression matrix or cell labels file...'
-			else:
-				return 'Cell Label Colors File: No upload'
+		return param_dict['clc-update']
 
 @app.callback(
     Output('compute-button', 'disabled'),
@@ -1416,103 +1433,7 @@ def num_clicks_compute(n_clicks, pathname):
 			json_string = f.readline().strip()
 			param_dict = json.loads(json_string)
 
-		matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
-		cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
-		cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
-
-		if len(matrix) > 0:
-
-			if n_clicks > param_dict['compute-clicks']:
-				return True
-			else:
-
-				if matrix[0].endswith('tsv'):
-
-					df = pd.read_table(matrix[0], sep = '\t', header = None)
-					if str(df.get_value(0,0)) == 'nan':
-
-						df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-					else:
-						return True
-
-				elif matrix[0].endswith('txt'):
-
-					df = pd.read_table(matrix[0], sep = '\t', header = None)
-					if str(df.get_value(0,0)) == 'nan':
-
-						df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-					else:
-						return True
-
-				elif matrix[0].endswith('csv'):
-
-					df = pd.read_table(matrix[0], sep = ',', header = None)
-					if str(df.get_value(0,0)) == 'nan':
-
-						df = pd.read_table(matrix[0], index_col = 0, sep = ',')
-
-					else:
-						return True
-
-				else:
-					return True
-
-				if len(df.columns) > 1000:
-						return True
-
-				elif df.isnull().values.any():
-					return True
-
-				elif df._get_numeric_data().size != df.size:
-					return True
-
-				else:
-
-					if len(cell_label) > 0 and len(cell_label_colors) == 0:
-
-						cl = pd.read_table(cell_label[0], header = None)
-						if len(cl.columns) == 1 and cl.size == len(df.columns):
-							return False
-
-						else:
-							return True
-
-					elif len(cell_label) > 0 and len(cell_label_colors) > 0:
-
-						try:
-							cl = pd.read_table(cell_label[0], header = None)
-							clc = pd.read_table(cell_label_colors[0], header = None)
-							if len(cl.columns) == 1 and cl.size == len(df.columns):
-								matches = []
-								for i in clc.iloc[:,1].tolist():
-									if re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', i):
-										matches.append(1)
-
-								if list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])) and sum(matches) == len(clc.iloc[:,1].tolist()):
-									return False
-
-								elif list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])):
-									return True
-
-								else:
-									return True
-
-							else:
-								return True
-
-						except:
-							return True
-
-					return False
-
-		else:
-
-			return True
-
-	else:
-		return True
+		return param_dict['compute-disable']
 
 @app.callback(
     Output('compute-button', 'children'),
@@ -1531,102 +1452,7 @@ def num_clicks_compute(n_clicks, pathname):
 			json_string = f.readline().strip()
 			param_dict = json.loads(json_string)
 
-		matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
-		cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
-		cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
-
-		if len(matrix) > 0:
-
-			if n_clicks > param_dict['compute-clicks']:
-				return 'Running...'
-			else:
-
-				if matrix[0].endswith('tsv'):
-
-					df = pd.read_table(matrix[0], sep = '\t', header = None)
-					if str(df.get_value(0,0)) == 'nan':
-
-						df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-					else:
-						return 'ERROR: Column and row IDs must be present ...'
-
-				elif matrix[0].endswith('txt'):
-
-					df = pd.read_table(matrix[0], sep = '\t', header = None)
-					if str(df.get_value(0,0)) == 'nan':
-
-						df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
-
-					else:
-						return 'ERROR: Column and row IDs must be present ...'
-
-				elif matrix[0].endswith('csv'):
-
-					df = pd.read_table(matrix[0], sep = ',', header = None)
-					if str(df.get_value(0,0)) == 'nan':
-
-						df = pd.read_table(matrix[0], index_col = 0, sep = ',')
-
-					else:
-						return 'ERROR: Column and row IDs must be present ...'
-
-				else:
-					return 'ERROR: File format needs to be .tsv, .csv, or .txt ...'
-
-				if len(df.columns) > 1000:
-						return 'ERROR: Limit of 1000 cells (Detected %s Cells) ...' % len(df.columns)
-
-				elif df.isnull().values.any():
-					return 'ERROR: NaN values detected in matrix ...'
-
-				elif df._get_numeric_data().size != df.size:
-					return 'ERROR: Matrix contains non-numeric values ...'
-
-				else:
-
-					if len(cell_label) > 0 and len(cell_label_colors) == 0:
-
-						cl = pd.read_table(cell_label[0], header = None)
-						if len(cl.columns) == 1 and cl.size == len(df.columns):
-							return 'Compute'
-
-						else:
-							return 'ERROR: Cell Labels file contains incorrect number of labels (%s Labels for %s Cells)' % (cl.size, len(df.columns))
-
-					elif len(cell_label) > 0 and len(cell_label_colors) > 0:
-
-						try:
-							cl = pd.read_table(cell_label[0], header = None)
-							clc = pd.read_table(cell_label_colors[0], header = None)
-							if len(cl.columns) == 1 and cl.size == len(df.columns):
-								matches = []
-								for i in clc.iloc[:,1].tolist():
-									if re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', i):
-										matches.append(1)
-
-								if list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])) and sum(matches) == len(clc.iloc[:,1].tolist()):
-									return 'Compute'
-
-								elif list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])):
-									return 'ERROR: Cell Label Colors file does not provide HEX color code ...'
-
-								else:
-									return 'ERROR: Disagreement between number of Cell Labels and Cell Label Colors ...'
-
-							else:
-								return 'ERROR: Cell Labels file contains incorrect number of labels (%s Labels for %s Cells)' % (cl.size, len(df.columns))
-
-						except:
-							return 'ERROR: Disagreement between Cell Labels and Cell Label Colors files ...'
-
-					return 'Compute'
-
-		else:
-			return 'Load Personal or Example Data (Step 1)'
-
-	else:
-		return 'Load Personal or Example Data (Step 1)'
+		return param_dict['compute-update']
 
 @app.callback(
 	Output('graph-button', 'children'),
@@ -1639,18 +1465,6 @@ def update_score_params_button(n_clicks):
 	else:
 		return '(-) Hide Graphs'
 
-# @app2.callback(
-# 	Output('graph-button2', 'children'),
-# 	[Input('graph-button2', 'n_clicks')])
-
-# def update_score_params_button(n_clicks):
-
-# 	if n_clicks%2 != 0:
-# 		return '(-) Hide'
-# 	else:
-# 		return '(+) Show'
-
-
 @app.callback(
 	Output('graph-container', 'style'),
 	[Input('graph-button', 'n_clicks')])
@@ -1661,17 +1475,6 @@ def update_score_params_visual(n_clicks):
 		return {'display': 'none'}
 	else:
 		return {'display': 'block'}
-
-# @app2.callback(
-# 	Output('graph-container2', 'style'),
-# 	[Input('graph-button2', 'n_clicks')])
-
-# def update_score_params_visual(n_clicks):
-
-# 	if n_clicks%2 != 0:
-# 		return {'display': 'block'}
-# 	else:
-# 		return {'display': 'none'}
 
 @app.callback(
     Output('buffer1', 'style'),
@@ -1719,7 +1522,7 @@ def compute_trajectories(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, 
 
 		if n_clicks > param_dict['compute-clicks']:
 
-			matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+			matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 			cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 			cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -1856,7 +1659,7 @@ def compute_trajectories(pathname, n_clicks):
 
 			if 'Finished computation...\n' in f_data:
 
-				matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -1876,6 +1679,8 @@ def compute_trajectories(pathname, n_clicks):
 				color_plot = 0
 				if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
 					color_plot = 1
+				elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
+					color_plot = 0.5
 
 				param_dict['compute-clicks'] = n_clicks
 				param_dict['checkbutton1'] += 1
@@ -1908,7 +1713,16 @@ def compute_trajectories(pathname, n_clicks):
 
 				cell_types = {}
 				if color_plot == 0:
-					cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+					cell_types['single-cell mappings'] = [x, y, z, 'unlabeled', 'grey']
+				elif color_plot == 0.5:
+					for label, x_c, y_c, z_c, color in zip(labels, x, y, z, c):
+						if label not in cell_types:
+							cell_types[label] = [[],[],[],[],[]]
+						cell_types[label][0].append(x_c)
+						cell_types[label][1].append(y_c)
+						cell_types[label][2].append(z_c)
+						cell_types[label][3].append(label)
+						cell_types[label][4].append('grey')
 				else:
 					for label, x_c, y_c, z_c, color in zip(labels, x, y, z, c):
 						if label not in cell_types:
@@ -2005,23 +1819,27 @@ def compute_trajectories(dataset):
 
 	try:
 
-		cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
-		cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
+		cell_label = glob.glob('/STREAM/precomputed/%s/cell_label.tsv.gz*' % dataset)
+		cell_label_colors = glob.glob('/STREAM/precomputed/%s/cell_label_color.tsv.gz*' % dataset)
 
 		cell_label_list = []
-		with gzip.open(cell_label, 'r') as f:
-			for line in f:
-				cell_label_list.append(line.strip())
+		if len(cell_label) > 0:
+			with gzip.open(cell_label[0], 'r') as f:
+				for line in f:
+					cell_label_list.append(line.strip())
 
 		cell_label_colors_dict = {}
-		with gzip.open(cell_label_colors, 'r') as f:
-			for line in f:
-				line = line.strip().split('\t')
-				cell_label_colors_dict[str(line[1])] = str(line[0])
+		if len(cell_label_colors) > 0:
+			with gzip.open(cell_label_colors[0], 'r') as f:
+				for line in f:
+					line = line.strip().split('\t')
+					cell_label_colors_dict[str(line[1])] = str(line[0])
 
 		color_plot = 0
 		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
 			color_plot = 1
+		elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
+			color_plot = 0.5
 
 		cell_coords = '/STREAM/precomputed/%s/STREAM_result/coord_cells.csv' % dataset
 		path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/coord_curve*csv' % dataset)
@@ -2046,7 +1864,16 @@ def compute_trajectories(dataset):
 
 		cell_types = {}
 		if color_plot == 0:
-			cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+			cell_types['single-cell mappings'] = [x, y, z, 'unlabeled', 'grey']
+		elif color_plot == 0.5:
+			for label, x_c, y_c, z_c, color in zip(labels, x, y, z, c):
+				if label not in cell_types:
+					cell_types[label] = [[],[],[],[],[]]
+				cell_types[label][0].append(x_c)
+				cell_types[label][1].append(y_c)
+				cell_types[label][2].append(z_c)
+				cell_types[label][3].append(label)
+				cell_types[label][4].append('grey')
 		else:
 			for label, x_c, y_c, z_c, color in zip(labels, x, y, z, c):
 				if label not in cell_types:
@@ -2147,7 +1974,7 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
 
 			if 'Finished computation...\n' in f_data:
 
-				matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -2167,6 +1994,8 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
 				color_plot = 0
 				if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
 					color_plot = 1
+				elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
+					color_plot = 0.5
 
 				cell_coords = RESULTS_FOLDER + '/flat_tree_coord_cells.csv'
 				nodes = RESULTS_FOLDER + '/nodes.tsv'
@@ -2237,6 +2066,14 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
 				cell_types = {}
 				if color_plot == 0:
 					cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+				elif color_plot == 0.5:
+					for label, x_c, y_c, color in zip(labels, x, y, c):
+						if label not in cell_types:
+							cell_types[label] = [[],[],[],[]]
+						cell_types[label][0].append(x_c)
+						cell_types[label][1].append(y_c)
+						cell_types[label][2].append(label)
+						cell_types[label][3].append('grey')
 				else:
 					for label, x_c, y_c, color in zip(labels, x, y, c):
 						if label not in cell_types:
@@ -2284,23 +2121,27 @@ def compute_trajectories(dataset):
 
 	try:
 
-		cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
-		cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
+		cell_label = glob.glob('/STREAM/precomputed/%s/cell_label.tsv.gz*' % dataset)
+		cell_label_colors = glob.glob('/STREAM/precomputed/%s/cell_label_color.tsv.gz*' % dataset)
 
 		cell_label_list = []
-		with gzip.open(cell_label, 'r') as f:
-			for line in f:
-				cell_label_list.append(line.strip())
+		if len(cell_label) > 0:
+			with gzip.open(cell_label[0], 'r') as f:
+				for line in f:
+					cell_label_list.append(line.strip())
 
 		cell_label_colors_dict = {}
-		with gzip.open(cell_label_colors, 'r') as f:
-			for line in f:
-				line = line.strip().split('\t')
-				cell_label_colors_dict[str(line[1])] = str(line[0])
+		if len(cell_label_colors) > 0:
+			with gzip.open(cell_label_colors[0], 'r') as f:
+				for line in f:
+					line = line.strip().split('\t')
+					cell_label_colors_dict[str(line[1])] = str(line[0])
 
 		color_plot = 0
 		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
 			color_plot = 1
+		elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
+			color_plot = 0.5
 
 		cell_coords = '/STREAM/precomputed/%s/STREAM_result/flat_tree_coord_cells.csv' % dataset
 		nodes = '/STREAM/precomputed/%s/STREAM_result/nodes.tsv' % dataset
@@ -2369,7 +2210,15 @@ def compute_trajectories(dataset):
 
 		cell_types = {}
 		if color_plot == 0:
-			cell_types['single-cell mappings'] = [x, y, z, cell_label_list, 'grey']
+			cell_types['single-cell mappings'] = [x, y, 'unlabeled', 'grey']
+		elif color_plot == 0.5:
+			for label, x_c, y_c, color in zip(labels, x, y, c):
+				if label not in cell_types:
+					cell_types[label] = [[],[],[],[]]
+				cell_types[label][0].append(x_c)
+				cell_types[label][1].append(y_c)
+				cell_types[label][2].append(label)
+				cell_types[label][3].append('grey')
 		else:
 			for label, x_c, y_c, color in zip(labels, x, y, c):
 				if label not in cell_types:
@@ -2481,6 +2330,8 @@ def num_clicks_compute(root, figure, pathname):
 	color_plot = 0
 	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
 		color_plot = 1
+	elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
+		color_plot = 0.5
 
 	traces = []
 	for path in path_coords:
@@ -2543,7 +2394,15 @@ def num_clicks_compute(root, figure, pathname):
 
 	cell_types = {}
 	if color_plot == 0:
-		cell_types['single-cell mappings'] = [x, y, cell_label_list, 'grey']
+		cell_types['single-cell mappings'] = [x, y, 'unlabeled', 'grey']
+	elif color_plot == 0.5:
+		for label, x_c, y_c, color in zip(labels, x, y, c):
+			if label not in cell_types:
+				cell_types[label] = [[],[],[],[]]
+			cell_types[label][0].append(x_c)
+			cell_types[label][1].append(y_c)
+			cell_types[label][2].append(label)
+			cell_types[label][3].append('grey')
 	else:
 		for label, x_c, y_c, color in zip(labels, x, y, c):
 			if label not in cell_types:
@@ -2594,23 +2453,27 @@ def num_clicks_compute(root, dataset):
 		cell_coords = '/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_cells.csv' % (dataset, root)
 		path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/%s/subway_coord_line*csv' % (dataset, root))
 
-		cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
-		cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
+		cell_label = glob.glob('/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset)
+		cell_label_colors = glob.glob('/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset)
 
 		cell_label_list = []
-		with gzip.open(cell_label, 'r') as f:
-			for line in f:
-				cell_label_list.append(line.strip())
+		if len(cell_label) > 0:
+			with gzip.open(cell_label[0], 'r') as f:
+				for line in f:
+					cell_label_list.append(line.strip())
 
 		cell_label_colors_dict = {}
-		with gzip.open(cell_label_colors, 'r') as f:
-			for line in f:
-				line = line.strip().split('\t')
-				cell_label_colors_dict[str(line[1])] = str(line[0])
+		if len(cell_label_colors) > 0:
+			with gzip.open(cell_label_colors[0], 'r') as f:
+				for line in f:
+					line = line.strip().split('\t')
+					cell_label_colors_dict[str(line[1])] = str(line[0])
 
 		color_plot = 0
 		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
 			color_plot = 1
+		elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
+			color_plot = 0.5
 
 		for path in path_coords:
 			x_p = []
@@ -2672,7 +2535,15 @@ def num_clicks_compute(root, dataset):
 
 		cell_types = {}
 		if color_plot == 0:
-			cell_types['single-cell mappings'] = [x, y, cell_label_list, 'grey']
+			cell_types['single-cell mappings'] = [x, y, 'unlabeled', 'grey']
+		elif color_plot == 0.5:
+			for label, x_c, y_c, color in zip(labels, x, y, c):
+				if label not in cell_types:
+					cell_types[label] = [[],[],[],[]]
+				cell_types[label][0].append(x_c)
+				cell_types[label][1].append(y_c)
+				cell_types[label][2].append(label)
+				cell_types[label][3].append('grey')
 		else:
 			for label, x_c, y_c, color in zip(labels, x, y, c):
 				if label not in cell_types:
@@ -2993,7 +2864,7 @@ def compute_single_gene(n_clicks, pathname, root, gene, norm, log2, atac, lle_dr
 
 		if (n_clicks > param_dict['sg-clicks'] or param_dict['sg-gene'] != gene):
 
-			matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+			matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 			cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 			cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -3116,7 +2987,7 @@ def compute_trajectories(pathname, n_clicks, root, gene):
 
 			if 'Finished computation...\n' in f_data:
 
-				matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -3581,7 +3452,7 @@ def compute_discovery(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, sel
 
 		if n_clicks > param_dict['discovery-clicks'] or param_dict['discovery-gene'] != gene:
 
-			matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+			matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 			cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 			cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -3703,7 +3574,7 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 
 			if 'Finished computation...\n' in f_data:
 
-				matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -4324,7 +4195,7 @@ def compute_correlation(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, s
 
 		if n_clicks > param_dict['correlation-clicks'] or param_dict['correlation-gene'] != gene:
 
-			matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+			matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 			cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 			cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
@@ -4446,7 +4317,7 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 
 			if 'Finished computation...\n' in f_data:
 
-				matrix = glob.glob(UPLOADS_FOLDER + '/Gene_Expression_Matrix*')
+				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
