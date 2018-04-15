@@ -24,17 +24,22 @@ import json
 import cPickle as cp
 import csv
 
+_ROOT = os.path.abspath(os.path.dirname(__file__))
+
+def get_data(path):
+        return os.path.join(_ROOT, path)
+
 # STREAM logo
-stream_logo = 'stream_logo.png'
+stream_logo = get_data('stream_logo.png')
 stream_logo_image = base64.b64encode(open(stream_logo, 'rb').read())
 
-mgh_logo = 'mgh.png'
+mgh_logo = get_data('mgh.png')
 mgh_logo_image = base64.b64encode(open(mgh_logo, 'rb').read())
 
-mitbe_logo = 'mitbe.png'
+mitbe_logo = get_data('mitbe.png')
 mitbe_logo_image = base64.b64encode(open(mitbe_logo, 'rb').read())
 
-hms_logo = 'hms.png'
+hms_logo = get_data('hms.png')
 hms_logo_image = base64.b64encode(open(hms_logo, 'rb').read())
 
 # Generate ID to initialize CRISPR-SURF instance
@@ -3992,7 +3997,7 @@ def update_table(slider, branches, direction, dataset):
 
 		branch1 = branches.split(' and ')[0]
 		branch2 = branches.split(' and ')[1]
-		
+
 		if direction == branch1:
 			direction_classify = '_up_'
 		elif direction == branch2:
@@ -4787,5 +4792,8 @@ def generate_report_url(directory):
 
 	return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (directory), attachment_filename = 'stream-outputs.zip', as_attachment = True)
 
+def main():
+    app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')
+
 if __name__ == '__main__':
-	app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')
+	main()
