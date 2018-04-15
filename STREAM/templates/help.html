@@ -40,15 +40,38 @@
       <div class="starter-template">
         <h1>STREAM Help</h1>
 
-        <h3>Section 1</h3>
-        <p class="lead">Bla<br> Some text</p>
+        <h3>What is STREAM</h3>
+        <p class="lead">STREAM(Single-cell Trajectories Reconstruction, Exploration And Mapping of omics data), is an interactive pipeline capable of disentangling and visualizing complex branching trajectories from both single-cell transcriptomic and epigenomic data. It also allows for automatic developmental-trajectory-related marker gene discovery and visualization. </p>
 
-        <h3>Section 2</h3>
-        <p class="lead">Bla<br> Some text</p>
+        <h3>What can I do with STREAM</h3>
+        <p class="lead">STREAM can be used in two different ways:
+        <p> 1. A computational trajectory inference tool:
+                <br> 1) STREAM can take as input both single cell transcriptomic and epigenomic data. It reliably reconstructs trajectories and pseudotime in both simple bifurcation or complex branching situation without the need of prior knowledge about the structure or the number of trajectories
+                <br> 2) STREAM provides the <i>mapping</i> procedure, which permits reusing a previously inferred principal graph as reference to map new cells not included in the original fitting procedure
+                <br> 3) STREAM provides analytical tools for potential marker genes (or k-mers) of different types: diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches, and transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch.
+                <br> 4) STREAM provides both single-cell-level and density-level visualizations of cells and gene expression patterns for inferred trajectories. Specially, STREAM proposed a novel visualizaiton, called the stream plot, which is useful to study subpopulation composition and cell-fate genes along branching trajectories                
+        <p> 2. An interactive database focused on single-cell trajectory visualization for several published studies. The users can visualize and explore cells’ developmental trajectories, subpopulations and their gene expression patterns at single-cell level.
 
-        <h3>Section 3</h3>
 
-        <p class="lead">Bla<br> Some text</p>
+        <h3>Usage</h3>
+
+        <p class="lead">Input files:
+        <p>
+            <br> For transcriptomic data, STREAM only requires a tab-separated gene expression matrix (raw counts or normalized values) in .tsv or .tsv.gz file format. Each row represents a unique gene and each column is one cell. 
+            
+            <br> Additionally it is possible to provide these following files in .tsv or .tsv.gz format: 
+            
+            cell_labels file: .tsv or .tsv.gz format. Each item can be a putative cell type or sampling time point obtained from experiments. Cell labels are helpful for visually validating the inferred trajectory. The order of labels should be consistent with cell order in the gene expression matrix file. No header is necessary:
+
+            cell_label_color file: .tsv or .tsv.gz format. Customized colors to use for the different cell labels. The first column specifies cell labels and the second column specifies the color in the format of hex. No header is necessary:
+
+            <br>For epigenomic data, to perform scATAC-seq trajectory inference analysis, the main input can be:
+            <br> 1)a set of files including count file, region file and sample file. Since this part is a bit time-consuming, currently it's not supported by the website yet. But users can easily achieve it by running STREAM at command line interface.
+
+            <br> 2)a precomputed scaled z-score file by STREAM. Each row represents a k-mer DNA sequence. Each column represents one cell. Each entry is a scaled z-score of the accessibility of each k-mer across cells
+
+
+        </p>
       </div>
 
     </div><!-- /.container -->
