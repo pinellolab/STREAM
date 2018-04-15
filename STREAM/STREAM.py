@@ -2508,7 +2508,7 @@ def Subway_Map_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start
             if(flag_web):    
                 X_plot_for_web = deepcopy(X_plot)
                 X_plot_for_web[gene_list[idx]] = gene_values
-                X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + gene_list[idx] + '.csv',sep='\t')    
+                X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + slugify(gene_list[idx]) + '.csv',sep='\t')    
                 plt.close(fig)
             else:
                 sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=0, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
@@ -2539,7 +2539,7 @@ def Subway_Map_Plot_Gene(df_rooted_tree,df_sc,flat_tree,dict_branches,node_start
             if(flag_web): 
                 X_plot_for_web = deepcopy(X_plot)
                 X_plot_for_web[gene_list[idx]] = gene_values
-                X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + gene_list[idx] + '.csv',sep='\t')
+                X_plot_for_web.to_csv(file_path_S + '/subway_coord_' + slugify(gene_list[idx]) + '.csv',sep='\t')
                 plt.close(fig)
             else:                                       
                 sc = ax.scatter(X_plot.iloc[:,0],X_plot.iloc[:,1], c=gene_values, vmin=-v_limit, vmax=max_gene_values, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
