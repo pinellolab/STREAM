@@ -3407,7 +3407,7 @@ def Output_Info(df_flat_tree,flat_tree,dict_node_state,file_path):
 
 def slugify(value): #adapted from the Django project
     value = unicodedata.normalize('NFKD', unicode(value)).encode('ascii', 'ignore')
-    value = unicode(re.sub('[^\w\.\s-]', '_', value).strip())
+    value = unicode(re.sub('[^\w\.\s-]', '-', value).strip())
     value = unicode(re.sub('[-\s]+', '-', value))
     return str(value)
 
@@ -4011,7 +4011,7 @@ def main():
             gene_list = gene_list + gene_list_DE
             gene_list = list(set(gene_list))
         
-
+    
     if(gene_list_filename!=None):
         if(os.path.exists(gene_list_filename)):
             gene_list = pd.read_csv(gene_list_filename,sep='\t',header=None,index_col=None,compression= 'gzip' if gene_list_filename.split('.')[-1]=='gz' else None).iloc[:,0].tolist()

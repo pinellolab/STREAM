@@ -28,57 +28,87 @@ To run STREAM at the command-line interface:
 Users can specify the following options:
 ```
 -m, --matrix  
-input file name (default: None)
+input file name. Matrix is in .tsv or tsv.gz format in which each row represents a unique gene and each column is one cell. (default: None)
 -l, --cell_labels  
-filename of cell labels (default: None)
+file name of cell labels (default: None)
 -c, --cell_labels_colors  
-filename of cell label colors (default: None)
+file name of cell label colors (default: None)
 -s, --select_features  
-LOESS or PCA: Select variable genes using LOESS or principal components using PCA (default: None)
+LOESS, PCA, all: Select variable genes using LOESS or top principal components using PCA or keep all the gene (default: LOESS)
 -f, --feature_genes  
-prepared feature genes (default: None)
--d, --detect_genes  
-whether to detect Transition and DE genes automatically
+specified feature genes (default: None)
+-t, --detect_TG_genes  
+detect transition genes automatically
+-d, --detect_DE_genes  
+detect DE genes automatically
 -g, --gene_list  
-genes to be visualized (default: None)
+genes to visualize, it can either be filename which contains all the genes in one column or a set of gene names separated by comma (default: None)
 -p, --use_precomputed  
-whether to use precomputed data files store.pckl (default: False)
---new  
-file name of data to be mapped (default: None)
---new_l  
-filename of new cell labels
---new_c  
-filename of new cell label colors
+use precomputed data files without re-computing structure learning part
 --log2  
-whether to do log2 transformation (default: False)
+perform log2 transformation
 --norm  
-whether to normalize data based on libary size (default: False)
+normalize data based on library size
 --atac
-whether it is atac-seq data (default: No)
+indicate scATAC-seq data
+--atac_counts
+scATAC-seq counts file name in .tsv or .tsv.gz format. Counts file is a compressed sparse matrix that contains three columns including region indices, sample indices and the number of reads(default: None)
+--atac_regions
+scATAC-seq regions file name in .tsv or .tsv.gz format. Regions file contains three columns including chromosome names, start and end positions of regions (default: None)
+--atac_samples
+scATAC-seq samples file name in .tsv or tsv.gz. Samples file contains one column of cell names  (default: None)
+--atac_k
+specify k-mers length for scATAC-seq analysis (default: 7)
 --n_processes  
-Specify the number of processes to use. The default is cores available.
+Specify the number of processes to use. (default, all the available cores).
 --loess_frac  
 The fraction of the data used in LOESS regression (default: 0.1)
---loess_z_score_cutoff  
-Z-score cutoff in gene selection based on LOESS regression (default: 1)
 --pca_max_PC  
 Maximal principal components in PCA (default: 100)
+--pca_first_PC  
+keep first PC
 --pca_n_PC  
-The number of selected PCs, it's determined automatically if it's not specified
+The number of selected PCs (default: 15)
+--n_processes  
+Specify the number of processes to use. The default uses all the cores available
 --lle_neighbours  
 LLE neighbour percent (default: 0.1)
 --lle_components  
-LLE dimension reduction (default: 3)
+number of components for LLE space (default: 3)
 --AP_damping_factor  
 Affinity Propagation: damping factor (default: 0.75)
---AP_min_percent  
-Affinity Propagation: minimal percentage of cell number in each cluster (default: 0.005)
---AP_alpha_factor  
-Affinity Propagation: minimal percentage of cell number in each cluster (default: 0.5)
---sp_size_cutoff  
-The percentile cutoff for the size of sparse cluster(0~100) (default: 50)
---sp_density_cutoff
-The percentile cutoff for the density of sparse cluster(0~100) (default: 50)
+--EPG_n_nodes
+Number of nodes for elastic principal graph (default: 50)
+--EPG_lambda
+lambda parameter used to compute the elastic energy (default: 0.02)
+--EPG_mu
+mu parameter used to compute the elastic energy (default: 0.1)
+--EPG_trimmingradius
+maximal distance of point from a node to affect its embedment (default: Inf)
+--EPG_finalenergy
+indicating the final elastic energy associated with the configuration. It can be 'Base' or 'Penalized' (default: 'Penalized')
+--EPG_alpha
+positive numeric, alpha parameter of the penalized elastic energy (default: 0.02)
+--disable_EPG_collapse
+disable collapsing small branches
+--EPG_collapse_mode
+the mode used to collapse branches. It can be 'PointNumber','PointNumber_Extrema', 'PointNumber_Leaves','EdgesNumber' or 'EdgesLength' (default:'PointNumber')
+--EPG_collapse_par
+the control parameter used for collapsing small branches
+--EPG_shift
+shift branching point 
+--EPG_shift_mode
+the mode to use to shift the branching points 'NodePoints' or 'NodeDensity' (default: NodeDensity)
+--EPG_shift_DR
+positive numeric, the radius used when computing point density if EPG_shift_mode is 'NodeDensity' (default:0.05)
+--EPG_shift_maxshift
+positive integer, the maximum distance (number of edges) to consider when exploring the branching point neighborhood (default:5)
+--disable_EPG_ext
+disable extending leaves with additional nodes
+--EPG_ext_mode
+the mode used to extend the graph. It can be 'QuantDists', 'QuantCentroid' or 'WeigthedCentroid'. (default: QuantDists)
+--EPG_ext_par
+the control parameter used for contribution of the different data points when extending leaves with nodes (default: 0.5)
 --DE_z_score_cutoff  
 Differentially Expressed Genes Z-score cutoff (default: 2)
 --DE_diff_cutoff  
@@ -87,21 +117,19 @@ Differentially Expressed Genes difference cutoff (default: 0.2)
 Transition Genes Spearman correlation cutoff (default: 0.4)
 --TG_diff_cutoff  
 Transition Genes difference cutoff (default: 0.2)
---RB_nbins  
-Number of bins on one branch used for plotting Rainbow_Plot (default: 3, suggesting range: 3~6)
---RB_log_scale  
-whether to use log2 scale for y axis of rainbow_plot (default: No)
---refit  
-whether to re-fit Principal Curve (default: No)
---save_figures_for_web
-Output format the figures for the web interface
+--stream_log_view
+use log2 scale for y axis of stream_plot 
+--for_web
+Output files for website
 -o, --output_folder  
-Output folder (default: Ariadne_Result)
+Output folder (default: None)
+--new  
+file name of data to be mapped (default: None)
+--new_l  
+filename of new cell labels (default: None)
+--new_c  
+filename of new cell label colors (default: None)
 ```
-
-
-
-
 
 For **transcriptomic data**, the main and required input file is a tab-separated gene expression matrix (raw counts or normalized values) in tsv file format. Each row represents a unique gene and each column is one cell.
 
@@ -109,12 +137,12 @@ For **transcriptomic data**, the main and required input file is a tab-separated
 Input file format
 -----------------
 
-The input file is a log2-transformed tab-separated gene expression matrix in tsv file format. Each row represents an unique gene and each column is one cell.  
+The input file is a log2-transformed tab-separated gene expression matrix in .tsv .tsv.gz file format. Each row represents an unique gene and each column is one cell.  
 
 For example, in python
 ```R
 >import pandas as pd
->input_data = pd.read_csv('data_guoji.tsv',sep='\t',header=0,index_col=0)
+>input_data = pd.read_csv('data_Guo.tsv.gz',sep='\t',header=0,index_col=0)
 >input_data.iloc[0:5,0:5]
 ```
 
@@ -128,11 +156,31 @@ For example, in python
 
 Other optionally provided files format:
 
-**cell_labels** file: tsv format. Cell labels are listed in one column. The order of labels should be consistent with cell order in gene expression matrix. No index names or column names are included.
+**cell_labels** file: .tsv or .tsv.gz format. Each item can be a putative cell type or sampling time point obtained from experiments. Cell labels are helpful for visually validating the inferred trajectory. The order of labels should be consistent with cell order in the gene expression matrix file. No header is necessary:
 
-**cell_label_color** file: tsv format. The first column is cell labels, the second column is color. The order of labels should be consistent with cell order in gene expression matrix. No index names or column names are included
+|        |
+|--------|
+| HSC    | 
+| HSC    | 
+| GMP    |
+| MEP    |
+| MEP    |
+| GMP    |
 
-**gene_list**, **feature_genes** file: tsv format. Genes are listed in one column. No index names or column names are included
+**cell_label_color** file: .tsv or .tsv.gz format. Customized colors to use for the different cell labels. The first column specifies cell labels and the second column specifies the color in the format of hex. No header is necessary:
+
+|       |         | 
+|-------|---------|
+| HSC   | #7DD2D9 | 
+| MPP   | #FFA500 |
+| CMP   | #e55b54 |
+| GMP   | #5dab5a |
+| MEP   | #166FD5 |
+| CLP   | #989797 |
+
+**gene_list** file: It contains genes that users may be interested in visualizing in subway map and stream plot. Genes are listed in one column. No header is necessary: 
+
+**feature_genes** file: tsv format. Genes are listed in one column. No index names or column names are included
 
 **precomputed_DR** file: tsv format. Each row represents one component and each column is one cell. The columns should be the same with gene expression matrix.
 
