@@ -17,8 +17,24 @@ To get a local copy of STREAM, simply execute the following command:
 * ```$docker pull pinellolab/stream```
 
 
-STREAM usage
-------------
+STREAM interactive website
+--------------------------
+
+In order to make STREAM user friendly and accessible to non-bioinformatician, we have created an interactive website: [http://stream.pinellolab.org](http://stream.pinellolab.org) The website implements all the features of the command line version and in addition provides interactive and exploratory panels to zoom and visualize single-cells on any given branch.
+
+The website offers two functions: 1) To run STREAM on single-cell transcriptomic or epigenomic data provided by the users. 2) The first interactive database of precomputed trajectories with results for seven published datasets. The users can visualize and explore cells’ developmental trajectories, subpopulations and their gene expression patterns at single-cell level. 
+
+The website can also run on a local machine using the provided Docker image we have created. To run the website in a local machine after the Docker installation, from the command line execute the following command:
+```
+docker run -p 10001:10001 pinellolab/stream STREAM_webapp
+```
+
+After the execution of the command the user will have a local instance of the website accessible at the URL: 
+[http://localhost:10001](http://localhost:10001)
+
+
+STREAM command line interface
+-----------------------------
 
 To run STREAM at the command-line interface:
 
@@ -131,13 +147,12 @@ filename of new cell labels (default: None)
 filename of new cell label colors (default: None)
 ```
 
-For **transcriptomic data**, the main and required input file is a tab-separated gene expression matrix (raw counts or normalized values) in tsv file format. Each row represents a unique gene and each column is one cell.
 
 
 Input file format
 -----------------
+For **transcriptomic data**, the main and required input file is a tab-separated gene expression matrix (raw counts or normalized values) in tsv file format. Each row represents a unique gene and each column is one cell.
 
-The input file is a log2-transformed tab-separated gene expression matrix in .tsv .tsv.gz file format. Each row represents an unique gene and each column is one cell.  
 
 For example, in python
 ```R
@@ -154,7 +169,7 @@ For example, in python
 | Ly6a   | 10.417026 | 11.452145 | 0.000000  | 8.158840  | 8.945882 |
 | Bax    | 6.911608  | 10.201157 | 0.000000  | 9.396073  | 0.000000 |
 
-Other optionally provided files format:
+In addition, it is possible to provide these optional files in .tsv or .tsv.gz format: 
 
 **cell_labels** file: .tsv or .tsv.gz format. Each item can be a putative cell type or sampling time point obtained from experiments. Cell labels are helpful for visually validating the inferred trajectory. The order of labels should be consistent with cell order in the gene expression matrix file. No header is necessary:
 
@@ -178,91 +193,136 @@ Other optionally provided files format:
 | MEP   | #166FD5 |
 | CLP   | #989797 |
 
-**gene_list** file: It contains genes that users may be interested in visualizing in subway map and stream plot. Genes are listed in one column. No header is necessary: 
+**gene_list** file: .tsv or .tsv.gz format. It contains genes that users may be interested in visualizing in subway map and stream plot. Genes are listed in one column. No header is necessary: 
 
-**feature_genes** file: tsv format. Genes are listed in one column. No index names or column names are included
+|        |
+|--------|
+| Ifitm1 | 
+| Cdkn3  | 
+| Ly6a   |
+| CD52   |
+| Foxo1  |
+| GMP    |
 
-**precomputed_DR** file: tsv format. Each row represents one component and each column is one cell. The columns should be the same with gene expression matrix.
+**feature_genes** file: .tsv or .tsv.gz format. It contains genes that the user can specify and that are used as features to infer trajectories. instead of using the automatic feature selection of STREAM. No header is necessary:
+
+|        |
+|--------|
+| Gata1  | 
+| Pax5   | 
+| CD63   |
+| Klf1   |
+| Lmo2   |
+| GMP    |
 
 
-Usage
------
+For **epigenomic data**, to perform scATAC-seq trajectory inference analysis, the main input can be:   
 
-To run Ariadne python script at the command-line interface:
-* start a terminal session;
-* enter ```$ python Ariadne.py [options] ```.
+1)a set of files including **count file**, **region file** and **sample file**. 
+
+**count file**, .tsv or .tsv.gz format. A tab-delimited compressed matrix in sparse format (column-oriented). It contains three columns. The first column specifies the rows indices (the regions) for non-zero entry. The second column specifies the columns indices (the sample) for non-zero entry. The last column contains the number of reads in a given region for a particular cell. No header is necessary:
+
+|        |     |  |
+|--------|-----|--|
+| 3735   | 96  | 1|
+| 432739 | 171 | 2|
+| 133126 | 292 | 1|
+| 219297 | 359 | 1|
+| 284936 | 1222| 1|
+| 442588 | 1580| 2|
+
+**region file**, .bed or .bed.gz format. A tab-delimited .bed file with three columns. The first column specifies chromosome names. The second column specifies the start position of the region. The third column specifies the end position of the region. The order of regions should be consistent with the regions indices in the count file. No header is necessary:
+
+|      |       |      |
+|------|-------|------|
+| chr1 | 10279 | 10779|
+| chr1 | 13252 | 13752|
+| chr1 | 16019 | 16519|
+| chr1 | 29026 | 29526|
+| chr1 | 96364 | 96864|
+
+**sample file**, .tsv or .tsv.gz format. It has one column. Each row is a cell name.  The order of the cells should be consistent with the sample indices in count file. No header is necessary:
+
+|                                    |
+|------------------------------------|
+| singles-BM0828-HSC-fresh-151027-1  | 
+| singles-BM0828-HSC-fresh-151027-2  | 
+| singles-BM0828-HSC-fresh-151027-3  |
+| singles-BM0828-HSC-fresh-151027-4  |
+| singles-BM0828-HSC-fresh-151027-5  |
+
+
+2)a precomputed scaled z-score file by STREAM. Each row represents a k-mer DNA sequence. Each column represents one cell. Each entry is a scaled z-score of the accessibility of each k-mer across cells
+
+|        | singles-BM0828-HSC-fresh-151027-1 | singles-BM0828-HSC-fresh-151027-2 | singles-BM0828-HSC-fresh-151027-3 |
+|--------|-----------------------------------|-----------------------------------|-----------------------------------|
+| AAAAAAA|-0.15973157637808505               | 0.18950966450007853               | 0.07713107176524692               | 
+| AAAAAAG|-1.3630723054479532                | -0.04770034004421244              | 0.6387323857481045                |
+| AAACACG|-0.2065161126378667                | -1.3375384076872765               | 0.2660278729402342                |
+| AGCGTTA|-0.496859947462221                 | 0.7181918229050274                | 0.19603357892921522               |
+| ATACTCA|-1.2127919166377426                | 0.7938414496478844                | -1.2665513250104594               |
+
 
 
 Example
 --------
 
-Using the data in the example folder of this repo: data_guoji.tsv, cell_label.tsv and cell_label_color.tsv, and assuming that they are in the current folder, you can run the analysis with the following command:
+**transcriptomic data**: Using the example data provided: data_Guo.tsv, cell_label.tsv and cell_label_color.tsv, and assuming that they are in the current folder, to perform trajectories analysis, users can simply run a single command (By default, LOESS is used to select most variable gene. For qPCR data, the number of genes is relatively small and often preselected, it this case it may be necessary to keep all the genes as features by setting the flag -s all):
 
 ```sh
-$ python Ariadne.py -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -o qPCR_result  
+$ docker run pinellolab/stream -v $PWD:/data -w /data -m data_Guo.tsv -l cell_label.tsv -c cell_label_color.tsv -s all
 ```
-if you want to visualize genes of interest, you can provide gene list file 'gene_list.tsv' and add '-p' to call the precomputed file obtained from the first running (In this way, the other existing figures will not be re-generated any more):
+
+To visualize genes of interest, user can provide a gene list file, for example: gene_list.tsv and add the flag  -p to use the precomputed file obtained from the first running (in this way, the analysis can will not restart from the beginning and other existing figures will not be re-generated):
 
 ```sh
-$ python Ariadne.py -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -o qPCR_result -g gene_list.tsv -p
+docker run pinellolab/stream -v $PWD:/data -w /data -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -s all -g gene_list.tsv -p
 ```
 
-if you want to explore potential DE genes and transition genes, you can add '-d' to detect marker genes automatically and top three genes from DE genes and transition genes of each branch pair or each branch will plotted automatically:
+To explore potential marker genes, it is possible to add the flags -d or -t to detect DE (differentially expressed) genes and transition gens respectively. The best three DE (any pair of branches) and transition genes (any branch) are automatically plotted:
 
 ```sh
-$ python Ariadne.py -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -o qPCR_result -d
+docker run pinellolab/stream -v $PWD:/data -w /data -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -s all -d -t
 ```
 
 
+**scATAC-seq data**: To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format:
 
-Using Ariadne with Docker
+Using these three files, users can run STREAM with the following command (note the flag --atac ):
+
+```sh
+docker run pinellolab/stream -v $PWD:/data -w /data --atac -s PCA --atac_counts count_file.tsv --atac_sample_file.tsv --atac_regions region_file.bed -l cell_label.tsv -c cell_label_color.tsv
+```
+
+This command will generate a file named df_zscores_scaled.tsv. It’s a tab-delimited z-score matrix with k-mers in row and cells in column. Each entry is a scaled z-score of the accessibility of each k-mer across cells. This operation is time consuming and it may take a couple of hours with a modest machine. STREAM also provides the option to take as input a precomputed z-score file from the previous step, for example to recover trajectories when increasing the dimensionality of the manifold. Using a precomputed z-score file, users can run STREAM with the following command:
+
+```sh
+docker run pinellolab/stream -v $PWD:/data -w /data -m df_zscores_scaled.tsv -l cell_label.tsv -c cell_label_color.tsv --atac -s PCA
+```
+
+
+Output description
 ------------------
 
-Assuming that the input files are in the current folder, the command line for docker is:
+STREAM write all the results by default in the folder STREAM_results, unless a different directory is specified by the user with the flag -o. This folder contains the following files and directories:
 
-```
-docker run -v $PWD/:/DATA -w /DATA pinellolab/ariadne ariadne-cli -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -o qPCR_result --save_figures_for_web
-
-## Fix two commands below
-docker run -v $PWD/:/DATA -w /DATA lucapinello/ariadne python Ariadne.py -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -o qPCR_result -g gene_list.tsv -p
-
-docker run -v $PWD/:/DATA -w /DATA lucapinello/ariadne python Ariadne.py -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -o qPCR_result -d
-```
-
-Interactive web application
-------------------
-
-[Our web-hosted version is available here.](http://ariadne.pinellolab.org) However, you may be interested in running the application
-on your own machine, in which case this can be executed using the following command--
-
-```
-docker run -p 3838:3838 -t pinellolab/ariadne ariadne-webapp
-```
-
-
-Results
--------
-
-The output folder is specified by user in the command line (option -o). It contains the following files and directories:
-
-* **LLE.png**: dimension reduction plot of LLE in 3D space
-* **IAP.png**: clustering plot of Improved Affinity Propagation in 3D space
-* **MST.png**: Minimum Spanning Tree plot in 3D space
-* **MST_Branches.png**: Minimum spanning Tree with extracted branches in 3D space
-* **Principal_Curve.png**: Principal Curve plot in 3D space.
-* **flat_tree.png**: single-cell level flat tree plot in 2D plane
-* **cell_info.tsv**: Cell information file. The index is the cell order in the original input file. Column 'CELL_ID' is cell names in input file. Column 'branch_id' is the branch id which cell is assigned to. The branch id consists of two cell states. Column 'lam' is the arc length from the first cell state of branch id to projection of cell on the branch. Column 'distance' is the euclidian distance between cell and its projection on the branch.  
-* **df_sc.msg**,**store.pckl**: file that stores computed variables and can be called using -p in command line
-* sub-folder **'Transition_Genes'**:
+*   **LLE.pdf**: projected cells in the MLLE 3D space.
+*   **EPG.pdf**: elastic principal graph fitted by ElPiGraph in 3D space
+*   **flat_tree.pdf**: 2D single-cell level flat tree plot 
+*   **nodes.tsv**: positions of nodes (or states) in the flat_tree plot
+*   **edges.tsv**: edges information in the flat_tree plot
+*   **cell_info.tsv**: Cell information file. Column 'CELL_ID', the cell names in the input file. Column 'Branch', the branch id a cell is assigned to. The branch id is encoded by the two cell states. Column 'lam',  the location on a branch, which is the arc length from the first cell state of branch id to the projection of the cell on that branch. Column 'dist', the euclidian distance between the cell and its projection on the branch.
+*   sub-folder **'Transition_Genes'** contains several files, one for each branch id, for example for (S1,S2):
     - **Transition_Genes_S1_S2.png**: Detected transition genes plot for branch S1_S2. Orange bars are genes whose expression values increase from state S1 to S2 and green bars are genes whose expression values decrease from S1 to S2
-    - **Transition_Genes_S1_S2.tsv**: Table that stores information of detected transition genes for branch S1_S2
-* sub-folder **'DE_Genes'**:
+    - **Transition_Genes_S1_S2.tsv**: Table that stores information of detected transition genes for branch S1_S2.
+*   sub-folder **'DE_Genes'** contains several files, one for each pair of branches, for example for (S1,S2) and (S3,S2):
     - **DE_genes_S1_S2 and S3_S2.png**: Detected differentially expressed top 15 genes plot. Red bars are genes that have higher gene expression in branch S1_S2, blue bars are genes that have higher gene expression in branch S3_S2
     - **DE_up_genes_S1_S2 and S3_S2.tsv**: Table that stores information of DE genes that have higher expression in branch S1_S2.
     - **DE_down_genes_S1_S2 and S3_S2.tsv**: Table that stores information of DE genes that have higher expression in branch S3_S2.
-* sub-folder **'S0'**: Choosing S0 state as root state
-    - **subway_map.png**: single-cell level cellular branches plot
-    - **rainbow_branches.png**: density level cellular branches plot
-    - **subway_map_gene.png**: gene expression pattern subway map plot
-    - **subway_map_filtered_0.6_gene.png**: gene expression pattern subway map plot after filtering out cells whose expression level is less than 60 percent according to that's gene expression distribution
-    - **rainbow_branches_gene.png**: gene expression pattern rainbow plot
+    sub-folder **'S0'**: Set of linearized plots (subway and stream plots) for each of the cell states, for example, choosing S0 state as root state:   
+    - **subway_map.pdf**: single-cell level cellular branches plot
+    - **stream_plot.pdf**: density level cellular branches plot
+    - **subway_map_gene.pdf**: gene expression pattern on subway map plot
+    - **stream_plot_gene.pdf**: gene expression pattern on stream plot
+*   sub-folder **'Precomputed'**:
+    - It contains files that store computed variables used when the flag -p is enabled.
