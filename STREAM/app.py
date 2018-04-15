@@ -1097,7 +1097,7 @@ app.layout = html.Div([
 
 	html.Div([
 
-		html.H3(id = 'buffer5', children = 'Step 3C: Identify Transition Genes'),
+		html.H3(id = 'buffer6', children = 'Step 3C: Identify Transition Genes'),
 		html.Button(id = 'correlation-button', children = 'Compute', n_clicks = 0),
 
 		html.Br(),
@@ -1165,6 +1165,29 @@ app.layout = html.Div([
 					], className = 'seven columns'),
 
 				], className = 'row'),
+
+			])
+
+		]),
+
+	html.Hr(),
+
+	html.Div([
+
+		html.H3(id = 'buffer5', children = 'Step 4: Download Current Analysis'),
+
+		html.Div(
+			id = 'download-container',
+			children = [
+			html.A(
+				'Download Files',
+				id='download-total',
+				download = "stream-outputs.zip",
+				href="",
+				target="_blank",
+				n_clicks = 0,
+				style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
+				),
 
 			])
 
@@ -1568,7 +1591,7 @@ def compute_trajectories(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, 
 						arguments_final.append(arguments[arg][0])
 
 			if not param_dict['compute-run']:
-				sb.call('python /STREAM/STREAM.py --for_web ' + ' '.join(map(str, arguments_final)) + ' > %s/dummy1.txt' % (RESULTS_FOLDER), shell = True)
+				sb.call('python /STREAM/STREAM.py --for_web ' + ' '.join(map(str, arguments_final)) + ' > %s/log1.txt' % (RESULTS_FOLDER), shell = True)
 
 			return {'display': 'block'}
 
@@ -1647,13 +1670,13 @@ def compute_trajectories(pathname, n_clicks):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		if os.path.exists(RESULTS_FOLDER + '/dummy1.txt'):
+		if os.path.exists(RESULTS_FOLDER + '/log1.txt'):
 
 			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
 				json_string = f.readline().strip()
 				param_dict = json.loads(json_string)
 
-			f = open(RESULTS_FOLDER + '/dummy1.txt', 'r')
+			f = open(RESULTS_FOLDER + '/log1.txt', 'r')
 			f_data = f.readlines()
 			f.close()
 
@@ -1966,9 +1989,9 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		if os.path.exists(RESULTS_FOLDER + '/dummy1.txt'):
+		if os.path.exists(RESULTS_FOLDER + '/log1.txt'):
 
-			f = open(RESULTS_FOLDER + '/dummy1.txt', 'r')
+			f = open(RESULTS_FOLDER + '/log1.txt', 'r')
 			f_data = f.readlines()
 			f.close()
 
@@ -2893,7 +2916,7 @@ def compute_single_gene(n_clicks, pathname, root, gene, norm, log2, atac, lle_dr
 						arguments_final.append(arguments[arg][0])
 
 			if param_dict['compute-run']:
-				sb.call('python /STREAM/STREAM.py --for_web -p -g %s ' % gene + ' '.join(map(str, arguments_final)) + ' > %s/dummy2.txt' % (RESULTS_FOLDER), shell = True)
+				sb.call('python /STREAM/STREAM.py --for_web -p -g %s ' % gene + ' '.join(map(str, arguments_final)) + ' > %s/log2.txt' % (RESULTS_FOLDER), shell = True)
 
 			return {'display': 'block'}
 
@@ -2975,13 +2998,13 @@ def compute_trajectories(pathname, n_clicks, root, gene):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		if os.path.exists(RESULTS_FOLDER + '/dummy2.txt'):
+		if os.path.exists(RESULTS_FOLDER + '/log2.txt'):
 
 			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
 				json_string = f.readline().strip()
 				param_dict = json.loads(json_string)
 
-			f = open(RESULTS_FOLDER + '/dummy2.txt', 'r')
+			f = open(RESULTS_FOLDER + '/log2.txt', 'r')
 			f_data = f.readlines()
 			f.close()
 
@@ -3481,7 +3504,7 @@ def compute_discovery(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, sel
 						arguments_final.append(arguments[arg][0])
 
 			if not param_dict['discovery-run']:
-				sb.call('python /STREAM/STREAM.py --for_web -d ' + ' '.join(map(str, arguments_final)) + ' > %s/dummy3.txt' % (RESULTS_FOLDER), shell = True)
+				sb.call('python /STREAM/STREAM.py --for_web -d ' + ' '.join(map(str, arguments_final)) + ' > %s/log3.txt' % (RESULTS_FOLDER), shell = True)
 
 			return {'display': 'block'}
 
@@ -3562,13 +3585,13 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		if os.path.exists(RESULTS_FOLDER + '/dummy3.txt'):
+		if os.path.exists(RESULTS_FOLDER + '/log3.txt'):
 
 			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
 				json_string = f.readline().strip()
 				param_dict = json.loads(json_string)
 
-			f = open(RESULTS_FOLDER + '/dummy3.txt', 'r')
+			f = open(RESULTS_FOLDER + '/log3.txt', 'r')
 			f_data = f.readlines()
 			f.close()
 
@@ -4224,7 +4247,7 @@ def compute_correlation(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, s
 						arguments_final.append(arguments[arg][0])
 
 			if not param_dict['correlation-run']:
-				sb.call('python /STREAM/STREAM.py --for_web -t ' + ' '.join(map(str, arguments_final)) + ' > %s/dummy4.txt' % (RESULTS_FOLDER), shell = True)
+				sb.call('python /STREAM/STREAM.py --for_web -t ' + ' '.join(map(str, arguments_final)) + ' > %s/log4.txt' % (RESULTS_FOLDER), shell = True)
 
 			return {'display': 'block'}
 
@@ -4305,13 +4328,13 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		if os.path.exists(RESULTS_FOLDER + '/dummy4.txt'):
+		if os.path.exists(RESULTS_FOLDER + '/log4.txt'):
 
 			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
 				json_string = f.readline().strip()
 				param_dict = json.loads(json_string)
 
-			f = open(RESULTS_FOLDER + '/dummy4.txt', 'r')
+			f = open(RESULTS_FOLDER + '/log4.txt', 'r')
 			f_data = f.readlines()
 			f.close()
 
@@ -4665,6 +4688,104 @@ def update_table(slider, branch, dataset):
 		dff = df.head(n = slider)[['gene', 'pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
+
+@app.callback(
+	Output('download-container', 'style'),
+	[Input('3d-scatter', 'figure'),
+	Input('url', 'pathname')])
+
+def download_container(figure, pathname):
+
+	if pathname:
+
+		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+		if os.path.exists(RESULTS_FOLDER + '/log1.txt'):
+
+			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+				json_string = f.readline().strip()
+				param_dict = json.loads(json_string)
+
+			f = open(RESULTS_FOLDER + '/log1.txt', 'r')
+			f_data = f.readlines()
+			f.close()
+
+			if 'Finished computation...\n' in f_data:
+				return {'display': 'block'}
+
+			else:
+				return {'display': 'none'}
+
+		else:
+			return {'display': 'none'}
+
+	else:
+		return {'display': 'none'}
+
+
+def bash_command(cmd):
+    sb.Popen(cmd, shell=True, executable='/bin/bash')
+
+@app.callback(
+    Output('buffer6', 'style'),
+    [Input('3d-scatter', 'figure'),
+    Input('url', 'pathname')])
+
+def zip_dir(figure, pathname):
+
+	if pathname:
+
+		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+		if os.path.exists(RESULTS_FOLDER + '/log1.txt'):
+
+			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+				json_string = f.readline().strip()
+				param_dict = json.loads(json_string)
+
+			f = open(RESULTS_FOLDER + '/log1.txt', 'r')
+			f_data = f.readlines()
+			f.close()
+
+			if 'Finished computation...\n' in f_data:
+
+				exp_name = 'stream-outputs'
+
+				if not os.path.exists('%s/%s' % (RESULTS_FOLDER, exp_name)):
+					sb.call('mkdir %s/%s' % (RESULTS_FOLDER, exp_name), shell = True)
+
+				sb.call('cp -r %s/*tsv %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+				sb.call('cp -r %s/*csv %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+				sb.call('cp -r %s/*pdf %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+				sb.call('cp -r %s/*png %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+				sb.call('cp -r %s/S* %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+				sb.call('cp -r %s/*_Genes %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+				sb.call('cp -r %s/Precomputed %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+
+				bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, exp_name, exp_name))
+
+	return {'display': 'block'}
+
+@app.callback(
+    Output('download-total', 'href'),
+    [Input('download-total', 'n_clicks'),
+    Input('url', 'pathname')])
+
+def generate_report_url(n_clicks, pathname):
+
+	UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+	RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+	full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+
+	return '/dash/urldownload%s' % full_path
+
+@app.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/stream-outputs.zip')
+def generate_report_url(directory):
+
+	return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (directory), attachment_filename = 'stream-outputs.zip', as_attachment = True)
 
 if __name__ == '__main__':
 	app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')

@@ -72,6 +72,8 @@ WORKDIR /STREAM
 #RUN  python STREAM.py -m exampleDataset/data_guoji.tsv -l exampleDataset/cell_label.tsv -c exampleDataset/cell_label_color.tsv -o /OUTPUT/test
 #RUN python stream.py -m exampleData/data_guoji.tsv -l exampleData/cell_label.tsv -c exampleData/cell_label_color.tsv -o test
 
+# install zips
+RUN apt-get update && apt-get install zip -y
 
 EXPOSE 10001
 #CMD ["bash", "start_server_docker.sh"]
