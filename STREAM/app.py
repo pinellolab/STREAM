@@ -4917,40 +4917,38 @@ def zip_dir(figure, pathname, title_input, description_input, starting_node):
 
 				print 'TRIGGEREEEEDDDDDD!!!!'
 
-				return redirect('/dash/urldownload%s' % full_path)
+				return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (pathname), attachment_filename = 'stream-outputs.zip', as_attachment = True)
 
 				# bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder))
 
-	# print 'LOLOLOLOLOLOLOLOLOLOL'
+# 	print 'LOLOLOLOLOLOLOLOLOLOL'
 
-	# return {'display': 'block'}
+# 	return {'display': 'block'}
 
-'''
-@app.callback(
-    Output('download-total', 'href'),
-    [Input('buffer6', 'style'),
-    Input('url', 'pathname')],
-    state = [State('download-total', 'n_clicks')])
+# @app.callback(
+#     Output('download-total', 'href'),
+#     [Input('buffer6', 'style'),
+#     Input('url', 'pathname')],
+#     state = [State('download-total', 'n_clicks')])
 
-def generate_report_url(buffer, pathname, n_clicks):
+# def generate_report_url(buffer, pathname, n_clicks):
 
-	print 'N CLICKS HERRRERERRERERE: %s' % n_clicks
-	if n_clicks > 0:
+# 	print 'N CLICKS HERRRERERRERERE: %s' % n_clicks
+# 	if n_clicks > 0:
 
-		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
-		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+# 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+# 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-		full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+# 		full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
 
-		print 'TRIGGEREEEEDDDDDD!!!!'
+# 		print 'TRIGGEREEEEDDDDDD!!!!'
 
-		return '/dash/urldownload%s' % full_path
-'''
+# 		return '/dash/urldownload%s' % full_path
 
-@app.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/stream-outputs.zip')
-def generate_report_url(directory):
+# @app.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/stream-outputs.zip')
+# def generate_report_url(directory):
 
-	return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (directory), attachment_filename = 'stream-outputs.zip', as_attachment = True)
+# 	return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (directory), attachment_filename = 'stream-outputs.zip', as_attachment = True)
 
 def main():
     app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')
