@@ -1,1 +1,1 @@
-docker build -t pinellolab/stream .
+docker build --no-cache -t pinellolab/stream .

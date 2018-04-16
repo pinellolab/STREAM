@@ -140,30 +140,30 @@ def save_files1():
 
 		if matrix[0].endswith('tsv') or matrix[0].endswith('tsv.gz'):
 
-			df = pd.read_table(matrix[0], sep = '\t', header = None, low_memory = False)
+			df = pd.read_table(matrix[0], sep = '\t', header = None, low_memory = False, compression = 'infer')
 			if str(df.get_value(0,0)) == 'nan':
 
-				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
+				df = pd.read_table(matrix[0], index_col = 0, sep = '\t', compression = 'infer')
 
 			else:
 				matrix_update = 'Data Matrix: [ERROR] Column and row IDs must be present ...'
 
 		elif matrix[0].endswith('txt') or matrix[0].endswith('txt.gz'):
 
-			df = pd.read_table(matrix[0], sep = '\t', header = None, low_memory = False)
+			df = pd.read_table(matrix[0], sep = '\t', header = None, low_memory = False, compression = 'infer')
 			if str(df.get_value(0,0)) == 'nan':
 
-				df = pd.read_table(matrix[0], index_col = 0, sep = '\t')
+				df = pd.read_table(matrix[0], index_col = 0, sep = '\t', compression = 'infer')
 
 			else:
 				matrix_update = 'Data Matrix: [ERROR] Column and row IDs must be present ...'
 
 		elif matrix[0].endswith('csv') or matrix[0].endswith('csv.gz'):
 
-			df = pd.read_table(matrix[0], sep = ',', header = None, low_memory = False)
+			df = pd.read_table(matrix[0], sep = ',', header = None, low_memory = False, compression = 'infer')
 			if str(df.get_value(0,0)) == 'nan':
 
-				df = pd.read_table(matrix[0], index_col = 0, sep = ',')
+				df = pd.read_table(matrix[0], index_col = 0, sep = ',', compression = 'infer')
 
 			else:
 				matrix_update = 'Data Matrix: [ERROR] Column and row IDs must be present ...'
@@ -194,8 +194,8 @@ def save_files1():
 		if len(matrix) > 0:
 
 			if len(cell_label_colors) > 0:
-				cl = pd.read_table(cell_label[0], header = None, low_memory = False)
-				clc = pd.read_table(cell_label_colors[0], header = None, low_memory = False)
+				cl = pd.read_table(cell_label[0], header = None, low_memory = False, compression = 'infer')
+				clc = pd.read_table(cell_label_colors[0], header = None, low_memory = False, compression = 'infer')
 				if len(cl.columns) == 1 and cl.size == len(df.columns):
 					matches = []
 					for i in clc.iloc[:,1].tolist():
@@ -234,7 +234,7 @@ def save_files1():
 			else:
 				clc_update = 'Cell Label Colors File: No Upload'
 
-				cl = pd.read_table(cell_label[0], header = None, low_memory = False)
+				cl = pd.read_table(cell_label[0], header = None, low_memory = False, compression = 'infer')
 				if len(cl.columns) == 1 and cl.size == len(df.columns):
 					cl_update = 'Cell Labels File: Upload Successful'
 
@@ -298,7 +298,10 @@ app2.layout = html.Div([
 	    value = 'Nestorowa'
 	),
 
-	html.Label(id = 'description', children = 'This scRNA-seq dataset contains 1656 cells and 4768 genes from mouse hematopoietic stem and progenitor cell differentiation. A single-cell resolution map of mouse hematopoietic stem and progenitor cell differentiation. Blood 128, e20-31 (2016).'),
+	html.Label(id = 'title', children = ''),
+	html.Label(id = 'description', children = ''),
+	html.Label(id = 'startingnode', children = ''),
+	html.Label(id = 'commandline', children = ''),
 
 	html.Br(),
 	html.Hr(),
@@ -306,15 +309,6 @@ app2.layout = html.Div([
 	html.H3('Visualize Trajectories'),
 
 	# html.Button(id = 'graph-button2', children = '(+) Show', n_clicks = 0),
-
-	html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
-	dcc.Dropdown(
-			id = 'root2',
-		    options=[
-		        {'label': 'S0', 'value': 'S0'},
-		    ],
-		    value='S0'
-		),
 
 	html.Div(
 
@@ -329,8 +323,19 @@ app2.layout = html.Div([
 				html.H4('3D Scatter Plot'),
 				dcc.Graph(id='3d-scatter2', animate=False),
 
-				html.H4('Flat Tree Plot'),
-				dcc.Graph(id='flat-tree-scatter2', animate=False),
+				# html.Br(),
+
+				html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+				dcc.Dropdown(
+						id = 'root2',
+					    options=[
+					        {'label': 'S0', 'value': 'S0'},
+					    ],
+					    value='S0'
+					),
+
+				html.H4('2D Subway Map'),
+				dcc.Graph(id='2d-subway2', animate=False),
 
 			], className = 'six columns'),
 
@@ -339,8 +344,11 @@ app2.layout = html.Div([
 			id = '2d-subway-container',
 			children = [
 
-				html.H4('2D Subway Map'),
-				dcc.Graph(id='2d-subway2', animate=False),
+				html.H4('Flat Tree Plot'),
+				dcc.Graph(id='flat-tree-scatter2', animate=False),
+
+				html.Br(),
+				html.Br(),
 
 				html.H4('Stream Plot'),
 				html.Img(id = 'rainbow-plot2', src = None, width = '70%', style = {'align':'middle'}),
@@ -616,11 +624,28 @@ app.layout = html.Div([
 
 			html.H3(id = 'buffer5', children = 'Personal Files'),
 
-			FilesUpload(
-				        id='required-files',
-				        label = 'tmp',
-				        uploadUrl=upload_url1,
-					    ),
+			html.Div([
+
+				html.Div([
+
+					html.H3(id = 'buffer5', children = 'Personal Files'),
+
+					FilesUpload(
+						        id='required-files',
+						        label = 'tmp',
+						        uploadUrl=upload_url1,
+							    ),
+
+					], className = 'six columns'),
+
+				html.Div([
+
+					html.H3(id = 'buffer5', children = 'Example Files'),
+					html.Button(id = 'load_example_data', children = 'Load Example Data', n_clicks = 0),
+
+					], className = 'six columns')
+
+				], className = 'row'),
 
 			html.Hr(),
 
@@ -632,11 +657,15 @@ app.layout = html.Div([
 			html.Label(id = 'cl-update', children = 'Cell Labels File: No Upload', style = {'font-weight':'bold'}),
 			html.Label(id = 'clc-update', children = 'Cell Label Colors File: No Upload', style = {'font-weight':'bold'}),
 
-			html.Hr(),
+			html.Br(),
 
-			html.H3(id = 'buffer5', children = 'Example Files'),
+			html.H6(id = 'ready-to-compute', children = 'Ready for Step 2: No')
 
-			html.Button(id = 'load_example_data', children = 'Load Example Data', n_clicks = 0),
+			# html.Hr(),
+
+			# html.H3(id = 'buffer5', children = 'Example Files'),
+
+			# html.Button(id = 'load_example_data', children = 'Load Example Data', n_clicks = 0),
 
 			], className = 'six columns', style = {'border-style':'solid','border-width':'2px', 'border-color':'#DCDCDC','border-radius':'10px','border-spacing':'15px','padding':'10px'}),
 
@@ -888,15 +917,6 @@ app.layout = html.Div([
 
 			html.Div([
 
-				html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
-				dcc.Dropdown(
-						id = 'root',
-					    options=[
-					        {'label': 'S0', 'value': 'S0'},
-					    ],
-					    value='S0'
-					),
-
 				]),
 
 			]),
@@ -919,8 +939,17 @@ app.layout = html.Div([
 					html.H3('3D Scatter Plot'),
 					dcc.Graph(id='3d-scatter', animate=False),
 
-					html.H3('Flat Tree Plot'),
-					dcc.Graph(id='flat-tree-scatter', animate=False),
+					html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+					dcc.Dropdown(
+							id = 'root',
+						    options=[
+						        {'label': 'S0', 'value': 'S0'},
+						    ],
+						    value='S0'
+						),
+
+					html.H3('2D Subway Map'),
+					dcc.Graph(id='2d-subway', animate=False),
 
 				], className = 'six columns'),
 
@@ -929,8 +958,11 @@ app.layout = html.Div([
 				id = '2d-subway-container',
 				children = [
 
-					html.H3('2D Subway Map'),
-					dcc.Graph(id='2d-subway', animate=False),
+					html.H3('Flat Tree Plot'),
+					dcc.Graph(id='flat-tree-scatter', animate=False),
+
+					html.Br(),
+					html.Br(),
 
 					html.H3('Stream Plot'),
 					html.Img(id = 'rainbow-plot', src = None, width = '70%', style = {'align':'middle'}),
@@ -1184,15 +1216,32 @@ app.layout = html.Div([
 		html.Div(
 			id = 'download-container',
 			children = [
-			html.A(
-				'Download Files',
-				id='download-total',
-				download = "stream-outputs.zip",
-				href="",
-				target="_blank",
-				n_clicks = 0,
-				style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
-				),
+
+			html.Div([
+
+				html.Label('Experiment Title', style = {'font-weight':'bold', 'padding-right':'10px'}),
+				dcc.Input(id = 'title-input', value = ''),
+
+				html.Label('Experiment Description', style = {'font-weight':'bold', 'padding-right':'10px'}),
+				dcc.Input(id = 'description-input', value = ''),
+
+				]),
+
+			html.Br(),
+
+			html.Div([
+
+				html.A(
+					html.Button('Download Files'),
+					id='download-total',
+					download = "stream-outputs.zip",
+					href="",
+					target="_blank",
+					n_clicks = 0,
+					style = {'font-weight':'bold', 'font-size':'100%', 'text-align':'center'}
+					),
+
+				]),
 
 			])
 
@@ -1244,6 +1293,17 @@ def num_clicks_compute(pathname):
 	return [{'label': i[0], 'value': i[1]} for i in dataset_list]
 
 @app2.callback(
+    Output('title', 'children'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	json_entry = '/STREAM/precomputed/%s/%s.json' % (dataset, dataset)
+	data = json.load(open(json_entry))
+
+	return 'Title: ' + data['title']
+
+@app2.callback(
     Output('description', 'children'),
     [Input('precomp-dataset', 'value')])
 
@@ -1252,7 +1312,29 @@ def num_clicks_compute(dataset):
 	json_entry = '/STREAM/precomputed/%s/%s.json' % (dataset, dataset)
 	data = json.load(open(json_entry))
 
-	return data['description']
+	return 'Description: ' + data['description']
+
+@app2.callback(
+    Output('startingnode', 'children'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	json_entry = '/STREAM/precomputed/%s/%s.json' % (dataset, dataset)
+	data = json.load(open(json_entry))
+
+	return 'Starting Node: ' + data['starting_node']
+
+@app2.callback(
+    Output('commandline', 'children'),
+    [Input('precomp-dataset', 'value')])
+
+def num_clicks_compute(dataset):
+
+	json_entry = '/STREAM/precomputed/%s/%s.json' % (dataset, dataset)
+	data = json.load(open(json_entry))
+
+	return 'Command Used: ' + data['command_used']
 
 #### INPUT FILES ######
 @app.callback(
@@ -1445,6 +1527,28 @@ def update_clc_log(pathname):
 		return param_dict['clc-update']
 
 @app.callback(
+    Output('ready-to-compute', 'children'),
+    [Input('compute-button', 'n_clicks'),
+    Input('url', 'pathname')],
+    events=[Event('common-interval', 'interval')])
+
+def num_clicks_compute(n_clicks, pathname):
+
+	if pathname:
+
+		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+		with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+			json_string = f.readline().strip()
+			param_dict = json.loads(json_string)
+
+		if param_dict['compute-disable']:
+			return 'Ready for Step 2: No'
+		else:
+			return 'Ready for Step 2: Yes'
+
+@app.callback(
     Output('compute-button', 'disabled'),
     [Input('compute-button', 'n_clicks'),
     Input('url', 'pathname')],
@@ -1595,8 +1699,11 @@ def compute_trajectories(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, 
 						arguments_final.append(arg)
 						arguments_final.append(arguments[arg][0])
 
-			if not param_dict['compute-run']:
-				sb.call('python /STREAM/STREAM.py --for_web ' + ' '.join(map(str, arguments_final)) + ' > %s/log1.txt' % (RESULTS_FOLDER), shell = True)
+			# if not param_dict['compute-run']:
+			sb.call('python /STREAM/STREAM.py --for_web ' + ' '.join(map(str, arguments_final)) + ' > %s/log1.txt' % (RESULTS_FOLDER), shell = True)
+
+			with open(RESULTS_FOLDER + '/command_line_used.txt', 'w') as f:
+				f.write('python /STREAM/STREAM.py --for_web ' + ' '.join(map(str, arguments_final)))
 
 			return {'display': 'block'}
 
@@ -4730,14 +4837,17 @@ def download_container(figure, pathname):
 
 
 def bash_command(cmd):
-    sb.Popen(cmd, shell=True, executable='/bin/bash')
+    sb.call(cmd, shell=True, executable='/bin/bash')
 
 @app.callback(
     Output('buffer6', 'style'),
-    [Input('3d-scatter', 'figure'),
-    Input('url', 'pathname')])
+    [Input('download-total', 'n_clicks'),
+    Input('url', 'pathname')],
+    state = [State('title-input', 'value'),
+    State('description-input', 'value'),
+    State('root', 'value')])
 
-def zip_dir(figure, pathname):
+def zip_dir(figure, pathname, title_input, description_input, starting_node):
 
 	if pathname:
 
@@ -4756,26 +4866,56 @@ def zip_dir(figure, pathname):
 
 			if 'Finished computation...\n' in f_data:
 
-				exp_name = 'stream-outputs'
+				overview_folder = 'stream-outputs'
+				results_folder = 'STREAM_result'
 
-				if not os.path.exists('%s/%s' % (RESULTS_FOLDER, exp_name)):
-					sb.call('mkdir %s/%s' % (RESULTS_FOLDER, exp_name), shell = True)
+				if os.path.exists('%s/%s' % (RESULTS_FOLDER, overview_folder)):
+					sb.call('rm -r %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
 
-				sb.call('cp -r %s/*tsv %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
-				sb.call('cp -r %s/*csv %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
-				sb.call('cp -r %s/*pdf %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
-				sb.call('cp -r %s/*png %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
-				sb.call('cp -r %s/S* %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
-				sb.call('cp -r %s/*_Genes %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
-				sb.call('cp -r %s/Precomputed %s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, exp_name), shell = True)
+				sb.call('mkdir %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
+				sb.call('mkdir %s/%s/%s' % (RESULTS_FOLDER, overview_folder, results_folder), shell = True)
 
-				bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, exp_name, exp_name))
+				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
+				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
+				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
+
+				sb.call('cp %s %s/%s/' % (matrix[0], RESULTS_FOLDER, overview_folder), shell = True)
+
+				if len(cell_label) > 0:
+					sb.call('cp %s %s/%s/cell_label.tsv' % (cell_label[0], RESULTS_FOLDER, overview_folder), shell = True)
+
+				if len(cell_label_colors) > 0:
+					sb.call('cp %s %s/%s/cell_label_color.tsv' % (cell_label_colors[0], RESULTS_FOLDER, overview_folder), shell = True)
+
+				with open(RESULTS_FOLDER + '/command_line_used.txt', 'r') as f:
+					command_line_used = f.readline()
+
+				json_file = {'title': title_input,
+							'description': description_input,
+							'starting_node': starting_node,
+							'command_used': command_line_used}
+
+				with open('%s/%s/stream.json' % (RESULTS_FOLDER, overview_folder), 'w') as f:
+					json_string = json.dumps(json_file)
+					f.write(json_string + '\n')
+
+				sb.call('cp -r %s/*tsv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+				sb.call('cp -r %s/*csv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+				sb.call('cp -r %s/*pdf %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+				sb.call('cp -r %s/*png %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+				sb.call('cp -r %s/S* %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+				sb.call('cp -r %s/*_Genes %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+				sb.call('cp -r %s/Precomputed %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+
+				bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder))
+
+	print 'LOLOLOLOLOLOLOLOLOLOL'
 
 	return {'display': 'block'}
 
 @app.callback(
     Output('download-total', 'href'),
-    [Input('download-total', 'n_clicks'),
+    [Input('buffer6', 'style'),
     Input('url', 'pathname')])
 
 def generate_report_url(n_clicks, pathname):
@@ -4784,6 +4924,8 @@ def generate_report_url(n_clicks, pathname):
 	RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
 	full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+
+	print 'TRIGGEREEEEDDDDDD!!!!'
 
 	return '/dash/urldownload%s' % full_path
 
