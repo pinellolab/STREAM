@@ -622,7 +622,7 @@ app.layout = html.Div([
 		# Input files
 		html.Div([
 
-			html.H3(id = 'buffer5', children = 'Personal Files'),
+			# html.H3(id = 'buffer5', children = 'Personal Files'),
 
 			html.Div([
 
@@ -4840,90 +4840,115 @@ def download_container(figure, pathname):
 #     sb.Popen(cmd, shell=True, executable='/bin/bash')
 
 @app.callback(
-    Output('buffer6', 'style'),
+    Output('download-total', 'href'),
     [Input('download-total', 'n_clicks'),
     Input('url', 'pathname')],
     state = [State('title-input', 'value'),
     State('description-input', 'value'),
     State('root', 'value')])
 
-def zip_dir(figure, pathname, title_input, description_input, starting_node):
+def zip_dir(n_clicks, pathname, title_input, description_input, starting_node):
 
 	if pathname:
-
 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+		overview_folder = 'stream-outputs'
+		results_folder = 'STREAM_result'
 
-		if os.path.exists(RESULTS_FOLDER + '/log1.txt'):
+		if n_clicks > 0:
 
-			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
-				json_string = f.readline().strip()
-				param_dict = json.loads(json_string)
+			with open(RESULTS_FOLDER + '/command_line_used.txt', 'r') as f:
+				command_line_used = f.readline()
 
-			f = open(RESULTS_FOLDER + '/log1.txt', 'r')
-			f_data = f.readlines()
-			f.close()
+			json_file = {'title': title_input,
+						'description': description_input,
+						'starting_node': starting_node,
+						'command_used': command_line_used}
 
-			if 'Finished computation...\n' in f_data:
+			with open('%s/stream.json' % (RESULTS_FOLDER), 'w') as f:
+				json_string = json.dumps(json_file)
+				f.write(json_string + '\n')
 
-				overview_folder = 'stream-outputs'
-				results_folder = 'STREAM_result'
+			full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
 
-				if os.path.exists('%s/%s' % (RESULTS_FOLDER, overview_folder)):
-					sb.call('rm -r %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
+			return '/dash/urldownload%s' % full_path
 
-				sb.call('mkdir %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
-				sb.call('mkdir %s/%s/%s' % (RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+			# RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
-				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
-				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
+			# if os.path.exists(RESULTS_FOLDER + '/log1.txt'):
 
-				sb.call('cp %s %s/%s/' % (matrix[0], RESULTS_FOLDER, overview_folder), shell = True)
+			# 	with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
+			# 		json_string = f.readline().strip()
+			# 		param_dict = json.loads(json_string)
 
-				if len(cell_label) > 0:
-					sb.call('cp %s %s/%s/cell_label.tsv' % (cell_label[0], RESULTS_FOLDER, overview_folder), shell = True)
+			# 	f = open(RESULTS_FOLDER + '/log1.txt', 'r')
+			# 	f_data = f.readlines()
+			# 	f.close()
 
-				if len(cell_label_colors) > 0:
-					sb.call('cp %s %s/%s/cell_label_color.tsv' % (cell_label_colors[0], RESULTS_FOLDER, overview_folder), shell = True)
+			# 	if 'Finished computation...\n' in f_data:
 
-				with open(RESULTS_FOLDER + '/command_line_used.txt', 'r') as f:
-					command_line_used = f.readline()
+			# 		overview_folder = 'stream-outputs'
+			# 		results_folder = 'STREAM_result'
 
-				json_file = {'title': title_input,
-							'description': description_input,
-							'starting_node': starting_node,
-							'command_used': command_line_used}
+			# 		if os.path.exists('%s/%s' % (RESULTS_FOLDER, overview_folder)):
+			# 			sb.call('rm -r %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
 
-				with open('%s/%s/stream.json' % (RESULTS_FOLDER, overview_folder), 'w') as f:
-					json_string = json.dumps(json_file)
-					f.write(json_string + '\n')
+			# 		sb.call('mkdir %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
+			# 		sb.call('mkdir %s/%s/%s' % (RESULTS_FOLDER, overview_folder, results_folder), shell = True)
 
-				sb.call('cp -r %s/*tsv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
-				sb.call('cp -r %s/*csv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
-				sb.call('cp -r %s/*pdf %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
-				sb.call('cp -r %s/*png %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
-				sb.call('cp -r %s/S* %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
-				sb.call('cp -r %s/*_Genes %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
-				sb.call('cp -r %s/Precomputed %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# 		matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
+			# 		cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
+			# 		cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
-				proc = sb.Popen('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder), shell=True, executable='/bin/bash')
-				proc.wait()
+			# 		sb.call('cp %s %s/%s/' % (matrix[0], RESULTS_FOLDER, overview_folder), shell = True)
 
-				UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
-				RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+			# 		if len(cell_label) > 0:
+			# 			sb.call('cp %s %s/%s/cell_label.tsv' % (cell_label[0], RESULTS_FOLDER, overview_folder), shell = True)
 
-				full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+			# 		if len(cell_label_colors) > 0:
+			# 			sb.call('cp %s %s/%s/cell_label_color.tsv' % (cell_label_colors[0], RESULTS_FOLDER, overview_folder), shell = True)
 
-				print 'TRIGGEREEEEDDDDDD!!!!'
+			# 		with open(RESULTS_FOLDER + '/command_line_used.txt', 'r') as f:
+			# 			command_line_used = f.readline()
 
-				return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (pathname), attachment_filename = 'stream-outputs.zip', as_attachment = True)
+			# 		json_file = {'title': title_input,
+			# 					'description': description_input,
+			# 					'starting_node': starting_node,
+			# 					'command_used': command_line_used}
 
-				# bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder))
+			# 		with open('%s/%s/stream.json' % (RESULTS_FOLDER, overview_folder), 'w') as f:
+			# 			json_string = json.dumps(json_file)
+			# 			f.write(json_string + '\n')
 
-# 	print 'LOLOLOLOLOLOLOLOLOLOL'
+			# 		sb.call('cp -r %s/*tsv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# 		sb.call('cp -r %s/*csv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# 		sb.call('cp -r %s/*pdf %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# 		sb.call('cp -r %s/*png %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# 		sb.call('cp -r %s/S* %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# 		sb.call('cp -r %s/*_Genes %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+			# 		sb.call('cp -r %s/Precomputed %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
 
-# 	return {'display': 'block'}
+			# 		proc = sb.Popen('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder), shell=True, executable='/bin/bash')
+			# 		proc.wait()
+
+			# 		full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+			# 		print 'REDIRECTING TO ......................... %s' % full_path
+			# 		return '/dash/urldownload%s' % full_path
+
+					# send_file('%s/stream-outputs.zip' % (RESULTS_FOLDER), attachment_filename = 'stream-outputs.zip', as_attachment = True)
+
+					# bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder))
+
+					# print 'LOLOLOLOLOLOLOLOLOLOL'
+					# return {'display': 'block'}
+
+		else:
+			full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+			# print 'INITIALIZING AT .................................. %s' % full_path
+			return '/dash/urldownload%s' % full_path
+
+
 
 # @app.callback(
 #     Output('download-total', 'href'),
@@ -4934,21 +4959,56 @@ def zip_dir(figure, pathname, title_input, description_input, starting_node):
 # def generate_report_url(buffer, pathname, n_clicks):
 
 # 	print 'N CLICKS HERRRERERRERERE: %s' % n_clicks
-# 	if n_clicks > 0:
+# 	if n_clicks == 0:
 
 # 		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 # 		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
 # 		full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
 
-# 		print 'TRIGGEREEEEDDDDDD!!!!'
-
+# 		print 'TRIGGEREEEEDDDDDD!!!! %s' % full_path
 # 		return '/dash/urldownload%s' % full_path
 
-# @app.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/stream-outputs.zip')
-# def generate_report_url(directory):
+@app.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/stream-outputs.zip')
+def generate_report_url(directory):
 
-# 	return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (directory), attachment_filename = 'stream-outputs.zip', as_attachment = True)
+	overview_folder = 'stream-outputs'
+	results_folder = 'STREAM_result'
+
+	RESULTS_FOLDER = '/tmp/RESULTS_FOLDER/%s' % directory
+	UPLOADS_FOLDER = '/tmp/UPLOADS_FOLDER/%s' % directory
+
+	if os.path.exists('%s/%s' % (RESULTS_FOLDER, overview_folder)):
+		sb.call('rm -r %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
+
+	sb.call('mkdir %s/%s' % (RESULTS_FOLDER, overview_folder), shell = True)
+	sb.call('mkdir %s/%s/%s' % (RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+
+	matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
+	cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
+	cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
+
+	sb.call('cp %s %s/%s/' % (matrix[0], RESULTS_FOLDER, overview_folder), shell = True)
+
+	if len(cell_label) > 0:
+		sb.call('cp %s %s/%s/cell_label.tsv' % (cell_label[0], RESULTS_FOLDER, overview_folder), shell = True)
+
+	if len(cell_label_colors) > 0:
+		sb.call('cp %s %s/%s/cell_label_color.tsv' % (cell_label_colors[0], RESULTS_FOLDER, overview_folder), shell = True)
+
+	sb.call('cp %s/stream.json %s/%s/' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder), shell = True)
+	sb.call('cp -r %s/*tsv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+	sb.call('cp -r %s/*csv %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+	sb.call('cp -r %s/*pdf %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+	sb.call('cp -r %s/*png %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+	sb.call('cp -r %s/S* %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+	sb.call('cp -r %s/*_Genes %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+	sb.call('cp -r %s/Precomputed %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
+
+	proc = sb.Popen('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder), shell=True, executable='/bin/bash')
+	proc.wait()
+
+	return send_file('/tmp/RESULTS_FOLDER/%s/stream-outputs.zip' % (directory), attachment_filename = 'stream-outputs.zip', as_attachment = True)
 
 def main():
     app.run_server(debug = True, processes = 5, port = 9992, host = '0.0.0.0')
