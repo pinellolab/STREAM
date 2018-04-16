@@ -285,6 +285,22 @@ To explore potential marker genes, it is possible to add the flags -d or -t to d
 docker run pinellolab/stream -v $PWD:/data -w /data -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -s all -d -t
 ```
 
+To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore.tsv, data_mapping.tsv (Moore, F.E. et al.2016) as an example.
+
+Users first need to run the following command to get initial inferred trajetories:
+
+```sh
+docker run pinellolab/stream -v $PWD:/data -w /data -m data_Moore.tsv -s all --EPG_shift --EPG_trimmingradius 0.1 -o /users_path/STREAM_result
+```
+
+To map the labelled cells to the inferred trajectories, users need to specify the same output direcotry by executing the following command:
+
+```sh
+docker run pinellolab/stream -v $PWD:/data -w /data -o /users_path/STREAM_result --new data_mapping.tsv --new_l cell_labels_mapping.tsv --new_c cell_labels_mapping_color.tsv 
+```
+
+After running this command,  a folder named 'Mapping_Result' will be created under '/users_path/STREAM_result' along with all the mapping analysis results.
+
 
 **scATAC-seq data**: To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format:
 
