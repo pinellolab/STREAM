@@ -1443,7 +1443,7 @@ def Genes_Detection_For_Transition(df_flat_tree,df_sc,input_genes,TG_spearman_cu
     df_gene_detection.index = range(df_gene_detection.shape[0])
 
     num_displayed_genes = 15
-    num_top_genes = 3
+    num_top_genes = 10
 
     # if(os.path.exists(file_path_precomp+'/results_scaled_genes.pickle')):
     #     print('Importing precomputed scaled genes ...')
@@ -1483,7 +1483,7 @@ def Genes_Detection_For_DE(df_flat_tree,df_sc,input_genes,DE_z_score_cutoff,DE_d
     df_gene_detection.index = range(df_gene_detection.shape[0])
 
     num_displayed_genes = 15
-    num_top_genes = 3
+    num_top_genes = 10
 
     # if(os.path.exists(file_path_precomp+'/results_scaled_genes.pickle')):
     #     print('Importing precomputed scaled genes ...')

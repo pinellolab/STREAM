@@ -57,8 +57,8 @@
 
         <p class="lead">Input files:
         <p>
-            <br> For transcriptomic data, STREAM only requires a tab-separated gene expression matrix (raw counts or normalized values) in .tsv or .tsv.gz file format. Each row represents a unique gene and each column is one cell. 
-            
+            <br> For transcriptomic data, STREAM only requires a tab-separated gene expression matrix (raw counts or normalized values) in .tsv or .tsv.gz file format. Each row represents a unique gene and each column is one cell. For raw counts, log2 transformation and library size normalization are necessary.
+
             <br> Additionally it is possible to provide these following files in .tsv or .tsv.gz format: 
             
             cell_labels file: .tsv or .tsv.gz format. Each item can be a putative cell type or sampling time point obtained from experiments. Cell labels are helpful for visually validating the inferred trajectory. The order of labels should be consistent with cell order in the gene expression matrix file. No header is necessary:
@@ -70,6 +70,22 @@
 
             <br> 2)a precomputed scaled z-score file by STREAM. Each row represents a k-mer DNA sequence. Each column represents one cell. Each entry is a scaled z-score of the accessibility of each k-mer across cells
 
+        <p class="lead">Precomputed results:
+            By clicking on 'Precomputd resutls', users are able to visualize precomputed trajectories for several published datasets. (More datasets will be included in future)
+            Users can choose any precomputed data from the droplist. Here we take 'Guo,G.et al.2013' as an example:
+        <img src="images/Choose_Precomputed_Data_Set.png" alt="Choose_Precomputed_Data_Set" width="50%" height="50%">
+            once user chose the dataset, a brief description will automatically appear beneath the menu.
+
+            3D scatter plot shows cells' positions and fitted principal graph by STREAM in MLLE space. In 3D scatter plot, users can easily and interatively perform a lot of different operations including rotatation, zoom-in, zoom-out, taking snapshots at a specific view.
+
+            Additionally, when hovering the mouse over points, cells' coordinates and cell labels obtained from experiment will show up. Users can also interactively control the legend panel. By clicking on cell type or fitted curve first time, the related cells or curves will disppear. By clicking them again, cells or curves will come back.
+
+            Flat tree plot intuitively and conveniently represents curves(trajectories) as linear segments in a 2D plane. In this representation, the lengths of tree branches are preserved from three or higher dimenional MLLE space. In addition, cells are projected onto the tree according to their branch locations and the distances from their assigned branches.
+
+            users can select different starting nodes to visualize the trajectories in subway map or stream plot
+
+
+        <p class="lead">Compute on your data:
 
         </p>
       </div>
