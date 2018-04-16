@@ -4836,8 +4836,8 @@ def download_container(figure, pathname):
 		return {'display': 'none'}
 
 
-def bash_command(cmd):
-    sb.call(cmd, shell=True, executable='/bin/bash')
+# def bash_command(cmd):
+#     sb.Popen(cmd, shell=True, executable='/bin/bash')
 
 @app.callback(
     Output('buffer6', 'style'),
@@ -4907,7 +4907,10 @@ def zip_dir(figure, pathname, title_input, description_input, starting_node):
 				sb.call('cp -r %s/*_Genes %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
 				sb.call('cp -r %s/Precomputed %s/%s/%s' % (RESULTS_FOLDER, RESULTS_FOLDER, overview_folder, results_folder), shell = True)
 
-				bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder))
+				proc = sb.Popen('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder), shell=True, executable='/bin/bash')
+				proc.wait()
+
+				# bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder))
 
 	print 'LOLOLOLOLOLOLOLOLOLOL'
 
