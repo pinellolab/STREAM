@@ -4910,12 +4910,22 @@ def zip_dir(figure, pathname, title_input, description_input, starting_node):
 				proc = sb.Popen('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder), shell=True, executable='/bin/bash')
 				proc.wait()
 
+				UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+				RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+
+				full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+
+				print 'TRIGGEREEEEDDDDDD!!!!'
+
+				return redirect('/dash/urldownload%s' % full_path)
+
 				# bash_command('pushd %s && zip -r %s.zip %s && popd' % (RESULTS_FOLDER, overview_folder, overview_folder))
 
-	print 'LOLOLOLOLOLOLOLOLOLOL'
+	# print 'LOLOLOLOLOLOLOLOLOLOL'
 
-	return {'display': 'block'}
+	# return {'display': 'block'}
 
+'''
 @app.callback(
     Output('download-total', 'href'),
     [Input('buffer6', 'style'),
@@ -4935,6 +4945,7 @@ def generate_report_url(buffer, pathname, n_clicks):
 		print 'TRIGGEREEEEDDDDDD!!!!'
 
 		return '/dash/urldownload%s' % full_path
+'''
 
 @app.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/stream-outputs.zip')
 def generate_report_url(directory):
