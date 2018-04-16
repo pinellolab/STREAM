@@ -4919,18 +4919,22 @@ def zip_dir(figure, pathname, title_input, description_input, starting_node):
 @app.callback(
     Output('download-total', 'href'),
     [Input('buffer6', 'style'),
-    Input('url', 'pathname')])
+    Input('url', 'pathname')],
+    state = [State('download-total', 'n_clicks')])
 
-def generate_report_url(n_clicks, pathname):
+def generate_report_url(buffer, pathname, n_clicks):
 
-	UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
-	RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+	print 'N CLICKS HERRRERERRERERE: %s' % n_clicks
+	if n_clicks > 0:
 
-	full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
+		UPLOADS_FOLDER = app.server.config['UPLOADS_FOLDER'] + '/' + str(pathname).split('/')[-1]
+		RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
-	print 'TRIGGEREEEEDDDDDD!!!!'
+		full_path = RESULTS_FOLDER + '/' + 'stream-outputs.zip'
 
-	return '/dash/urldownload%s' % full_path
+		print 'TRIGGEREEEEDDDDDD!!!!'
+
+		return '/dash/urldownload%s' % full_path
 
 @app.server.route('/dash/urldownload/tmp/RESULTS_FOLDER/<directory>/stream-outputs.zip')
 def generate_report_url(directory):
