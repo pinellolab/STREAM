@@ -2128,7 +2128,7 @@ def compute_trajectories(pathname, n_clicks):
 	return {
         'data': traces,
         'layout': go.Layout(
-        	annotations = annotations,
+        	# annotations = annotations,
         	dragmode = "turntable",
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
@@ -2312,7 +2312,7 @@ def compute_trajectories(dataset):
 	return {
         'data': traces,
         'layout': go.Layout(
-        	annotations = annotations,
+        	# annotations = annotations,
         	dragmode = "turntable",
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
