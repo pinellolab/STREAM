@@ -2818,7 +2818,7 @@ def num_clicks_compute(root, figure, pathname):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -2961,7 +2961,7 @@ def num_clicks_compute(root, dataset):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -3473,8 +3473,8 @@ def compute_trajectories(pathname, n_clicks, root, gene):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
@@ -3577,8 +3577,8 @@ def compute_trajectories(dataset, gene, root):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
@@ -4067,8 +4067,8 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
@@ -4171,8 +4171,8 @@ def compute_trajectories(dataset, root, gene):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
@@ -4311,6 +4311,7 @@ def update_table(slider, branches, direction, figure, pathname):
 	RESULTS_FOLDER = app.server.config['RESULTS_FOLDER'] + '/' + str(pathname).split('/')[-1]
 
 	use_this_table = ''
+
 
 	try:
 
@@ -4826,8 +4827,8 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
@@ -4932,8 +4933,8 @@ def compute_trajectories(dataset, root, gene):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
