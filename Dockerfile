@@ -3,7 +3,7 @@
 ############################################################
 
 # Set the base image to anaconda python 2.7
-FROM continuumio/anaconda
+FROM continuumio/anaconda:5.1.0
 
 # File Author / Maintainer
 MAINTAINER Luca Pinello
