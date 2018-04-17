@@ -43,75 +43,286 @@
         <h3>What is STREAM</h3>
         <p>STREAM(Single-cell Trajectories Reconstruction, Exploration And Mapping of omics data), is an interactive pipeline capable of disentangling and visualizing complex branching trajectories from both single-cell transcriptomic and epigenomic data. It also allows for automatic developmental-trajectory-related marker gene discovery and visualization. </p>
 
+        <p>STREAM is available as user-friendly open source software and can be used interactively as a web-application at <a href="stream.pinellolab.org">stream.pinellolab.org</a> or as a standalone command-line tool with Docker <a href="https://github.com/pinellolab/STREAM">https://github.com/pinellolab/STREAM</a>
+        <br>
+        <br><img src="images/Figure1.png" alt="Figure1" width="50%" height="50%"></p>
+        <br>
+
         <h3>What can I do with STREAM</h3>
-        <p>STREAM can be used in two different ways:</p>
-        <p> 1. A computational trajectory inference tool:
-                <br> 1) STREAM can take as input both single cell transcriptomic and epigenomic data. It reliably reconstructs trajectories and pseudotime in both simple bifurcation or complex branching situation without the need of prior knowledge about the structure or the number of trajectories
-                <br> 2) STREAM provides the <i>mapping</i> procedure, which permits reusing a previously inferred principal graph as reference to map new cells not included in the original fitting procedure
-                <br> 3) STREAM provides analytical tools for potential marker genes (or k-mers) of different types: diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches, and transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch.
-                <br> 4) STREAM provides both single-cell-level and density-level visualizations of cells and gene expression patterns for inferred trajectories. Specially, STREAM proposed a novel visualizaiton, called the stream plot, which is useful to study subpopulation composition and cell-fate genes along branching trajectories                
-        <p> 2. An interactive database focused on single-cell trajectory visualization for several published studies. The users can visualize and explore cells’ developmental trajectories, subpopulations and their gene expression patterns at single-cell level.
+        <p>STREAM can be used in two different ways:</p>  
+
+        <p><b> 1. An interactive database focused on single-cell trajectory visualization for several published studies.</b>
+            <ul>
+                Users can visualize and explore cells’ developmental trajectories, subpopulations and their gene expression patterns at single-cell level.
+            </ul>
+        </p>
+
+        <p><b> 2. A computational trajectory inference tool:</b>
+            <ul>
+                <li> STREAM can take as input both single cell transcriptomic and epigenomic data. It reliably reconstructs trajectories and pseudotime in both simple bifurcation or complex branching situation without the need of prior knowledge about the structure or the number of trajectories</li>
+                <br>
+                <li> STREAM provides the <b><i>mapping</i></b> procedure, which permits reusing a previously inferred principal graph as reference to map new cells not included in the original fitting procedure (Currently it's only supported at command line interface <a href="https://github.com/pinellolab/STREAM">https://github.com/pinellolab/STREAM</a>)</li>
+                <br>
+                <li> STREAM provides analytical tools for potential marker genes (or k-mers) of different types: diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches, and transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch.</li>
+                <br>
+                <li> STREAM provides both single-cell-level and density-level visualizations of cells and gene expression patterns for inferred trajectories. Specially, STREAM proposed a novel visualizaiton, called the stream plot, which is useful to study subpopulation composition and cell-fate genes along branching trajectories</li> </p>
+            </ul>   
 
         <h3>Usage</h3>
-
-        <h4>Precomputed results:</h4>
+        <h4><b>1.Precomputed results:</b></h4>
+        <ul>
             <p>By clicking on 'Precomputd resutls', users are able to visualize precomputed trajectories for several published datasets. (More datasets will be included in future)</p>
 
-            <h5>Choose Precomputed Data Set</h5>
+            <h5><b>1).Choose Precomputed Data Set</b></h5>
             <p>Users can choose any precomputed data from the droplist. Here we take 'Guo,G.et al.2013' as an example:
             <img src="images/Choose_Precomputed_Data_Set.png" alt="Choose_Precomputed_Data_Set" width="50%" height="50%">
             <br>once user chose the dataset, a brief description will automatically appear beneath the menu.</p>
 
-            <h5>Visualize Trajectories:</h5>    
+            <h5><b>2).Visualize Trajectories</b></h5>    
             <p>3D scatter plot shows cells' positions and fitted principal graph by STREAM in MLLE space. In 3D scatter plot, users can easily and interatively perform a lot of different operations including rotatation, zoom-in, zoom-out, taking snapshots at a specific view.
-            <br>Additionally, when hovering the mouse over points, cells' coordinates and cell labels obtained from experiment will show up. Users can also interactively control the legend panel. By clicking on cell type or fitted curve first time, the related cells or curves will disppear. By clicking them again, cells or curves will come back. This helps focus on branch or cell type of interest.</p>
-            <p>Flat tree plot intuitively and conveniently represents curves(trajectories) as linear segments in a 2D plane. In this representation, the lengths of tree branches are preserved from three or higher dimenional MLLE space. In addition, cells are projected onto the tree according to their branch locations and the distances from their assigned branches. When hovering the mouse over points, cells' coordinates in 2D plane and cell labels obtained from experiment will appear. Users can zoom in by selecting a specific area. Similar to 3D scatter plot, users can interactively control the legend part.</p>
+                <div id="banner" style="overflow: hidden; display: flex; justify-content:space-around;">
+                    <img src="images/3D.png" alt="3D" width="20%" height="20%">
+                    <img src="images/3D_rotation.png" alt="3D_rotation" width="20%" height="20%">
+                    <img src="images/3D_zoomin.png" alt="3D_zoomin" width="20%" height="20%">
+                    <img src="images/3D_zoomout.png" alt="3D_zoomout" width="21%" height="21%">
+                </div>
+            <br>Additionally, when hovering the mouse over points, cells' coordinates and cell labels obtained from experiment will show up. Users can also interactively control the legend panel. By clicking on cell type or fitted curve first time, the related cells or curves will disppear. By clicking them again, cells or curves will come back. This helps focus on branch or cell type of interest.
+                <div id="banner" style="overflow: hidden; display: flex; justify-content:space-around;">
+                    <img src="images/3D_with_label.png" alt="3D_with_label" width="20%" height="20%">
+                    <img src="images/3D_one_celltype.png" alt="3D_one_celltype" width="20%" height="20%">
+                    <img src="images/3D_part_of_curves.png" alt="3D_part_of_curves" width="20%" height="20%">
+                </div>
+            </p>
+            <p>Flat tree plot intuitively and conveniently represents curves(trajectories) as linear segments in a 2D plane. In this representation, the lengths of tree branches are preserved from three or higher dimenional MLLE space. In addition, cells are projected onto the tree according to their branch locations and the distances from their assigned branches. When hovering the mouse over points, cells' coordinates in 2D plane and cell labels obtained from experiment will appear. Users can zoom in by selecting a specific area. Similar to 3D scatter plot, users can interactively control the legend part.
+                <div id="banner" style="overflow: hidden; display: flex; justify-content:space-around;">
+                    <img src="images/flat_tree.png" alt="flat_tree" width="20%" height="20%">
+                    <img src="images/flat_tree_with_label.png" alt="flat_tree_with_label" width="20%" height="20%">
+                    <img src="images/flat_tree_area_selection.png" alt="flat_tree_area_selection" width="20%" height="20%">
+                    <img src="images/flat_tree_zoomin.png" alt="flat_tree_zoomin" width="20%" height="20%">
+                </div>
+            </p>
             <p>Users can select different starting nodes to visualize the trajectories in subway map (at single-cell level) or stream plot (at density level). By default, the recommended start node is selected. This allows easily re-organization of the tree using breadth-first search to better represents pseudotime progression from a selected starting node.</p>
 
-            <h5>Visualize Genes of Interest</h5>
-            <p>In the gene combo box,users can either choose genes from the droplist or type in gene name themselves. Genes will be visualized in both subway map and stream plot. When hovering the mouse over point, both cells' coordinates and gene expressions will be displayed.
+            <img src="images/select_start_node.png" alt="select_start_node" width="20%" height="20%">
 
-            <h5>Visualize Diverging Genes</h5>
-            <p>Diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches. Users first need to choose a pair of adjacent branches, between which differentially expressed genes were calculated by STREAM. Then users can specify the branch on which DE genes are relatively highly expressed. Top automatically detected DE genes will be showned. Users can easily control how many genes to display through a slider bar. On the right, users can visualize detected diverging gene. </p>
 
-            <h5>Visualize Transition Genes</h5>
-            <p>Transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch. Users first need to choose one branch, along which transition genes were calculated by STREAM. Then top automatically detected transition genes will be displayed. Users can easily control how many genes to display through a slider bar. On the right, users can visualize detected transition gene.</p>
+            <h5><b>3).Visualize Genes of Interest</b></h5>
+            <p>In the gene combo box,users can either choose genes from the droplist or type in gene name themselves. 
+            <br><img src="images/select_gene.png" alt="select_gene" width="50%" height="50%">
+            <br>Genes will be visualized in both subway map and stream plot. When hovering the mouse over point, both cells' coordinates and gene expressions will be displayed.
+            <br><img src="images/subway_map_stream_plot.png" alt="subway_map_stream_plot" width="50%" height="50%">
 
-        <h4>Compute on your own data:</h4>    
-            <h5>Input files</h5>
+            <h5><b>4).Visualize Diverging Genes</b></h5>
+            <p>Diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches. 
+            <br>Users first need to choose a pair of adjacent branches, between which differentially expressed genes were calculated by STREAM.
+            <br><img src="images/select_branch_pair.png" alt="select_branch_pair" width="20%" height="50%">
+            <br>Then users can specify the branch on which DE genes are relatively highly expressed.
+            <br><img src="images/select_DE_high_branch.png" alt="select_DE_high_branch" width="20%" height="50%">
+            <br>Top automatically detected DE genes will be showned. Users can easily control how many genes to display through a slider bar. 
+            <br></b><img src="images/DE_genes.png" alt="DE_genes" width="20%" height="20%">
+            <br>On the right, users can visualize detected diverging gene at flat tree and stream plot. </p>
+
+            <h5><b>5).Visualize Transition Genes</b></h5>
+            <p>Transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch. 
+            <br>Users first need to choose one branch, along which transition genes were calculated by STREAM. 
+            <br><img src="images/select_branch.png" alt="select_branch" width="20%" height="20%">
+            <br>Then top automatically detected transition genes will be displayed. Users can easily control how many genes to display through a slider bar. 
+            <br><img src="images/transition_gene.png" alt="transition_gene" width="20%" height="20%">
+            <br>On the right, users can visualize detected transition gene.</p>
+        </ul>
+
+        <br>
+        <h4><b>2.Compute on your own data:</b></h4>    
+        <ul>
+            <h5><b>1).Input files</b></h5>
             <p>Data Matrix:
-            <br>For transcriptomic data, STREAM only requires a tab-separated gene expression matrix (raw counts or normalized values) in .tsv or .tsv.gz file format. Each row represents a unique gene and each column is one cell. For raw counts, log2 transformation and library size normalization are necessary.
-            <br>For epigenomic data, to perform scATAC-seq trajectory inference analysis, the main input can be:
-            <br> 1)a set of files including count file, region file and sample file. Since this part is a bit time-consuming, currently it's not supported by the website yet. But users can easily achieve it by running STREAM at command line interface.
-            <br> 2)a precomputed scaled z-score file by STREAM. Each row represents a k-mer DNA sequence. Each column represents one cell. Each entry is a scaled z-score of the accessibility of each k-mer across cells</p>
+            <br>For <b>transcriptomic data</b>, STREAM only requires a tab-separated gene expression matrix (raw counts or normalized values) in .tsv or .tsv.gz file format. Each row represents a unique gene and each column is one cell. For raw counts, log2 transformation and library size normalization are necessary.
 
+            <table style="width: 60%; text-align: center"; border = "1">
+                <tbody>
+                <tr>
+                <td style="width: 15px;">&nbsp;</td>
+                <td style="width: 15px;">singles-BM0828-HSC-fresh-151027-1</td>
+                <td style="width: 15px;">singles-BM0828-HSC-fresh-151027-2</td>
+                <td style="width: 15px;">singles-BM0828-HSC-fresh-151027-3</td>
+                </tr>
+                <tr>                    
+                <td style="width: 15px;">AAAAAAA</td>
+                <td style="width: 15px;">-0.15973157637808505</td>
+                <td style="width: 15px;">0.18950966450007853</td>
+                <td style="width: 15px;">0.07713107176524692</td>
+                </tr>
+                <tr>                 
+                <td style="width: 15px;">AAAAAAG</td>
+                <td style="width: 15px;">-1.3630723054479532</td>
+                <td style="width: 15px;">-0.04770034004421244</td>
+                <td style="width: 15px;">0.6387323857481045</td>
+                </tr>
+                <tr>                  
+                <td style="width: 15px;">AAACACG</td>
+                <td style="width: 15px;">-0.2065161126378667</td>
+                <td style="width: 15px;">-1.3375384076872765</td>
+                <td style="width: 15px;">0.2660278729402342</td>
+                </tr>
+                <tr>                    
+                <td style="width: 15px;">AGCGTTA</td>
+                <td style="width: 15px;">-0.496859947462221</td>
+                <td style="width: 15px;">0.7181918229050274</td>
+                <td style="width: 15px;">0.19603357892921522</td>
+                </tr>
+                <tr>                   
+                <td style="width: 15px;">ATACTCA</td>
+                <td style="width: 15px;">-1.2127919166377426</td>
+                <td style="width: 15px;">0.7938414496478844</td>
+                <td style="width: 15px;">-1.2665513250104594</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <br>For <b>epigenomic data</b>, to perform scATAC-seq trajectory inference analysis, the main input can be:
+            <br> 1)a set of files including count file, region file and sample file. Since this part is a bit time-consuming, currently it's not supported by the website yet. But users can easily achieve it by running STREAM at command line interface <a href="https://github.com/pinellolab/STREAM">https://github.com/pinellolab/STREAM</a>.
+            <br> 2)a precomputed scaled z-score file by STREAM. Each row represents a k-mer DNA sequence. Each column represents one cell. Each entry is a scaled z-score of the accessibility of each k-mer across cells</p>
+            <table style="width: 70%; text-align: center"; border = "1">
+                <tbody>
+                <tr>
+                <td style="width: 15px;">&nbsp;</td>
+                <td style="width: 15px;">HSC1</td>
+                <td style="width: 15px;">HSC1.1</td>
+                <td style="width: 15px;">HSC1.2</td>
+                <td style="width: 15px;">HSC1.3</td>
+                <td style="width: 15px;">HSC1.4</td>
+                </tr>
+                <tr>                
+                <td style="width: 15px;">CD52</td>
+                <td style="width: 15px;">6.479620</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">5.550051</td>
+                <td style="width: 15px;">0.000000</td>
+                </tr>
+                <tr>            
+                <td style="width: 15px;">Ifitm1</td>
+                <td style="width: 15px;">11.688533</td>
+                <td style="width: 15px;">11.390682</td>
+                <td style="width: 15px;">10.561844</td>
+                <td style="width: 15px;">11.874295</td>
+                <td style="width: 15px;">8.976571</td>
+                </tr>
+                <tr>                
+                <td style="width: 15px;">Cdkn3</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">8.293616</td>
+                </tr>
+                <tr>              
+                <td style="width: 15px;">Ly6a</td>
+                <td style="width: 15px;">10.417026</td>
+                <td style="width: 15px;">11.452145</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">8.158840</td>
+                <td style="width: 15px;">8.945882</td>
+                </tr>
+                <tr>              
+                <td style="width: 15px;">Bax</td>
+                <td style="width: 15px;">6.911608</td>
+                <td style="width: 15px;">10.201157</td>
+                <td style="width: 15px;">0.000000</td>
+                <td style="width: 15px;">9.396073</td>
+                <td style="width: 15px;">0.000000</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <br>
             <p>Additionally it is possible to provide these following files in .tsv or .tsv.gz format: 
             <br>cell_labels file: .tsv or .tsv.gz format. Each item can be a putative cell type or sampling time point obtained from experiments. Cell labels are helpful for visually validating the inferred trajectory. The order of labels should be consistent with cell order in the gene expression matrix file. No header is necessary.
+
+            <table style="width: 5%; text-align: center"; border = "1">
+                <tbody>
+                <tr>
+                <td style="width: 15px;">HSC</td>
+                </tr>
+                <tr>                
+                <td style="width: 15px;">HSC</td>
+                </tr>
+                <tr>            
+                <td style="width: 15px;">GMP</td>
+                </tr>
+                <tr>                
+                <td style="width: 15px;">MEP</td>
+                </tr>
+                <tr>              
+                <td style="width: 15px;">MEP</td>
+                </tr>
+                <tr>              
+                <td style="width: 15px;">GMP</td>
+                </tr>
+                </tbody>
+            </table>
+
+
             <br>cell_label_color file: .tsv or .tsv.gz format. Customized colors to use for the different cell labels. The first column specifies cell labels and the second column specifies the color in the format of hex. No header is necessary.</p>
+            
+            <table style="width: 15%; text-align: center"; border = "1">
+                <tbody>
+                <tr>
+                <td style="width: 15px;">HSC</td>
+                <td style="width: 15px;">#7DD2D9</td>
+                </tr>
+                <tr>                
+                <td style="width: 15px;">MPP</td>
+                <td style="width: 15px;">#FFA500</td>
+                </tr>
+                <tr>            
+                <td style="width: 15px;">CMP</td>
+                <td style="width: 15px;">#e55b54</td>
+                </tr>
+                <tr>                
+                <td style="width: 15px;">GMP</td>
+                <td style="width: 15px;">#5dab5a</td>
+                </tr>
+                <tr>              
+                <td style="width: 15px;">MEP</td>
+                <td style="width: 15px;">#166FD5</td>
+                </tr>
+                <tr>              
+                <td style="width: 15px;">CLP</td>
+                <td style="width: 15px;">#989797</td>
+                </tr>
+                </tbody>
+            </table>
 
-            <p>In addition to personal files, in order to help users quickly get an idea how STREAM works, users can simply click the button 'load example data'. This will automatically upload data matrix file,cell_labels file and cell_label_color file for users. </p>
 
-            <h5>Parameters</h5>
+            <p>In addition to personal files, in order to help users quickly get an idea how STREAM works, users can simply click the button 'load example data'. This will automatically upload data matrix file,cell_labels file and cell_label_color file for users. 
+
+            <br><img src="images/load_example.png" alt="load_example" width="15%" height="15%"></p>
+
+            <h5><b>2).Parameters</b></h5>
             This panel mainly consists of basic parameters and advanced parameters. The basic parameters should be able to work well in most cases. It's necessary to do log2 transformation and library size normalization if the data matrix provided by user contains raw count. Also since scATAC-seq data is very different from transcriptomic data, users need to specify whether it's ATAC-seq data or not. For feature selection, by default, we use LOESS fitting to select most variable genes. In scATAC-seq data, because z-score matrix has negative values, users need to use PCA to select top PCs. In sc-qPCR data,usually the number of gene is relatively small, we suggest that users keep all the genes by choosing 'all'. For dimension reduction, we are using MLLE. The neighbor size is chosen based on the number of cells and is set by default to 10% of the total number of cells. The number of MLLE components to use depends on the number of branches and on the complexity of the structure to learn. Typically, three components capture the main structure for most datasets, increasing them may recover finer structures (although we observed that there is no benefit for selecting more than 5 components in all the datasets tested).
 
-            <h5>Compute Trajectories</h5>
+            <br><img src="images/parameters.png" alt="parameters" width="30%" height="30%">
+
+            <h5><b>3).Compute Trajectories</b></h5>
             When users click the button "compute", STREAM will infer trajectories based on the parameters set by users. The process may take a few minutes depending on the data size (For sc-qPCR data with hundreds of cell, it may take one minute. For scRNA-seq data with around 2000 cells and 3k genes, it may take two minutes). Once it's done, similar to the part "precomputed results", users are able to see different interactive visualizations including 3D scatter plot with fitted trajecotries, flat tree plot, subway map and stream plot. For subway map and stream plot, users can explore different re-organizations of the inferred tree structure by choosing different start node.
 
-            <h5>Visualize Genes of Interest</h5>
+            <h5><b>4).Visualize Genes of Interest</b></h5>
             Similar to the 'Precomputed results', after choosing the gene of insterst, users can simply click "perform analysis" to interactively visualize its gene expression pattern in both subway map and stream plot obtained from the step 'Compute trajectories'.
 
-            <h5>Identify Diverging Genes</h5>
+            <h5><b>5).Identify Diverging Genes</b></h5>
             Users can simply click the button 'perform analysis' and start the diverging genes analysis. Then the button status will become 'running'. This process usually takes longer than 'compute trajectories'. The running time varies depending on the number of genes and cells. (For sc-qPCR data with hundreds of cell, it may take around five minutes. For scRNA-seq data with around 2000 cells and 3k genes, it may take around eight minutes). Once it's completed, similar to 'Precomputed results', diverging gene will be displayed based on the pair of branches users have choosen and users can interactively visualize diverging genes in subway map and stream plot on the right. 
 
-            <h5>Identify Transition Genes</h5>
+            <h5><b>6).Identify Transition Genes</b></h5>
             Users can simply click the button 'perform analysis' and start the transition genes analysis. Then the button status will become 'running'. This process usually is a little faster than diverging genes analysis (For sc-qPCR data with hundreds of cell, it may take around three minutes. For scRNA-seq data with around 2000 cells and 3k genes, it may take around six minutes). Once it's completed, similar to 'Precomputed results', transition gene will be displayed based on specific branch users have choosen and users can interactively visualize transition genes in subway map and stream plot on the right. 
 
-
+        </ul>
+            <br>
             <h3>Download current analysis</h3>
-            Having finished the previous analysis steps, by clicking 'download files', users can easily download STREAM analyis results. (For 3D scatter plot,flat tree plot and subway map, users can also easily download them directly from the interactive plots)
-
-
-
+            <ul>
+            Having finished the previous analysis steps, by clicking 'download files', users can easily download STREAM analyis results. All the results will be formalized and included in a zip file. Users are also more than welcome to provide to us their personal analysis results from STREAM. We will be happy to include that in the precomputed results part on STREAM website.(For 3D scatter plot,flat tree plot and subway map, users can also easily download them directly from the interactive plots)
+            <br><img src="images/download.png" alt="download" width="20%" height="20%">
+            </ul>
 
 
       </div>
