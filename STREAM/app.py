@@ -23,6 +23,7 @@ import uuid
 import json
 import cPickle as cp
 import csv
+import time
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -58,7 +59,6 @@ dcc._css_dist[0]['relative_package_path'].append('Loading-State.css')
 
 app.server.config['UPLOADS_FOLDER']='/tmp/UPLOADS_FOLDER'
 app.server.config['RESULTS_FOLDER']='/tmp/RESULTS_FOLDER'
-
 
 @server.route('/help')
 def help():
@@ -1887,22 +1887,11 @@ def update_container(dataset, stream_plot_src, pathname, root):
 	rainbow_plot_image = base64.b64encode(open(rainbow_plot, 'rb').read())
 
 	if 'data:image/png;base64,{}'.format(rainbow_plot_image) == stream_plot_src:
+
 		return {'display': 'none'}
 		# return {'display': 'block'}
 	else:
 		return {'display': 'block'}
-
-	# gene_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S0/stream_plot_*png' % dataset)
-
-	# gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
-
-	# gene_options_correct = [{'label': i, 'value': i} for i in gene_list]
-
-	# if gene_options_correct != gene_options_current:
-	# 	return {'display': 'block'}
-
-	# else:
-		# return {'display': 'none'}
 
 @app.callback(
 	Output('common-interval-1', 'interval'),
@@ -2816,9 +2805,9 @@ def num_clicks_compute(root, figure, pathname):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -2959,9 +2948,9 @@ def num_clicks_compute(root, dataset):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -3471,9 +3460,9 @@ def compute_trajectories(pathname, n_clicks, root, gene):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -3575,9 +3564,9 @@ def compute_trajectories(dataset, gene, root):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -4065,9 +4054,9 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -4169,9 +4158,9 @@ def compute_trajectories(dataset, root, gene):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -4825,9 +4814,9 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -4931,9 +4920,9 @@ def compute_trajectories(dataset, root, gene):
         'data': traces,
         'layout': go.Layout(
         	autosize = True,
-        	margin=dict(l=0,r=0,b=0,t=0),
+        	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, showticklabels=True, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
