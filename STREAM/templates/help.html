@@ -45,7 +45,7 @@
 
         <p>STREAM is available as user-friendly open source software and can be used interactively as a web-application at <a href="stream.pinellolab.org">stream.pinellolab.org</a> or as a standalone command-line tool with Docker <a href="https://github.com/pinellolab/STREAM">https://github.com/pinellolab/STREAM</a>
         <br>
-        <br><img src="images/Figure1.png" alt="Figure1" width="50%" height="50%"></p>
+        <br><img src="/static/images/Figure1.png" alt="Figure1" width="50%" height="50%"></p>
         <br>
 
         <h3>What can I do with STREAM</h3>
@@ -75,59 +75,59 @@
 
             <h5><b>1).Choose Precomputed Data Set</b></h5>
             <p>Users can choose any precomputed data from the droplist. Here we take 'Guo,G.et al.2013' as an example:
-            <img src="images/Choose_Precomputed_Data_Set.png" alt="Choose_Precomputed_Data_Set" width="50%" height="50%">
+            <img src="/static/images/Choose_Precomputed_Data_Set.png" alt="Choose_Precomputed_Data_Set" width="50%" height="50%">
             <br>once user chose the dataset, a brief description will automatically appear beneath the menu.</p>
 
             <h5><b>2).Visualize Trajectories</b></h5>    
             <p>3D scatter plot shows cells' positions and fitted principal graph by STREAM in MLLE space. In 3D scatter plot, users can easily and interatively perform a lot of different operations including rotatation, zoom-in, zoom-out, taking snapshots at a specific view.
                 <div id="banner" style="overflow: hidden; display: flex; justify-content:space-around;">
-                    <img src="images/3D.png" alt="3D" width="20%" height="20%">
-                    <img src="images/3D_rotation.png" alt="3D_rotation" width="20%" height="20%">
-                    <img src="images/3D_zoomin.png" alt="3D_zoomin" width="20%" height="20%">
-                    <img src="images/3D_zoomout.png" alt="3D_zoomout" width="21%" height="21%">
+                    <img src="/static/images/3D.png" alt="3D" width="20%" height="20%">
+                    <img src="/static/images/3D_rotation.png" alt="3D_rotation" width="20%" height="20%">
+                    <img src="/static/images/3D_zoomin.png" alt="3D_zoomin" width="20%" height="20%">
+                    <img src="/static/images/3D_zoomout.png" alt="3D_zoomout" width="21%" height="21%">
                 </div>
             <br>Additionally, when hovering the mouse over points, cells' coordinates and cell labels obtained from experiment will show up. Users can also interactively control the legend panel. By clicking on cell type or fitted curve first time, the related cells or curves will disppear. By clicking them again, cells or curves will come back. This helps focus on branch or cell type of interest.
                 <div id="banner" style="overflow: hidden; display: flex; justify-content:space-around;">
-                    <img src="images/3D_with_label.png" alt="3D_with_label" width="20%" height="20%">
-                    <img src="images/3D_one_celltype.png" alt="3D_one_celltype" width="20%" height="20%">
-                    <img src="images/3D_part_of_curves.png" alt="3D_part_of_curves" width="20%" height="20%">
+                    <img src="/static/images/3D_with_label.png" alt="3D_with_label" width="20%" height="20%">
+                    <img src="/static/images/3D_one_celltype.png" alt="3D_one_celltype" width="20%" height="20%">
+                    <img src="/static/images/3D_part_of_curves.png" alt="3D_part_of_curves" width="20%" height="20%">
                 </div>
             </p>
             <p>Flat tree plot intuitively and conveniently represents curves(trajectories) as linear segments in a 2D plane. In this representation, the lengths of tree branches are preserved from three or higher dimenional MLLE space. In addition, cells are projected onto the tree according to their branch locations and the distances from their assigned branches. When hovering the mouse over points, cells' coordinates in 2D plane and cell labels obtained from experiment will appear. Users can zoom in by selecting a specific area. Similar to 3D scatter plot, users can interactively control the legend part.
                 <div id="banner" style="overflow: hidden; display: flex; justify-content:space-around;">
-                    <img src="images/flat_tree.png" alt="flat_tree" width="20%" height="20%">
-                    <img src="images/flat_tree_with_label.png" alt="flat_tree_with_label" width="20%" height="20%">
-                    <img src="images/flat_tree_area_selection.png" alt="flat_tree_area_selection" width="20%" height="20%">
-                    <img src="images/flat_tree_zoomin.png" alt="flat_tree_zoomin" width="20%" height="20%">
+                    <img src="/static/images/flat_tree.png" alt="flat_tree" width="20%" height="20%">
+                    <img src="/static/images/flat_tree_with_label.png" alt="flat_tree_with_label" width="20%" height="20%">
+                    <img src="/static/images/flat_tree_area_selection.png" alt="flat_tree_area_selection" width="20%" height="20%">
+                    <img src="/static/images/flat_tree_zoomin.png" alt="flat_tree_zoomin" width="20%" height="20%">
                 </div>
             </p>
             <p>Users can select different starting nodes to visualize the trajectories in subway map (at single-cell level) or stream plot (at density level). By default, the recommended start node is selected. This allows easily re-organization of the tree using breadth-first search to better represents pseudotime progression from a selected starting node.</p>
 
-            <img src="images/select_start_node.png" alt="select_start_node" width="20%" height="20%">
+            <img src="/static/images/select_start_node.png" alt="select_start_node" width="20%" height="20%">
 
 
             <h5><b>3).Visualize Genes of Interest</b></h5>
             <p>In the gene combo box,users can either choose genes from the droplist or type in gene name themselves. 
-            <br><img src="images/select_gene.png" alt="select_gene" width="50%" height="50%">
+            <br><img src="/static/images/select_gene.png" alt="select_gene" width="50%" height="50%">
             <br>Genes will be visualized in both subway map and stream plot. When hovering the mouse over point, both cells' coordinates and gene expressions will be displayed.
-            <br><img src="images/subway_map_stream_plot.png" alt="subway_map_stream_plot" width="50%" height="50%">
+            <br><img src="/static/images/subway_map_stream_plot.png" alt="subway_map_stream_plot" width="50%" height="50%">
 
             <h5><b>4).Visualize Diverging Genes</b></h5>
             <p>Diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches. 
             <br>Users first need to choose a pair of adjacent branches, between which differentially expressed genes were calculated by STREAM.
-            <br><img src="images/select_branch_pair.png" alt="select_branch_pair" width="20%" height="50%">
+            <br><img src="/static/images/select_branch_pair.png" alt="select_branch_pair" width="20%" height="50%">
             <br>Then users can specify the branch on which DE genes are relatively highly expressed.
-            <br><img src="images/select_DE_high_branch.png" alt="select_DE_high_branch" width="20%" height="50%">
+            <br><img src="/static/images/select_DE_high_branch.png" alt="select_DE_high_branch" width="20%" height="50%">
             <br>Top automatically detected DE genes will be showned. Users can easily control how many genes to display through a slider bar. 
-            <br></b><img src="images/DE_genes.png" alt="DE_genes" width="20%" height="20%">
+            <br></b><img src="/static/images/DE_genes.png" alt="DE_genes" width="20%" height="20%">
             <br>On the right, users can visualize detected diverging gene at flat tree and stream plot. </p>
 
             <h5><b>5).Visualize Transition Genes</b></h5>
             <p>Transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch. 
             <br>Users first need to choose one branch, along which transition genes were calculated by STREAM. 
-            <br><img src="images/select_branch.png" alt="select_branch" width="20%" height="20%">
+            <br><img src="/static/images/select_branch.png" alt="select_branch" width="20%" height="20%">
             <br>Then top automatically detected transition genes will be displayed. Users can easily control how many genes to display through a slider bar. 
-            <br><img src="images/transition_gene.png" alt="transition_gene" width="20%" height="20%">
+            <br><img src="/static/images/transition_gene.png" alt="transition_gene" width="20%" height="20%">
             <br>On the right, users can visualize detected transition gene.</p>
         </ul>
 
@@ -297,12 +297,12 @@
 
             <p>In addition to personal files, in order to help users quickly get an idea how STREAM works, users can simply click the button 'load example data'. This will automatically upload data matrix file,cell_labels file and cell_label_color file for users. 
 
-            <br><img src="images/load_example.png" alt="load_example" width="15%" height="15%"></p>
+            <br><img src="/static/images/load_example.png" alt="load_example" width="15%" height="15%"></p>
 
             <h5><b>2).Parameters</b></h5>
             This panel mainly consists of basic parameters and advanced parameters. The basic parameters should be able to work well in most cases. It's necessary to do log2 transformation and library size normalization if the data matrix provided by user contains raw count. Also since scATAC-seq data is very different from transcriptomic data, users need to specify whether it's ATAC-seq data or not. For feature selection, by default, we use LOESS fitting to select most variable genes. In scATAC-seq data, because z-score matrix has negative values, users need to use PCA to select top PCs. In sc-qPCR data,usually the number of gene is relatively small, we suggest that users keep all the genes by choosing 'all'. For dimension reduction, we are using MLLE. The neighbor size is chosen based on the number of cells and is set by default to 10% of the total number of cells. The number of MLLE components to use depends on the number of branches and on the complexity of the structure to learn. Typically, three components capture the main structure for most datasets, increasing them may recover finer structures (although we observed that there is no benefit for selecting more than 5 components in all the datasets tested).
 
-            <br><img src="images/parameters.png" alt="parameters" width="30%" height="30%">
+            <br><img src="/static/images/parameters.png" alt="parameters" width="30%" height="30%">
 
             <h5><b>3).Compute Trajectories</b></h5>
             When users click the button "compute", STREAM will infer trajectories based on the parameters set by users. The process may take a few minutes depending on the data size (For sc-qPCR data with hundreds of cell, it may take one minute. For scRNA-seq data with around 2000 cells and 3k genes, it may take two minutes). Once it's done, similar to the part "precomputed results", users are able to see different interactive visualizations including 3D scatter plot with fitted trajecotries, flat tree plot, subway map and stream plot. For subway map and stream plot, users can explore different re-organizations of the inferred tree structure by choosing different start node.
@@ -321,7 +321,7 @@
             <h3>Download current analysis</h3>
             <ul>
             Having finished the previous analysis steps, by clicking 'download files', users can easily download STREAM analyis results. All the results will be formalized and included in a zip file. Users are also more than welcome to provide to us their personal analysis results from STREAM. We will be happy to include that in the precomputed results part on STREAM website.(For 3D scatter plot,flat tree plot and subway map, users can also easily download them directly from the interactive plots)
-            <br><img src="images/download.png" alt="download" width="20%" height="20%">
+            <br><img src="/static/images/download.png" alt="download" width="20%" height="20%">
             </ul>
 
 
