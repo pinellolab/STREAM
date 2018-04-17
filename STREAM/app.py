@@ -283,6 +283,13 @@ app2.layout = html.Div([
 
 	dcc.Location(id='url2', refresh=False),
 
+	html.Div(id = 'custom-loading-states-11',
+		children = [
+
+		html.Div(id = 'custom-loading-state11', className = '_dash-loading-callback_custom', children = ['Loading...', html.Center(children=[html.Div(id = 'custom-loading-state2', className = 'loader', style = {'display':'block'})])],  style = {'display':'block'})
+
+		], style = {'display':'none'}),
+
 	html.Img(src='data:image/png;base64,{}'.format(stream_logo_image), width = '50%'),
 	html.H2('Single-cell Trajectory Reconstruction Exploration And Mapping'),
 
@@ -1875,6 +1882,26 @@ def update_container(n_clicks, segmentation_container, pathname):
 
 		return {'display': 'none'}
 
+@app2.callback(
+	Output('custom-loading-states-11', 'style'),
+	[Input('precomp-dataset', 'value'),
+	Input('sg-gene2', 'options'),
+	Input('url2', 'pathname')])
+
+def update_container(dataset, gene_options_current, pathname):
+
+	gene_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S0/stream_plot_*png' % dataset)
+
+	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
+
+	gene_options_correct = [{'label': i, 'value': i} for i in gene_list]
+
+	if gene_options_correct != gene_options_current:
+		return {'display': 'block'}
+
+	else:
+		return {'display': 'none'}
+
 @app.callback(
 	Output('common-interval-1', 'interval'),
 	[Input('compute-button', 'n_clicks'),
@@ -2022,18 +2049,16 @@ def compute_trajectories(pathname, n_clicks):
 								)
 							)
 
-				coord_states_list = {}
-				with open(coord_states, 'r') as f:
-					next(f)
-					for line in f:
-						line = line.strip('\n').split('\t')
-						coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
+				# coord_states_list = {}
+				# with open(coord_states, 'r') as f:
+				# 	next(f)
+				# 	for line in f:
+				# 		line = line.strip('\n').split('\t')
+				# 		coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
 
-				print coord_states_list
-
-				annotations = []
-				for coord_state in coord_states_list:
-					annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
+				# annotations = []
+				# for coord_state in coord_states_list:
+				# 	annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
 					# traces.append(
 
 					# 	go.Scatter3d(
@@ -2100,7 +2125,7 @@ def compute_trajectories(pathname, n_clicks):
 	return {
         'data': traces,
         'layout': go.Layout(
-        	annotations = annotations,
+        	# annotations = annotations,
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
@@ -2204,16 +2229,16 @@ def compute_trajectories(dataset):
 						)
 					)
 
-		coord_states_list = {}
-		with open(coord_states, 'r') as f:
-			next(f)
-			for line in f:
-				line = line.strip('\n').split('\t')
-				coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
+		# coord_states_list = {}
+		# with open(coord_states, 'r') as f:
+		# 	next(f)
+		# 	for line in f:
+		# 		line = line.strip('\n').split('\t')
+		# 		coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
 
-		annotations = []
-		for coord_state in coord_states_list:
-			annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
+		# annotations = []
+		# for coord_state in coord_states_list:
+		# 	annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
 
 			# traces.append(
 
@@ -2272,7 +2297,7 @@ def compute_trajectories(dataset):
 	return {
         'data': traces,
         'layout': go.Layout(
-        	annotations = annotations,
+        	# annotations = annotations,
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
@@ -4283,7 +4308,7 @@ def update_table(slider, branches, direction, figure, pathname):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','z_score','U','diff','mean_up','mean_down','pval','qval']
-		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']].round(2) # update with your own logic
 
 		return generate_table(dff)
 
@@ -4320,7 +4345,7 @@ def update_table(slider, branches, direction, dataset):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','z_score','U','diff','mean_up','mean_down','pval','qval']
-		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']].round(2) # update with your own logic
 
 		return generate_table(dff)
 
@@ -4971,7 +4996,7 @@ def update_table(slider, branch, figure, pathname):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','stat','diff','pval','qval']
-		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']].round(2) # update with your own logic
 
 		return generate_table(dff)
 
@@ -4995,7 +5020,7 @@ def update_table(slider, branch, dataset):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','stat','diff','pval','qval']
-		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']].round(2) # update with your own logic
 
 		return generate_table(dff)
 
