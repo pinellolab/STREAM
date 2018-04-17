@@ -325,17 +325,17 @@ app2.layout = html.Div([
 
 				# html.Br(),
 
-				html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
-				dcc.Dropdown(
-						id = 'root2',
-					    options=[
-					        {'label': 'S0', 'value': 'S0'},
-					    ],
-					    value='S0'
-					),
+				# html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+				# dcc.Dropdown(
+				# 		id = 'root2',
+				# 	    options=[
+				# 	        {'label': 'S0', 'value': 'S0'},
+				# 	    ],
+				# 	    value='S0'
+				# 	),
 
-				html.H4('2D Subway Map'),
-				dcc.Graph(id='2d-subway2', animate=False),
+				# html.H4('2D Subway Map'),
+				# dcc.Graph(id='2d-subway2', animate=False),
 
 			], className = 'six columns'),
 
@@ -347,11 +347,69 @@ app2.layout = html.Div([
 				html.H4('Flat Tree Plot'),
 				dcc.Graph(id='flat-tree-scatter2', animate=False),
 
-				html.Br(),
-				html.Br(),
+				# html.Br(),
+				# html.Br(),
+
+				# html.H4('Stream Plot'),
+				# html.Img(id = 'rainbow-plot2', src = None, width = '70%', style = {'align':'middle'}),
+
+			], className = 'six columns'),
+
+		], className = 'row'),
+
+	html.Hr(),
+
+	html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+	dcc.Dropdown(
+			id = 'root2',
+		    options=[
+		        {'label': 'S0', 'value': 'S0'},
+		    ],
+		    value='S0'
+		),
+
+	html.Div(
+
+		id = 'graph-container2',
+		children = [
+
+		html.Div(
+
+			id = '3d-scatter-container',
+			children = [
+
+				# html.H4('3D Scatter Plot'),
+				# dcc.Graph(id='3d-scatter2', animate=False),
+
+				# html.Br(),
+
+				# html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+				# dcc.Dropdown(
+				# 		id = 'root2',
+				# 	    options=[
+				# 	        {'label': 'S0', 'value': 'S0'},
+				# 	    ],
+				# 	    value='S0'
+				# 	),
+
+				html.H4('2D Subway Map'),
+				dcc.Graph(id='2d-subway2', animate=False),
+
+			], className = 'six columns'),
+
+		html.Div(
+
+			id = '2d-subway-container',
+			children = [
+
+				# html.H4('Flat Tree Plot'),
+				# dcc.Graph(id='flat-tree-scatter2', animate=False),
+
+				# html.Br(),
+				# html.Br(),
 
 				html.H4('Stream Plot'),
-				html.Img(id = 'rainbow-plot2', src = None, width = '70%', style = {'align':'middle'}),
+				html.Img(id = 'rainbow-plot2', src = None, width = '90%', style = {'align':'middle'}),
 
 			], className = 'six columns'),
 
@@ -399,7 +457,7 @@ app2.layout = html.Div([
 			html.Div([
 
 				html.H4('Stream Plot'),
-				html.Img(id = 'sg-plot2', src = None, width = '100%', style = {'align':'middle'}),
+				html.Img(id = 'sg-plot2', src = None, width = '90%', style = {'align':'middle'}),
 
 				], className = 'six columns'),
 
@@ -478,7 +536,7 @@ app2.layout = html.Div([
 				dcc.Graph(id='2d-subway-discovery2', animate=False),
 
 				html.H4('Stream Plot'),
-				html.Img(id = 'discovery-plot2', src = None, width = '70%', style = {'align':'middle'}),
+				html.Img(id = 'discovery-plot2', src = None, width = '90%', style = {'align':'middle'}),
 
 				], className = 'seven columns'),
 
@@ -547,7 +605,7 @@ app2.layout = html.Div([
 				dcc.Graph(id='2d-subway-correlation2', animate=False),
 
 				html.H4('Stream Plot'),
-				html.Img(id = 'correlation-plot2', src = None, width = '70%', style = {'align':'middle'}),
+				html.Img(id = 'correlation-plot2', src = None, width = '90%', style = {'align':'middle'}),
 
 				], className = 'seven columns'),
 
@@ -636,6 +694,14 @@ app.layout = html.Div([
 						        uploadUrl=upload_url1,
 							    ),
 
+					html.Br(),
+					html.Br(),
+					html.Br(),
+
+					html.Label(id = 'matrix-update', children = 'Data Matrix: No Upload', style = {'font-weight':'bold'}),
+					html.Label(id = 'cl-update', children = 'Cell Labels File: No Upload', style = {'font-weight':'bold'}),
+					html.Label(id = 'clc-update', children = 'Cell Label Colors File: No Upload', style = {'font-weight':'bold'}),
+
 					], className = 'six columns'),
 
 				html.Div([
@@ -643,23 +709,36 @@ app.layout = html.Div([
 					html.H3(id = 'buffer5', children = 'Example Files'),
 					html.Button(id = 'load_example_data', children = 'Load Example Data', n_clicks = 0),
 
+					html.Br(),
+					html.Br(),
+					html.Br(),
+					html.Br(),
+					html.Br(),
+					html.Br(),
+					html.Br(),
+					html.Br(),
+					html.Br(),
+					html.Br(),
+
+					html.H4(id = 'ready-to-compute', children = 'Ready for Step 2: No'),
+
 					], className = 'six columns')
 
 				], className = 'row'),
 
-			html.Hr(),
+			# html.Hr(),
 
 			# html.Label(id = 'matrix-upload', children = 'Data Matrix: None', style = {'font-weight':'bold'}),
 			# html.Label(id = 'cl-upload', children = 'Cell Labels File: None', style = {'font-weight':'bold'}),
 			# html.Label(id = 'clc-upload', children = 'Cell Label Colors File: None', style = {'font-weight':'bold'}),
 
-			html.Label(id = 'matrix-update', children = 'Data Matrix: No Upload', style = {'font-weight':'bold'}),
-			html.Label(id = 'cl-update', children = 'Cell Labels File: No Upload', style = {'font-weight':'bold'}),
-			html.Label(id = 'clc-update', children = 'Cell Label Colors File: No Upload', style = {'font-weight':'bold'}),
+			# html.Label(id = 'matrix-update', children = 'Data Matrix: No Upload', style = {'font-weight':'bold'}),
+			# html.Label(id = 'cl-update', children = 'Cell Labels File: No Upload', style = {'font-weight':'bold'}),
+			# html.Label(id = 'clc-update', children = 'Cell Label Colors File: No Upload', style = {'font-weight':'bold'}),
 
-			html.Br(),
+			# html.Br(),
 
-			html.H6(id = 'ready-to-compute', children = 'Ready for Step 2: No')
+			# html.H6(id = 'ready-to-compute', children = 'Ready for Step 2: No')
 
 			# html.Hr(),
 
@@ -733,6 +812,8 @@ app.layout = html.Div([
 					], className = 'six columns'),
 
 				], className = 'row'),
+
+				html.Hr(),
 
 				html.Div([
 
@@ -902,13 +983,11 @@ app.layout = html.Div([
 
 	html.Hr(),
 
-	html.H3(id = 'buffer3', children = 'Step 2: Compute Trajectories'),
+	html.H3(id = 'buffer3', children = 'Step 2: Compute Trajectories (~5 Minutes)'),
 
 	html.Button('Compute', id='compute-button'),
 
-	html.Br(),
-	html.Br(),
-	html.Br(),
+	# html.Br(),
 
 	html.Div(id = 'compute-container',
 		children = [
@@ -924,11 +1003,11 @@ app.layout = html.Div([
 		html.Br(),
 		html.Br(),
 
-		html.Button(id = 'graph-button', children = '(-) Hide Graphs', n_clicks = 0),
+		# html.Button(id = 'graph-button', children = '(-) Hide Graphs', n_clicks = 0),
 
 		html.Div(
 
-			id = 'graph-container',
+			id = 'graph-container1',
 			children = [
 
 			html.Div(
@@ -939,17 +1018,17 @@ app.layout = html.Div([
 					html.H3('3D Scatter Plot'),
 					dcc.Graph(id='3d-scatter', animate=False),
 
-					html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
-					dcc.Dropdown(
-							id = 'root',
-						    options=[
-						        {'label': 'S0', 'value': 'S0'},
-						    ],
-						    value='S0'
-						),
+					# html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+					# dcc.Dropdown(
+					# 		id = 'root',
+					# 	    options=[
+					# 	        {'label': 'S0', 'value': 'S0'},
+					# 	    ],
+					# 	    value='S0'
+					# 	),
 
-					html.H3('2D Subway Map'),
-					dcc.Graph(id='2d-subway', animate=False),
+					# html.H3('2D Subway Map'),
+					# dcc.Graph(id='2d-subway', animate=False),
 
 				], className = 'six columns'),
 
@@ -961,11 +1040,67 @@ app.layout = html.Div([
 					html.H3('Flat Tree Plot'),
 					dcc.Graph(id='flat-tree-scatter', animate=False),
 
-					html.Br(),
-					html.Br(),
+					# html.Br(),
+					# html.Br(),
+
+					# html.H3('Stream Plot'),
+					# html.Img(id = 'rainbow-plot', src = None, width = '70%', style = {'align':'middle'}),
+
+				], className = 'six columns'),
+
+			], className = 'row'),
+
+		html.Hr(),
+
+		html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+		dcc.Dropdown(
+				id = 'root',
+			    options=[
+			        {'label': 'S0', 'value': 'S0'},
+			    ],
+			    value='S0'
+			),
+
+		html.Div(
+
+			id = 'graph-container2',
+			children = [
+
+			html.Div(
+
+				id = '3d-scatter-container',
+				children = [
+
+					# html.H3('3D Scatter Plot'),
+					# dcc.Graph(id='3d-scatter', animate=False),
+
+					# html.Label('Select Starting Branch', style = {'font-weight':'bold', 'padding-right':'10px'}),
+					# dcc.Dropdown(
+					# 		id = 'root',
+					# 	    options=[
+					# 	        {'label': 'S0', 'value': 'S0'},
+					# 	    ],
+					# 	    value='S0'
+					# 	),
+
+					html.H3('2D Subway Map'),
+					dcc.Graph(id='2d-subway', animate=False),
+
+				], className = 'six columns'),
+
+			html.Div(
+
+				id = '2d-subway-container',
+				children = [
+
+					# html.H3('Flat Tree Plot'),
+					# dcc.Graph(id='flat-tree-scatter', animate=False),
+
+					# html.Br(),
+					# html.Br(),
 
 					html.H3('Stream Plot'),
-					html.Img(id = 'rainbow-plot', src = None, width = '70%', style = {'align':'middle'}),
+					html.Img(id = 'rainbow-plot', src = None, width = '90%', style = {'align':'middle'}),
 
 
 
@@ -982,7 +1117,7 @@ app.layout = html.Div([
 
 	html.Div([
 
-		html.H3('Step 3A: Visualize Genes of Interest'),
+		html.H3('Step 3A: Visualize Genes of Interest (~1 Minute)'),
 		html.Button(id = 'sg-button', children = 'Get Started!', n_clicks = 0),
 
 		html.Br(),
@@ -1015,7 +1150,7 @@ app.layout = html.Div([
 						),
 
 					html.Br(),
-					html.Br(),
+					# html.Br(),
 
 					html.Button(id = 'sg-compute', children = 'Visualize Gene', n_clicks = 0),
 
@@ -1032,7 +1167,7 @@ app.layout = html.Div([
 
 					html.Div([
 
-						html.Img(id = 'sg-plot', src = None, width = '100%', style = {'align':'middle'}),
+						html.Img(id = 'sg-plot', src = None, width = '90%', style = {'align':'middle'}),
 
 						], className = 'six columns'),
 
@@ -1048,7 +1183,7 @@ app.layout = html.Div([
 
 	html.Div([
 
-		html.H3(id = 'buffer4', children = 'Step 3B: Identify Diverging Genes'),
+		html.H3(id = 'buffer4', children = 'Step 3B: Identify Diverging Genes (~10 Minutes)'),
 		html.Button(id = 'discovery-button', children = 'Compute', n_clicks = 0),
 
 		html.Br(),
@@ -1120,7 +1255,7 @@ app.layout = html.Div([
 
 					dcc.Graph(id='2d-subway-discovery', animate=False),
 
-					html.Img(id = 'discovery-plot', src = None, width = '70%', style = {'align':'middle'}),
+					html.Img(id = 'discovery-plot', src = None, width = '90%', style = {'align':'middle'}),
 
 					], className = 'seven columns'),
 
@@ -1134,7 +1269,7 @@ app.layout = html.Div([
 
 	html.Div([
 
-		html.H3(id = 'buffer6', children = 'Step 3C: Identify Transition Genes'),
+		html.H3(id = 'buffer6', children = 'Step 3C: Identify Transition Genes (~10 Minutes)'),
 		html.Button(id = 'correlation-button', children = 'Compute', n_clicks = 0),
 
 		html.Br(),
@@ -1197,7 +1332,7 @@ app.layout = html.Div([
 
 					dcc.Graph(id='2d-subway-correlation', animate=False),
 
-					html.Img(id = 'correlation-plot', src = None, width = '70%', style = {'align':'middle'}),
+					html.Img(id = 'correlation-plot', src = None, width = '90%', style = {'align':'middle'}),
 
 					], className = 'seven columns'),
 
@@ -1586,27 +1721,27 @@ def num_clicks_compute(n_clicks, pathname):
 
 		return param_dict['compute-update']
 
-@app.callback(
-	Output('graph-button', 'children'),
-	[Input('graph-button', 'n_clicks')])
+# @app.callback(
+# 	Output('graph-button', 'children'),
+# 	[Input('graph-button', 'n_clicks')])
 
-def update_score_params_button(n_clicks):
+# def update_score_params_button(n_clicks):
 
-	if n_clicks%2 != 0:
-		return '(+) Show Graphs'
-	else:
-		return '(-) Hide Graphs'
+# 	if n_clicks%2 != 0:
+# 		return '(+) Show Graphs'
+# 	else:
+# 		return '(-) Hide Graphs'
 
-@app.callback(
-	Output('graph-container', 'style'),
-	[Input('graph-button', 'n_clicks')])
+# @app.callback(
+# 	Output('graph-container', 'style'),
+# 	[Input('graph-button', 'n_clicks')])
 
-def update_score_params_visual(n_clicks):
+# def update_score_params_visual(n_clicks):
 
-	if n_clicks%2 != 0:
-		return {'display': 'none'}
-	else:
-		return {'display': 'block'}
+# 	if n_clicks%2 != 0:
+# 		return {'display': 'none'}
+# 	else:
+# 		return {'display': 'block'}
 
 @app.callback(
     Output('buffer1', 'style'),
@@ -1826,6 +1961,7 @@ def compute_trajectories(pathname, n_clicks):
 					f.write(new_json_string + '\n')
 
 				cell_coords = RESULTS_FOLDER + '/coord_cells.csv'
+				coord_states = RESULTS_FOLDER + '/coord_states.csv'
 				path_coords = glob.glob(RESULTS_FOLDER + '/coord_curve*csv')
 
 				x = []
@@ -1886,6 +2022,36 @@ def compute_trajectories(pathname, n_clicks):
 								)
 							)
 
+				coord_states_list = {}
+				with open(coord_states, 'r') as f:
+					next(f)
+					for line in f:
+						line = line.strip('\n').split('\t')
+						coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
+
+				print coord_states_list
+
+				annotations = []
+				for coord_state in coord_states_list:
+					annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
+					# traces.append(
+
+					# 	go.Scatter3d(
+					# 			    x=coord_states_list[coord_state][0], y=coord_states_list[coord_state][1], z=coord_states_list[coord_state][2],
+					# 			    text = coord_state,
+					# 			    mode = 'text+markers',
+					# 			    textfont=dict(
+					# 					size = 20
+					# 				),
+					# 			    # opacity = 0.7,
+					# 			    name = coord_state,
+					# 			    # line=dict(
+					# 			    #     width=10
+					# 			    # ),
+					# 			)
+
+					# 		)
+
 				roots = []
 				for path in path_coords:
 					x_p = []
@@ -1934,6 +2100,7 @@ def compute_trajectories(pathname, n_clicks):
 	return {
         'data': traces,
         'layout': go.Layout(
+        	annotations = annotations,
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
@@ -1977,6 +2144,7 @@ def compute_trajectories(dataset):
 			color_plot = 0.5
 
 		cell_coords = '/STREAM/precomputed/%s/STREAM_result/coord_cells.csv' % dataset
+		coord_states = '/STREAM/precomputed/%s/STREAM_result/coord_states.csv' % dataset
 		path_coords = glob.glob('/STREAM/precomputed/%s/STREAM_result/coord_curve*csv' % dataset)
 
 		x = []
@@ -2036,6 +2204,35 @@ def compute_trajectories(dataset):
 						)
 					)
 
+		coord_states_list = {}
+		with open(coord_states, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip('\n').split('\t')
+				coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
+
+		annotations = []
+		for coord_state in coord_states_list:
+			annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
+
+			# traces.append(
+
+			# 	go.Scatter3d(
+			# 			    x=coord_states_list[coord_state][0], y=coord_states_list[coord_state][1], z=coord_states_list[coord_state][2],
+			# 			    text = coord_state,
+			# 			    mode = 'text+markers',
+			# 			    textfont=dict(
+			# 					size = 20
+			# 				),
+			# 			    # opacity = 0.7,
+			# 			    name = coord_state,
+			# 			    # line=dict(
+			# 			    #     width=10
+			# 			    # ),
+			# 			)
+
+			# 		)
+
 		roots = []
 		for path in path_coords:
 			x_p = []
@@ -2075,6 +2272,7 @@ def compute_trajectories(dataset):
 	return {
         'data': traces,
         'layout': go.Layout(
+        	annotations = annotations,
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
@@ -2569,8 +2767,8 @@ def num_clicks_compute(root, figure, pathname):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
@@ -2712,8 +2910,8 @@ def num_clicks_compute(root, dataset):
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Dim.1'),
-            yaxis = dict(showgrid = False, zeroline=False, title = 'Dim.2'),
+            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
 
@@ -3191,7 +3389,7 @@ def compute_trajectories(pathname, n_clicks, root, gene):
 				# except:
 				# 	pass
 
-				exp_labels = ['Expression: ' + str(x) for x in exp]
+				exp_labels = ['Expression: ' + str(x) for x in exp_scaled]
 				traces.append(
 					go.Scatter(
 								x = x_c,
@@ -3305,7 +3503,7 @@ def compute_trajectories(dataset, gene, root):
 	except:
 		pass
 
-	exp_labels = ['Expression: ' + str(x) for x in exp]
+	exp_labels = ['Expression: ' + str(x) for x in exp_scaled]
 	traces.append(
 		go.Scatter(
 					x = x_c,
@@ -3785,7 +3983,7 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 				except:
 					pass
 
-				exp_labels = ['Expression: ' + str(x) for x in exp]
+				exp_labels = ['Expression: ' + str(x) for x in exp_scaled]
 				traces.append(
 					go.Scatter(
 								x = x_c,
@@ -3899,7 +4097,7 @@ def compute_trajectories(dataset, root, gene):
 	except:
 		pass
 
-	exp_labels = ['Expression: ' + str(x) for x in exp]
+	exp_labels = ['Expression: ' + str(x) for x in exp_scaled]
 	traces.append(
 		go.Scatter(
 					x = x_c,
@@ -4085,7 +4283,7 @@ def update_table(slider, branches, direction, figure, pathname):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','z_score','U','diff','mean_up','mean_down','pval','qval']
-		dff = df.head(n = slider)[['gene', 'pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
@@ -4122,7 +4320,7 @@ def update_table(slider, branches, direction, dataset):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','z_score','U','diff','mean_up','mean_down','pval','qval']
-		dff = df.head(n = slider)[['gene', 'pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
@@ -4527,7 +4725,7 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 				except:
 					pass
 
-				exp_labels = ['Expression: ' + str(x) for x in exp]
+				exp_labels = ['Expression: ' + str(x) for x in exp_scaled]
 
 				traces.append(
 					go.Scatter(
@@ -4643,7 +4841,7 @@ def compute_trajectories(dataset, root, gene):
 	except:
 		pass
 
-	exp_labels = ['Expression: ' + str(x) for x in exp]
+	exp_labels = ['Expression: ' + str(x) for x in exp_scaled]
 
 	traces.append(
 		go.Scatter(
@@ -4773,7 +4971,7 @@ def update_table(slider, branch, figure, pathname):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','stat','diff','pval','qval']
-		dff = df.head(n = slider)[['gene', 'pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
@@ -4797,7 +4995,7 @@ def update_table(slider, branch, dataset):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','stat','diff','pval','qval']
-		dff = df.head(n = slider)[['gene', 'pval', 'qval']] # update with your own logic
+		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
