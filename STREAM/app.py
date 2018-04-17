@@ -800,7 +800,7 @@ app.layout = html.Div([
 				        options=[
 				            {'label': 'LOESS', 'value': 'LOESS'},
 				            {'label': 'PCA', 'value': 'PCA'},
-				            {'label': 'None', 'value': 'all'}
+				            {'label': 'All', 'value': 'all'}
 				        ],
 				        value = 'LOESS',
 				        labelStyle={'display': 'inline-block'}),
@@ -813,7 +813,7 @@ app.layout = html.Div([
 					html.Label('LLE Neighbours', style = {'font-weight':'bold', 'padding-right':'10px'}),
 					dcc.Input(id = 'lle-nbs', value = 0.1),
 
-					html.Label('LLE Dimension Reduction', style = {'font-weight':'bold', 'padding-right':'10px'}),
+					html.Label('LLE Components', style = {'font-weight':'bold', 'padding-right':'10px'}),
 					dcc.Input(id = 'lle-dr', value = 3),
 
 					], className = 'six columns'),
@@ -998,14 +998,6 @@ app.layout = html.Div([
 
 	html.Div(id = 'compute-container',
 		children = [
-
-		html.Div([
-
-			html.Div([
-
-				]),
-
-			]),
 
 		html.Br(),
 		html.Br(),
@@ -2049,16 +2041,27 @@ def compute_trajectories(pathname, n_clicks):
 								)
 							)
 
-				# coord_states_list = {}
-				# with open(coord_states, 'r') as f:
-				# 	next(f)
-				# 	for line in f:
-				# 		line = line.strip('\n').split('\t')
-				# 		coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
+				coord_states_list = {}
+				with open(coord_states, 'r') as f:
+					next(f)
+					for line in f:
+						line = line.strip('\n').split('\t')
+						coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
 
-				# annotations = []
-				# for coord_state in coord_states_list:
-				# 	annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
+				annotations = []
+				for coord_state in coord_states_list:
+					annotations.append(
+					dict(
+				        showarrow = False,
+				        x = coord_states_list[coord_state][0],
+				        y = coord_states_list[coord_state][1],
+				        z = coord_states_list[coord_state][2],
+				        text = coord_state,
+				        xanchor = "left",
+				        xshift = 10,
+				        opacity = 0.7
+				      )
+					)
 					# traces.append(
 
 					# 	go.Scatter3d(
@@ -2125,7 +2128,8 @@ def compute_trajectories(pathname, n_clicks):
 	return {
         'data': traces,
         'layout': go.Layout(
-        	# annotations = annotations,
+        	annotations = annotations,
+        	dragmode = "turntable",
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
@@ -2229,16 +2233,27 @@ def compute_trajectories(dataset):
 						)
 					)
 
-		# coord_states_list = {}
-		# with open(coord_states, 'r') as f:
-		# 	next(f)
-		# 	for line in f:
-		# 		line = line.strip('\n').split('\t')
-		# 		coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
+		coord_states_list = {}
+		with open(coord_states, 'r') as f:
+			next(f)
+			for line in f:
+				line = line.strip('\n').split('\t')
+				coord_states_list[line[0]] = [float(line[1]), float(line[2]), float(line[3])]
 
-		# annotations = []
-		# for coord_state in coord_states_list:
-		# 	annotations.append(dict(x = coord_states_list[coord_state][0],y = coord_states_list[coord_state][1],z = coord_states_list[coord_state][2], text = coord_state))
+		annotations = []
+		for coord_state in coord_states_list:
+			annotations.append(
+					dict(
+				        showarrow = False,
+				        x = coord_states_list[coord_state][0],
+				        y = coord_states_list[coord_state][1],
+				        z = coord_states_list[coord_state][2],
+				        text = coord_state,
+				        xanchor = "left",
+				        xshift = 10,
+				        opacity = 0.7
+				      )
+					)
 
 			# traces.append(
 
@@ -2297,7 +2312,8 @@ def compute_trajectories(dataset):
 	return {
         'data': traces,
         'layout': go.Layout(
-        	# annotations = annotations,
+        	annotations = annotations,
+        	dragmode = "turntable",
         	autosize = True,
         	margin=dict(l=0,r=0,b=0,t=0),
             hovermode='closest',
@@ -4308,7 +4324,15 @@ def update_table(slider, branches, direction, figure, pathname):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','z_score','U','diff','mean_up','mean_down','pval','qval']
-		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']].round(2) # update with your own logic
+
+		mapper =  {'z_score': '{0:.2f}',
+		           'diff': '{0:.2f}',
+		           'pval': '{:.2g}',
+		           'qval': '{:.2g}'}
+		for key, value in mapper.items():
+			df[key] = df[key].apply(value.format)
+
+		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
@@ -4345,7 +4369,15 @@ def update_table(slider, branches, direction, dataset):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','z_score','U','diff','mean_up','mean_down','pval','qval']
-		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']].round(2) # update with your own logic
+
+		mapper =  {'z_score': '{0:.2f}',
+		           'diff': '{0:.2f}',
+		           'pval': '{:.2g}',
+		           'qval': '{:.2g}'}
+		for key, value in mapper.items():
+			df[key] = df[key].apply(value.format)
+
+		dff = df.head(n = slider)[['gene', 'z_score', 'diff','pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
@@ -4996,7 +5028,15 @@ def update_table(slider, branch, figure, pathname):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','stat','diff','pval','qval']
-		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']].round(2) # update with your own logic
+
+		mapper =  {'stat': '{0:.2f}',
+		           'diff': '{0:.2f}',
+		           'pval': '{:.2g}',
+		           'qval': '{:.2g}'}
+		for key, value in mapper.items():
+			df[key] = df[key].apply(value.format)
+
+		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
@@ -5020,7 +5060,15 @@ def update_table(slider, branch, dataset):
 
 		df = pd.read_table(use_this_table).fillna('')
 		df.columns = ['gene','stat','diff','pval','qval']
-		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']].round(2) # update with your own logic
+
+		mapper =  {'stat': '{0:.2f}',
+		           'diff': '{0:.2f}',
+		           'pval': '{:.2g}',
+		           'qval': '{:.2g}'}
+		for key, value in mapper.items():
+			df[key] = df[key].apply(value.format)
+
+		dff = df.head(n = slider)[['gene', 'stat', 'diff', 'pval', 'qval']] # update with your own logic
 
 		return generate_table(dff)
 
