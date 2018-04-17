@@ -1877,22 +1877,32 @@ def update_container(n_clicks, segmentation_container, pathname):
 @app2.callback(
 	Output('custom-loading-states-11', 'style'),
 	[Input('precomp-dataset', 'value'),
-	Input('sg-gene2', 'options'),
-	Input('url2', 'pathname')])
+	Input('rainbow-plot2', 'src'),
+	Input('url2', 'pathname')],
+	state = [State('root2', 'value')])
 
-def update_container(dataset, gene_options_current, pathname):
+def update_container(dataset, stream_plot_src, pathname, root):
 
-	gene_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S0/stream_plot_*png' % dataset)
+	rainbow_plot = '/STREAM/precomputed/%s/STREAM_result/%s/stream_plot.png' % (dataset, root)
+	rainbow_plot_image = base64.b64encode(open(rainbow_plot, 'rb').read())
 
-	gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
-
-	gene_options_correct = [{'label': i, 'value': i} for i in gene_list]
-
-	if gene_options_correct != gene_options_current:
+	if 'data:image/png;base64,{}'.format(rainbow_plot_image) == stream_plot_src:
+		return {'display': 'none'}
+		# return {'display': 'block'}
+	else:
 		return {'display': 'block'}
 
-	else:
-		return {'display': 'none'}
+	# gene_list_tmp = glob.glob('/STREAM/precomputed/%s/STREAM_result/S0/stream_plot_*png' % dataset)
+
+	# gene_list = [x.split('_')[-1].replace('.png', '') for x in gene_list_tmp]
+
+	# gene_options_correct = [{'label': i, 'value': i} for i in gene_list]
+
+	# if gene_options_correct != gene_options_current:
+	# 	return {'display': 'block'}
+
+	# else:
+		# return {'display': 'none'}
 
 @app.callback(
 	Output('common-interval-1', 'interval'),
