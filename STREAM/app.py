@@ -1383,30 +1383,30 @@ app.layout = html.Div([
 
 	html.Hr(),
 
-	html.Div([
+	# html.Div([
 
-		html.Div([
+	# 	html.Div([
 
-			html.Img(src='data:image/png;base64,{}'.format(hms_logo_image), width = '25%'),
+	# 		html.Img(src='data:image/png;base64,{}'.format(hms_logo_image), width = '25%'),
 
-			], className = 'four columns'),
+	# 		], className = 'four columns'),
 
-		html.Div([
+	# 	html.Div([
 
-			html.Img(src='data:image/png;base64,{}'.format(mitbe_logo_image), width = '40%'),
+	# 		html.Img(src='data:image/png;base64,{}'.format(mitbe_logo_image), width = '40%'),
 
-			html.H3([html.Center([html.A('Pinello Lab', href='http://www.pinellolab.org/')])]),
+	# 		html.H3([html.Center([html.A('Pinello Lab', href='http://www.pinellolab.org/')])]),
 
-			html.Label('Credits: H Chen, L Albergante, JY Hsu, CA Lareau, GL Bosco, J Guan, S Zhou, AN Gorban, DE Bauer, MJ Aryee, DM Langenau, A Zinovyev, JD Buenrostro, GC Yuan, L Pinello', style = {'font-weight':'bold'})
+	# 		html.Label('Credits: H Chen, L Albergante, JY Hsu, CA Lareau, GL Bosco, J Guan, S Zhou, AN Gorban, DE Bauer, MJ Aryee, DM Langenau, A Zinovyev, JD Buenrostro, GC Yuan, L Pinello', style = {'font-weight':'bold'})
 
-			], className = 'four columns'),
+	# 		], className = 'four columns'),
 
-		html.Div([
+	# 	html.Div([
 
-			html.Img(src='data:image/png;base64,{}'.format(mgh_logo_image), width = '26%'),
+	# 		html.Img(src='data:image/png;base64,{}'.format(mgh_logo_image), width = '26%'),
 
-			], className = 'four columns'),
-		], className = 'row', style = {'text-align':'center'})
+	# 		], className = 'four columns'),
+	# 	], className = 'row', style = {'text-align':'center'})
 
 	])
 
