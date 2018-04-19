@@ -728,7 +728,7 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
     nx.set_node_attributes(EPG, 'pos', dict_nodes_pos)
 
     dict_branches = Extract_Branches(EPG)
-    sns_palette = sns.color_palette("hls", len(dict_branches))
+    sns_palette = sns.color_palette("hls", len(dict_branches)).as_hex()
     curves_color = {x:sns_palette[i] for i,x in enumerate(dict_branches.keys())}
     print('Number of branches after initial ElPiGraph: ' + str(len(dict_branches)))
     if(not flag_web):
@@ -813,7 +813,7 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
     nx.set_node_attributes(EPG, 'pos', dict_nodes_pos)   
 
     dict_branches = Extract_Branches(EPG)
-    sns_palette = sns.color_palette("hls", len(dict_branches))
+    sns_palette = sns.color_palette("hls", len(dict_branches)).as_hex()
     curves_color = {x:sns_palette[i] for i,x in enumerate(dict_branches.keys())}
     print('Number of branches after optimization: ' + str(len(dict_branches)))
     if(not flag_web):
@@ -849,7 +849,7 @@ def Structure_Learning(df_flat_tree,AP_damping_factor,n_cluster,lle_n_nb_percent
         nx.set_node_attributes(EPG, 'pos', dict_nodes_pos)    
 
         dict_branches = Extract_Branches(EPG)
-        sns_palette = sns.color_palette("hls", len(dict_branches))
+        sns_palette = sns.color_palette("hls", len(dict_branches)).as_hex()
         curves_color = {x:sns_palette[i] for i,x in enumerate(dict_branches.keys())}
         print('Number of branches after extension: ' + str(len(dict_branches)))
         if(not flag_web):
