@@ -173,8 +173,8 @@ def save_files1():
 
 		if '[ERROR]' not in matrix_update:
 
-			if len(df.columns) > 1000:
-				matrix_update = 'Data Matrix: [ERROR] Limit of 1000 cells (Detected %s Cells) ...' % len(df.columns)
+			if len(df.columns) > 2500:
+				matrix_update = 'Data Matrix: [ERROR] Limit of 2500 cells (Detected %s Cells) ...' % len(df.columns)
 
 			elif df.isnull().values.any():
 				matrix_update = 'Data Matrix: [ERROR] NaN values detected in matrix ...'
@@ -196,17 +196,22 @@ def save_files1():
 			if len(cell_label_colors) > 0:
 				cl = pd.read_table(cell_label[0], header = None, low_memory = False, compression = 'infer')
 				clc = pd.read_table(cell_label_colors[0], header = None, low_memory = False, compression = 'infer')
+
+				# cl = pd.read_table('Cell_Labels_cell_label.tsv.gz', header = None, low_memory = False, compression = 'infer')
+				# clc = pd.read_table('Cell_Label_Colors_cell_label_color.tsv.gz', header = None, low_memory = False, compression = 'infer')
+
+
 				if len(cl.columns) == 1 and cl.size == len(df.columns):
 					matches = []
 					for i in clc.iloc[:,1].tolist():
 						if re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', i):
 							matches.append(1)
 
-					if list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])) and sum(matches) == len(clc.iloc[:,1].tolist()):
+					if sorted(list(set(clc.iloc[:,0]))) == sorted(list(set(cl.iloc[:,0]))) and sum(matches) == len(clc.iloc[:,1].tolist()):
 						cl_update = 'Cell Labels File: Upload Successful'
 						clc_update = 'Cell Label Colors File: Upload Successful'
 
-					elif list(set(clc.iloc[:,0])) == list(set(cl.iloc[:,0])):
+					elif sorted(list(set(clc.iloc[:,0]))) == sorted(list(set(cl.iloc[:,0]))):
 						cl_update = 'Cell Labels File: Upload Successful'
 						clc_update = 'Cell Label Colors File: [ERROR] Cell Label Colors file does not provide HEX color code ...'
 
@@ -626,7 +631,7 @@ app.layout = html.Div([
 
 	dcc.Location(id='url', refresh=False),
 
-	dcc.Interval(id='common-interval', interval=2000),
+	dcc.Interval(id='common-interval', interval=5000),
 
 	dcc.Interval(id='common-interval-1', interval=1000000),
 	dcc.Interval(id='common-interval-2', interval=1000000),
@@ -701,7 +706,8 @@ app.layout = html.Div([
 						        uploadUrl=upload_url1,
 							    ),
 
-					html.Br(),
+					html.Label(id = 'max-cells', children = 'IMPORTANT: Maximum of 2500 Cells', style = {'font-weight':'bold'}),
+
 					html.Br(),
 					html.Br(),
 
@@ -1792,22 +1798,34 @@ def compute_trajectories(n_clicks, pathname, norm, log2, atac, lle_dr, lle_nbs, 
 			cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 			cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
-			cell_label_list = []
-			if len(cell_label) > 0:
-				with open(cell_label[0], 'r') as f:
-					for line in f:
-						cell_label_list.append(line.strip())
+			# cell_label_list = []
+			# if len(cell_label) > 0:
+			# 	if cell_label[0].endswith('.gz'):
+			# 		with gzip.open(cell_label[0], 'r') as f:
+			# 			for line in f:
+			# 				cell_label_list.append(line.strip())
+			# 	else:
+			# 		with open(cell_label[0], 'r') as f:
+			# 			for line in f:
+			# 				cell_label_list.append(line.strip())
 
-			cell_label_colors_dict = {}
-			if len(cell_label_colors) > 0:
-				with open(cell_label_colors[0], 'r') as f:
-					for line in f:
-						line = line.strip().split('\t')
-						cell_label_colors_dict[str(line[0])] = str(line[1])
+			# cell_label_colors_dict = {}
+			# if len(cell_label_colors) > 0:
+			# 	if cell_label_colors[0].endswith('.gz'):
+			# 		with gzip.open(cell_label_colors[0], 'r') as f:
+			# 			for line in f:
+			# 				line = line.strip().split('\t')
+			# 				cell_label_colors_dict[str(line[1])] = str(line[0])
 
-			color_plot = []
-			if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
-				color_plot = [cell_label_colors_dict[x] for x in cell_label_list]
+			# 	else:
+			# 		with open(cell_label_colors[0], 'r') as f:
+			# 			for line in f:
+			# 				line = line.strip().split('\t')
+			# 				cell_label_colors_dict[str(line[1])] = str(line[0])
+
+			# color_plot = []
+			# if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
+			# 	color_plot = [cell_label_colors_dict[x] for x in cell_label_list]
 
 			arguments = {'-m':[], '-l':[], '-c':[], '-o': [RESULTS_FOLDER], '--norm':[norm], '--log2':[log2], '--atac':[atac], '--lle_components':[lle_dr], '--lle_neighbours':[lle_nbs], '--select_features':[select],
 			'--loess_frac':[loess_frac], '--pca_n_PC':[pca_n_PC], '--pca_first_PC':[pca_first_PC],'--feature_genes':[feature_genes],'--AP_damping_factor':[AP_damping_factor],'--EPG_n_nodes':[EPG_n_nodes],
@@ -1910,11 +1928,11 @@ def update_container(n_clicks, segmentation_container, pathname):
 
 	if n_clicks == param_dict['checkbutton1']:
 
-		return 5000
+		return 10000
 
 	elif not param_dict['checkpoint1']:
 
-		return 5000
+		return 10000
 
 	else:
 
@@ -1937,6 +1955,8 @@ def compute_trajectories(pathname, n_clicks):
 
 		if os.path.exists(RESULTS_FOLDER + '/log1.txt'):
 
+			# print 'PASSING 111111111 LOLOLOLOLOLOLOLOLOLOLOLOLOLOLOLOLOL'
+
 			with open(UPLOADS_FOLDER + '/params.json', 'r') as f:
 				json_string = f.readline().strip()
 				param_dict = json.loads(json_string)
@@ -1947,22 +1967,36 @@ def compute_trajectories(pathname, n_clicks):
 
 			if 'Finished computation...\n' in f_data:
 
+				# print 'PASSING 2222222222 LOLOLOLOLOLOLOLOLOLOLOLOLOLOLOLOLOL'
+
 				matrix = glob.glob(UPLOADS_FOLDER + '/Data_Matrix*')
 				cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 				cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
 				cell_label_list = []
 				if len(cell_label) > 0:
-					with open(cell_label[0], 'r') as f:
-						for line in f:
-							cell_label_list.append(line.strip())
+					if cell_label[0].endswith('.gz'):
+						with gzip.open(cell_label[0], 'r') as f:
+							for line in f:
+								cell_label_list.append(line.strip())
+					else:
+						with open(cell_label[0], 'r') as f:
+							for line in f:
+								cell_label_list.append(line.strip())
 
 				cell_label_colors_dict = {}
 				if len(cell_label_colors) > 0:
-					with open(cell_label_colors[0], 'r') as f:
-						for line in f:
-							line = line.strip().split('\t')
-							cell_label_colors_dict[str(line[1])] = str(line[0])
+					if cell_label_colors[0].endswith('.gz'):
+						with gzip.open(cell_label_colors[0], 'r') as f:
+							for line in f:
+								line = line.strip().split('\t')
+								cell_label_colors_dict[str(line[1])] = str(line[0])
+
+					else:
+						with open(cell_label_colors[0], 'r') as f:
+							for line in f:
+								line = line.strip().split('\t')
+								cell_label_colors_dict[str(line[1])] = str(line[0])
 
 				color_plot = 0
 				if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
@@ -2124,6 +2158,8 @@ def compute_trajectories(pathname, n_clicks):
 					new_json_string = json.dumps(param_dict)
 					f.write(new_json_string + '\n')
 
+				# print 'PASSING 333333333 LOLOLOLOLOLOLOLOLOLOLOLOLOLOLOLOLOL'
+
 	return {
         'data': traces,
         'layout': go.Layout(
@@ -2154,16 +2190,28 @@ def compute_trajectories(dataset):
 
 		cell_label_list = []
 		if len(cell_label) > 0:
-			with gzip.open(cell_label[0], 'r') as f:
-				for line in f:
-					cell_label_list.append(line.strip())
+			if cell_label[0].endswith('.gz'):
+				with gzip.open(cell_label[0], 'r') as f:
+					for line in f:
+						cell_label_list.append(line.strip())
+			else:
+				with open(cell_label[0], 'r') as f:
+					for line in f:
+						cell_label_list.append(line.strip())
 
 		cell_label_colors_dict = {}
 		if len(cell_label_colors) > 0:
-			with gzip.open(cell_label_colors[0], 'r') as f:
-				for line in f:
-					line = line.strip().split('\t')
-					cell_label_colors_dict[str(line[1])] = str(line[0])
+			if cell_label_colors[0].endswith('.gz'):
+				with gzip.open(cell_label_colors[0], 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						cell_label_colors_dict[str(line[1])] = str(line[0])
+
+			else:
+				with open(cell_label_colors[0], 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						cell_label_colors_dict[str(line[1])] = str(line[0])
 
 		color_plot = 0
 		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
@@ -2353,16 +2401,28 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
 
 				cell_label_list = []
 				if len(cell_label) > 0:
-					with open(cell_label[0], 'r') as f:
-						for line in f:
-							cell_label_list.append(line.strip())
+					if cell_label[0].endswith('.gz'):
+						with gzip.open(cell_label[0], 'r') as f:
+							for line in f:
+								cell_label_list.append(line.strip())
+					else:
+						with open(cell_label[0], 'r') as f:
+							for line in f:
+								cell_label_list.append(line.strip())
 
 				cell_label_colors_dict = {}
 				if len(cell_label_colors) > 0:
-					with open(cell_label_colors[0], 'r') as f:
-						for line in f:
-							line = line.strip().split('\t')
-							cell_label_colors_dict[str(line[1])] = str(line[0])
+					if cell_label_colors[0].endswith('.gz'):
+						with gzip.open(cell_label_colors[0], 'r') as f:
+							for line in f:
+								line = line.strip().split('\t')
+								cell_label_colors_dict[str(line[1])] = str(line[0])
+
+					else:
+						with open(cell_label_colors[0], 'r') as f:
+							for line in f:
+								line = line.strip().split('\t')
+								cell_label_colors_dict[str(line[1])] = str(line[0])
 
 				color_plot = 0
 				if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
@@ -2499,16 +2559,28 @@ def compute_trajectories(dataset):
 
 		cell_label_list = []
 		if len(cell_label) > 0:
-			with gzip.open(cell_label[0], 'r') as f:
-				for line in f:
-					cell_label_list.append(line.strip())
+			if cell_label[0].endswith('.gz'):
+				with gzip.open(cell_label[0], 'r') as f:
+					for line in f:
+						cell_label_list.append(line.strip())
+			else:
+				with open(cell_label[0], 'r') as f:
+					for line in f:
+						cell_label_list.append(line.strip())
 
 		cell_label_colors_dict = {}
 		if len(cell_label_colors) > 0:
-			with gzip.open(cell_label_colors[0], 'r') as f:
-				for line in f:
-					line = line.strip().split('\t')
-					cell_label_colors_dict[str(line[1])] = str(line[0])
+			if cell_label_colors[0].endswith('.gz'):
+				with gzip.open(cell_label_colors[0], 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						cell_label_colors_dict[str(line[1])] = str(line[0])
+
+			else:
+				with open(cell_label_colors[0], 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						cell_label_colors_dict[str(line[1])] = str(line[0])
 
 		color_plot = 0
 		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
@@ -2689,16 +2761,28 @@ def num_clicks_compute(root, figure, pathname):
 
 	cell_label_list = []
 	if len(cell_label) > 0:
-		with open(cell_label[0], 'r') as f:
-			for line in f:
-				cell_label_list.append(line.strip())
+		if cell_label[0].endswith('.gz'):
+			with gzip.open(cell_label[0], 'r') as f:
+				for line in f:
+					cell_label_list.append(line.strip())
+		else:
+			with open(cell_label[0], 'r') as f:
+				for line in f:
+					cell_label_list.append(line.strip())
 
 	cell_label_colors_dict = {}
 	if len(cell_label_colors) > 0:
-		with open(cell_label_colors[0], 'r') as f:
-			for line in f:
-				line = line.strip().split('\t')
-				cell_label_colors_dict[str(line[1])] = str(line[0])
+		if cell_label_colors[0].endswith('.gz'):
+			with gzip.open(cell_label_colors[0], 'r') as f:
+				for line in f:
+					line = line.strip().split('\t')
+					cell_label_colors_dict[str(line[1])] = str(line[0])
+
+		else:
+			with open(cell_label_colors[0], 'r') as f:
+				for line in f:
+					line = line.strip().split('\t')
+					cell_label_colors_dict[str(line[1])] = str(line[0])
 
 	color_plot = 0
 	if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
@@ -2831,16 +2915,31 @@ def num_clicks_compute(root, dataset):
 
 		cell_label_list = []
 		if len(cell_label) > 0:
-			with gzip.open(cell_label[0], 'r') as f:
-				for line in f:
-					cell_label_list.append(line.strip())
+			if cell_label[0].endswith('.gz'):
+				with gzip.open(cell_label[0], 'r') as f:
+					for line in f:
+						cell_label_list.append(line.strip())
+			else:
+				with open(cell_label[0], 'r') as f:
+					for line in f:
+						cell_label_list.append(line.strip())
 
 		cell_label_colors_dict = {}
 		if len(cell_label_colors) > 0:
-			with gzip.open(cell_label_colors[0], 'r') as f:
-				for line in f:
-					line = line.strip().split('\t')
-					cell_label_colors_dict[str(line[1])] = str(line[0])
+			if cell_label_colors[0].endswith('.gz'):
+				with gzip.open(cell_label_colors[0], 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						cell_label_colors_dict[str(line[1])] = str(line[0])
+
+			else:
+				with open(cell_label_colors[0], 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						cell_label_colors_dict[str(line[1])] = str(line[0])
+
+		# print cell_label_list
+		# print cell_label_colors_dict
 
 		color_plot = 0
 		if len(cell_label_list) > 0 and len(cell_label_colors_dict) > 0:
@@ -2906,6 +3005,11 @@ def num_clicks_compute(root, dataset):
 		except:
 			pass
 
+		# print x
+		# print y
+		# print c
+		# print labels
+
 		cell_types = {}
 		if color_plot == 0:
 			cell_types['single-cell mappings'] = [x, y, 'unlabeled', 'grey']
@@ -2925,6 +3029,8 @@ def num_clicks_compute(root, dataset):
 				cell_types[label][1].append(y_c)
 				cell_types[label][2].append(label)
 				cell_types[label][3].append(color)
+
+		# print cell_types
 
 		for label in cell_types:
 			traces.append(
