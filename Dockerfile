@@ -79,4 +79,4 @@ EXPOSE 10001
 #CMD ["bash", "start_server_docker.sh"]
 
 # Reroute to enable the STREAM CLI and STREAM webapp
-#ENTRYPOINT ["/opt/conda/bin/python", "/STREAM/stream_router.py"]
+ENTRYPOINT ["/opt/conda/bin/python", "/STREAM/stream_router.py"]
