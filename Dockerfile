@@ -55,25 +55,35 @@ RUN mv /opt/conda/bin/xml2-config /opt/conda/bin/xml2-config_old
 RUN Rscript -e 'source("https://bioconductor.org/biocLite.R");biocLite("BiocInstaller");biocLite("BSgenome.Hsapiens.UCSC.hg19");biocLite("TFBSTools");BiocInstaller::biocLite("GreenleafLab/chromVAR")'
 RUN mv /opt/conda/bin/xml2-config_old /opt/conda/bin/xml2-config
 
+
+# install zips
+RUN apt-get update && apt-get install zip -y
+
 # upload button
 COPY upload-button.zip /
 RUN unzip upload-button.zip && cd upload-button && python setup.py install
 RUN rm upload-button.zip
 RUN rm -Rf upload-button
 
+
+RUN pip install dash==0.21.0  # The core dash backend
+RUN pip install dash-renderer==0.12.1  # The dash front-end
+RUN pip install dash-html-components==0.10.0  # HTML components
+RUN pip install dash-core-components==0.22.1  # Supercharged components
+RUN pip install plotly --upgrade  # Plotly graphing library used in examples
+
 # create environment
 COPY STREAM /STREAM
 COPY /STREAM/STREAM.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
 COPY /STREAM/Loading-State.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
+COPY /STREAM/jquery-3.3.1.min.js /opt/conda/lib/python2.7/site-packages/dash_core_components/
 RUN mkdir /tmp/UPLOADS_FOLDER
 RUN mkdir /tmp/RESULTS_FOLDER
+
 
 WORKDIR /STREAM
 #RUN  python STREAM.py -m exampleDataset/data_guoji.tsv -l exampleDataset/cell_label.tsv -c exampleDataset/cell_label_color.tsv -o /OUTPUT/test
 #RUN python stream.py -m exampleData/data_guoji.tsv -l exampleData/cell_label.tsv -c exampleData/cell_label_color.tsv -o test
-
-# install zips
-RUN apt-get update && apt-get install zip -y
 
 EXPOSE 10001
 #CMD ["bash", "start_server_docker.sh"]

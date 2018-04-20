@@ -27,6 +27,42 @@ import time
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
+
+
+class Dash_responsive(dash.Dash):
+    def __init__(self, *args, **kwargs):
+        super(Dash_responsive,self).__init__(*args, **kwargs)
+
+    def index(self, *args, **kwargs):  # pylint: disable=unused-argument
+        scripts = self._generate_scripts_html()
+        css = self._generate_css_dist_html()
+        config = self._generate_config_html()
+        title = getattr(self, 'title', 'STREAM')
+        return '''
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>{}</title>
+                {}
+                <link rel="stylesheet" href="/static/STREAM.css">
+                <link rel="stylesheet" href="/static/Loading-State.css">
+                <script src="/static/jquery-3.3.1.min.js"></script>
+            </head>
+            <body>
+                <div id="react-entry-point">
+                    <div class="_dash-loading">
+                        Loading...
+                    </div>
+                </div>
+                <footer>
+                    {}
+                    {}
+                </footer>
+            </body>
+        </html>
+        '''.format(title, css, config, scripts)
+
 def get_data(path):
         return os.path.join(_ROOT, path)
 
@@ -46,21 +82,22 @@ hms_logo_image = base64.b64encode(open(hms_logo, 'rb').read())
 # Generate ID to initialize CRISPR-SURF instance
 server = Flask(__name__)
 server.secret_key = '~x94`zW\sfa24\xa2qdx20g\x9dl\xc0x35x90\kchs\x9c\xceb\xb4'
-app = dash.Dash(name = 'stream-app', server = server, url_base_pathname = '/compute/', csrf_protect=False)
+app = Dash_responsive('stream-compute', server = server, url_base_pathname = '/compute/', csrf_protect=False)
+
 app.css.config.serve_locally = True
 app.scripts.config.serve_locally = True
 
-app2 = dash.Dash(name = 'stream-app-precomputed', server = server, url_base_pathname = '/precomputed/', csrf_protect=False)
-app2.css.config.serve_locally = True
-app2.scripts.config.serve_locally = True
-
-dcc._css_dist[0]['relative_package_path'].append('STREAM.css')
-dcc._css_dist[0]['relative_package_path'].append('Loading-State.css')
+app2 = Dash_responsive(name = 'stream-app-precomputed', server = server, url_base_pathname = '/precomputed/', csrf_protect=False)
 
 app.server.config['UPLOADS_FOLDER']='/tmp/UPLOADS_FOLDER'
 app.server.config['RESULTS_FOLDER']='/tmp/RESULTS_FOLDER'
+app.server.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024 #200 Mb max
 
-app.server.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
+
+@app.server.route('/static/<path:path>')
+def static_file(path):
+    static_folder = os.path.join(os.getcwd(), 'static')
+    return send_from_directory(static_folder, path)
 
 @server.route('/help')
 def help():
@@ -628,6 +665,9 @@ app2.layout = html.Div([
 		])
 
 	])
+
+
+
 
 app.layout = html.Div([
 
