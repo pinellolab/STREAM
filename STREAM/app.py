@@ -60,6 +60,8 @@ dcc._css_dist[0]['relative_package_path'].append('Loading-State.css')
 app.server.config['UPLOADS_FOLDER']='/tmp/UPLOADS_FOLDER'
 app.server.config['RESULTS_FOLDER']='/tmp/RESULTS_FOLDER'
 
+app.server.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
+
 @server.route('/help')
 def help():
 	return render_template('help.html')
