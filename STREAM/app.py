@@ -2077,7 +2077,7 @@ def compute_trajectories(pathname, n_clicks):
 					z_p = []
 					s1 = path.strip().split('_')[-2]
 					s2 = path.strip().split('_')[-1].strip('.csv')
-					s_3 = [s1, s2]
+					s_3 = sorted([s1, s2])
 					path_name = '-'.join(map(str, s_3))
 					roots.append(s1)
 					roots.append(s2)
@@ -2296,7 +2296,7 @@ def compute_trajectories(dataset):
 			z_p = []
 			s1 = path.strip().split('_')[-2]
 			s2 = path.strip().split('_')[-1].strip('.csv')
-			s_3 = [s1, s2]
+			s_3 = sorted([s1, s2])
 			path_name = '-'.join(map(str, s_3))
 			roots.append(s1)
 			roots.append(s2)
@@ -2512,7 +2512,7 @@ def compute_trajectories(pathname, threed_scatter, n_clicks):
 				with open(edges, 'r') as f:
 					for line in f:
 						line = line.strip().split('\t')
-						edge_list.append([str(line[0]), str(line[1])])
+						edge_list.append(sorted([str(line[0]), str(line[1])]))
 
 				path_coords = {}
 				path_coords_reordered = []
@@ -2672,7 +2672,7 @@ def compute_trajectories(dataset):
 		with open(edges, 'r') as f:
 			for line in f:
 				line = line.strip().split('\t')
-				edge_list.append([str(line[0]), str(line[1])])
+				edge_list.append(sorted([str(line[0]), str(line[1])]))
 
 		path_coords = {}
 		path_coords_reordered = []
@@ -2873,6 +2873,10 @@ def num_clicks_compute(root, figure, pathname):
 		entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
 		path_coords_reordered.append(entry[0])
 
+	for path in path_coords:
+		if path not in path_coords_reordered:
+			path_coords_reordered.append(path)
+
 	traces = []
 	for path in path_coords_reordered:
 		x_p = []
@@ -3042,6 +3046,10 @@ def num_clicks_compute(root, dataset):
 		for e in edge_list:
 			entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
 			path_coords_reordered.append(entry[0])
+
+		for path in path_coords:
+			if path not in path_coords_reordered:
+				path_coords_reordered.append(path)
 
 		for path in path_coords_reordered:
 			x_p = []
