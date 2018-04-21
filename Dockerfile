@@ -74,9 +74,9 @@ RUN pip install plotly --upgrade  # Plotly graphing library used in examples
 
 # create environment
 COPY STREAM /STREAM
-COPY /STREAM/STREAM.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
-COPY /STREAM/Loading-State.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
-COPY /STREAM/jquery-3.3.1.min.js /opt/conda/lib/python2.7/site-packages/dash_core_components/
+COPY /STREAM/static/STREAM.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
+COPY /STREAM/static/Loading-State.css /opt/conda/lib/python2.7/site-packages/dash_core_components/
+COPY /STREAM/static/jquery-3.3.1.min.js /opt/conda/lib/python2.7/site-packages/dash_core_components/
 RUN mkdir /tmp/UPLOADS_FOLDER
 RUN mkdir /tmp/RESULTS_FOLDER
 
