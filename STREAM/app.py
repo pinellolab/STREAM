@@ -2978,7 +2978,7 @@ def num_clicks_compute(root, figure, pathname):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -3160,7 +3160,7 @@ def num_clicks_compute(root, dataset):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
