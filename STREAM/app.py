@@ -4207,6 +4207,9 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 					new_json_string = json.dumps(param_dict)
 					f.write(new_json_string + '\n')
 
+				edges = RESULTS_FOLDER + '/edges.tsv'
+				edge_list = []
+
 				with open(edges, 'r') as f:
 					for line in f:
 						line = line.strip().split('\t')
@@ -4996,6 +4999,9 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 				with open(UPLOADS_FOLDER + '/params.json', 'w') as f:
 					new_json_string = json.dumps(param_dict)
 					f.write(new_json_string + '\n')
+
+				edges = RESULTS_FOLDER + '/edges.tsv'
+				edge_list = []
 
 				with open(edges, 'r') as f:
 					for line in f:
