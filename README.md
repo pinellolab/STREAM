@@ -14,7 +14,7 @@ Docker can be downloaded freely from here: [https://store.docker.com/search?offe
 
 To get a local copy of STREAM, simply execute the following command:
 
-* ```$docker pull pinellolab/stream```
+* ```docker pull pinellolab/stream```
 
 
 STREAM interactive website
