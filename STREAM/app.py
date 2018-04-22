@@ -40,6 +40,17 @@ class Dash_responsive(dash.Dash):
         <!DOCTYPE html>
         <html>
             <head>
+            <!-- Global site tag (gtag.js) - Google Analytics -->
+            <script async src='https://www.googletagmanager.com/gtag/js?id=UA-117917519-1'></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'UA-117917519-1');
+            </script>
+            '''+'''
+
                 <meta charset="UTF-8">
                 <title>{}</title>
                 {}
@@ -799,7 +810,7 @@ app.layout = html.Div([
 
 			# html.Button(id = 'load_example_data', children = 'Load Example Data', n_clicks = 0),
 
-			], className = 'six columns', style = {'border-style':'solid','border-width':'2px', 'border-color':'#DCDCDC','border-radius':'10px','border-spacing':'15px','padding':'10px'}),
+			], className = 'six columns', style = {'border-style':'solid','border-width':'2px', 'border-color':'#DCDCDC','border-radius':'10px','border-spacing':'15px','padding':'10px','padding-bottom':'3.8em'}),
 
 		# Input Parameters
 		html.Div([

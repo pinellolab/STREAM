@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117917519-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-117917519-1');
+    </script>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -49,7 +58,7 @@
         <br>
 
         <h3>What can I do with STREAM</h3>
-        <p>STREAM can be used in two different ways:</p>  
+        <p>STREAM can be used in two different ways:</p>
 
         <p><b> 1. An interactive database focused on single-cell trajectory visualization for several published studies.</b>
             <ul>
@@ -66,7 +75,7 @@
                 <li> STREAM provides analytical tools for potential marker genes (or k-mers) of different types: diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches, and transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch.</li>
                 <br>
                 <li> STREAM provides both single-cell-level and density-level visualizations of cells and gene expression patterns for inferred trajectories. Specially, STREAM proposed a novel visualizaiton, called the stream plot, which is useful to study subpopulation composition and cell-fate genes along branching trajectories</li> </p>
-            </ul>   
+            </ul>
 
         <h3>Usage</h3>
         <h4><b>1.Precomputed results:</b></h4>
@@ -78,7 +87,7 @@
             <img src="/static/images/Choose_Precomputed_Data_Set.png" alt="Choose_Precomputed_Data_Set" width="50%" height="50%">
             <br>once user chose the dataset, a brief description will automatically appear beneath the menu.</p>
 
-            <h5><b>2).Visualize Trajectories</b></h5>    
+            <h5><b>2).Visualize Trajectories</b></h5>
             <p>3D scatter plot shows cells' positions and fitted principal graph by STREAM in MLLE space. In the 3D scatter plot, users can easily and interatively perform a lot of different operations including rotatation, zoom-in, zoom-out, taking snapshots at a specific view.
                 <div id="banner" style="overflow: hidden; display: flex; justify-content:space-around;">
                     <img src="/static/images/3D.png" alt="3D" width="20%" height="20%">
@@ -107,32 +116,32 @@
 
 
             <h5><b>3).Visualize Genes of Interest</b></h5>
-            <p>In the gene combo box,users can either choose genes from the droplist or type in gene name themselves. 
+            <p>In the gene combo box,users can either choose genes from the droplist or type in gene name themselves.
             <br><img src="/static/images/select_gene.png" alt="select_gene" width="50%" height="50%">
             <br>Genes will be visualized in both subway map and stream plot. When hovering the mouse over point, both cells' coordinates and gene expressions will be displayed.
             <br><img src="/static/images/subway_map_stream_plot.png" alt="subway_map_stream_plot" width="50%" height="50%">
 
             <h5><b>4).Visualize Diverging Genes</b></h5>
-            <p>Diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches. 
+            <p>Diverging genes, i.e. genes important in defining branching points that are differentially expressed between diverging branches.
             <br>Users first need to choose a pair of adjacent branches, between which differentially expressed genes were calculated by STREAM.
             <br><img src="/static/images/select_branch_pair.png" alt="select_branch_pair" width="20%" height="50%">
             <br>Then users can specify the branch on which DE genes are relatively highly expressed.
             <br><img src="/static/images/select_DE_high_branch.png" alt="select_DE_high_branch" width="20%" height="50%">
-            <br>Top automatically detected DE genes will be showned. Users can easily control how many genes to display through a slider bar. 
+            <br>Top automatically detected DE genes will be showned. Users can easily control how many genes to display through a slider bar.
             <br></b><img src="/static/images/DE_genes.png" alt="DE_genes" width="20%" height="20%">
             <br>On the right, users can visualize detected diverging gene at flat tree and stream plot. </p>
 
             <h5><b>5).Visualize Transition Genes</b></h5>
-            <p>Transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch. 
-            <br>Users first need to choose one branch, along which transition genes were calculated by STREAM. 
+            <p>Transition genes, i.e. genes for which the expression correlates with the cell pseudotime on a given branch.
+            <br>Users first need to choose one branch, along which transition genes were calculated by STREAM.
             <br><img src="/static/images/select_branch.png" alt="select_branch" width="20%" height="20%">
-            <br>Then top automatically detected transition genes will be displayed. Users can easily control how many genes to display through a slider bar. 
+            <br>Then top automatically detected transition genes will be displayed. Users can easily control how many genes to display through a slider bar.
             <br><img src="/static/images/transition_gene.png" alt="transition_gene" width="20%" height="20%">
             <br>On the right, users can visualize detected transition gene.</p>
         </ul>
 
         <br>
-        <h4><b>2.Compute on your own data:</b></h4>    
+        <h4><b>2.Compute on your own data:</b></h4>
         <ul>
             <h5><b>1).Input files</b></h5>
             <p>Data Matrix:
@@ -146,31 +155,31 @@
                 <td style="width: 15px;">singles-BM0828-HSC-fresh-151027-2</td>
                 <td style="width: 15px;">singles-BM0828-HSC-fresh-151027-3</td>
                 </tr>
-                <tr>                    
+                <tr>
                 <td style="width: 15px;">AAAAAAA</td>
                 <td style="width: 15px;">-0.15973157637808505</td>
                 <td style="width: 15px;">0.18950966450007853</td>
                 <td style="width: 15px;">0.07713107176524692</td>
                 </tr>
-                <tr>                 
+                <tr>
                 <td style="width: 15px;">AAAAAAG</td>
                 <td style="width: 15px;">-1.3630723054479532</td>
                 <td style="width: 15px;">-0.04770034004421244</td>
                 <td style="width: 15px;">0.6387323857481045</td>
                 </tr>
-                <tr>                  
+                <tr>
                 <td style="width: 15px;">AAACACG</td>
                 <td style="width: 15px;">-0.2065161126378667</td>
                 <td style="width: 15px;">-1.3375384076872765</td>
                 <td style="width: 15px;">0.2660278729402342</td>
                 </tr>
-                <tr>                    
+                <tr>
                 <td style="width: 15px;">AGCGTTA</td>
                 <td style="width: 15px;">-0.496859947462221</td>
                 <td style="width: 15px;">0.7181918229050274</td>
                 <td style="width: 15px;">0.19603357892921522</td>
                 </tr>
-                <tr>                   
+                <tr>
                 <td style="width: 15px;">ATACTCA</td>
                 <td style="width: 15px;">-1.2127919166377426</td>
                 <td style="width: 15px;">0.7938414496478844</td>
@@ -192,7 +201,7 @@
                 <td style="width: 15px;">HSC1.3</td>
                 <td style="width: 15px;">HSC1.4</td>
                 </tr>
-                <tr>                
+                <tr>
                 <td style="width: 15px;">CD52</td>
                 <td style="width: 15px;">6.479620</td>
                 <td style="width: 15px;">0.000000</td>
@@ -200,7 +209,7 @@
                 <td style="width: 15px;">5.550051</td>
                 <td style="width: 15px;">0.000000</td>
                 </tr>
-                <tr>            
+                <tr>
                 <td style="width: 15px;">Ifitm1</td>
                 <td style="width: 15px;">11.688533</td>
                 <td style="width: 15px;">11.390682</td>
@@ -208,7 +217,7 @@
                 <td style="width: 15px;">11.874295</td>
                 <td style="width: 15px;">8.976571</td>
                 </tr>
-                <tr>                
+                <tr>
                 <td style="width: 15px;">Cdkn3</td>
                 <td style="width: 15px;">0.000000</td>
                 <td style="width: 15px;">0.000000</td>
@@ -216,7 +225,7 @@
                 <td style="width: 15px;">0.000000</td>
                 <td style="width: 15px;">8.293616</td>
                 </tr>
-                <tr>              
+                <tr>
                 <td style="width: 15px;">Ly6a</td>
                 <td style="width: 15px;">10.417026</td>
                 <td style="width: 15px;">11.452145</td>
@@ -224,7 +233,7 @@
                 <td style="width: 15px;">8.158840</td>
                 <td style="width: 15px;">8.945882</td>
                 </tr>
-                <tr>              
+                <tr>
                 <td style="width: 15px;">Bax</td>
                 <td style="width: 15px;">6.911608</td>
                 <td style="width: 15px;">10.201157</td>
@@ -236,7 +245,7 @@
             </table>
 
             <br>
-            <p>Additionally it is possible to provide these following files in .tsv or .tsv.gz format: 
+            <p>Additionally it is possible to provide these following files in .tsv or .tsv.gz format:
             <br>cell_labels file: .tsv or .tsv.gz format. Each item can be a putative cell type or sampling time point obtained from experiments. Cell labels are helpful for visually validating the inferred trajectory. The order of labels should be consistent with cell order in the gene expression matrix file. No header is necessary.
 
             <table style="width: 5%; text-align: center"; border = "1">
@@ -244,19 +253,19 @@
                 <tr>
                 <td style="width: 15px;">HSC</td>
                 </tr>
-                <tr>                
+                <tr>
                 <td style="width: 15px;">HSC</td>
                 </tr>
-                <tr>            
+                <tr>
                 <td style="width: 15px;">GMP</td>
                 </tr>
-                <tr>                
+                <tr>
                 <td style="width: 15px;">MEP</td>
                 </tr>
-                <tr>              
+                <tr>
                 <td style="width: 15px;">MEP</td>
                 </tr>
-                <tr>              
+                <tr>
                 <td style="width: 15px;">GMP</td>
                 </tr>
                 </tbody>
@@ -264,30 +273,30 @@
 
 
             <br>cell_label_color file: .tsv or .tsv.gz format. Customized colors to use for the different cell labels. The first column specifies cell labels and the second column specifies the color in the format of hex. No header is necessary.</p>
-            
+
             <table style="width: 15%; text-align: center"; border = "1">
                 <tbody>
                 <tr>
                 <td style="width: 15px;">HSC</td>
                 <td style="width: 15px;">#7DD2D9</td>
                 </tr>
-                <tr>                
+                <tr>
                 <td style="width: 15px;">MPP</td>
                 <td style="width: 15px;">#FFA500</td>
                 </tr>
-                <tr>            
+                <tr>
                 <td style="width: 15px;">CMP</td>
                 <td style="width: 15px;">#e55b54</td>
                 </tr>
-                <tr>                
+                <tr>
                 <td style="width: 15px;">GMP</td>
                 <td style="width: 15px;">#5dab5a</td>
                 </tr>
-                <tr>              
+                <tr>
                 <td style="width: 15px;">MEP</td>
                 <td style="width: 15px;">#166FD5</td>
                 </tr>
-                <tr>              
+                <tr>
                 <td style="width: 15px;">CLP</td>
                 <td style="width: 15px;">#989797</td>
                 </tr>
@@ -295,7 +304,7 @@
             </table>
 
 
-            <p>In addition to personal files, in order to help users quickly get an idea how STREAM works, users can simply click the button 'load example data'. This will automatically upload data matrix file,cell_labels file and cell_label_color file for users. 
+            <p>In addition to personal files, in order to help users quickly get an idea how STREAM works, users can simply click the button 'load example data'. This will automatically upload data matrix file,cell_labels file and cell_label_color file for users.
 
             <br><img src="/static/images/load_example.png" alt="load_example" width="15%" height="15%"></p>
 
@@ -311,10 +320,10 @@
             Similar to the 'Precomputed results', after choosing the gene of insterst, users can simply click "perform analysis" to interactively visualize its gene expression pattern in both subway map and stream plot obtained from the step 'Compute trajectories'.
 
             <h5><b>5).Identify Diverging Genes</b></h5>
-            Users can simply click the button 'perform analysis' and start the diverging genes analysis. Then the button status will become 'running'. This process usually takes longer than 'compute trajectories'. The running time varies depending on the number of genes and cells. (For sc-qPCR data with hundreds of cell, it may take around five minutes. For scRNA-seq data with around 2000 cells and 3k genes, it may take around eight minutes). Once it's completed, similar to 'Precomputed results', diverging gene will be displayed based on the pair of branches users have choosen and users can interactively visualize diverging genes in subway map and stream plot on the right. 
+            Users can simply click the button 'perform analysis' and start the diverging genes analysis. Then the button status will become 'running'. This process usually takes longer than 'compute trajectories'. The running time varies depending on the number of genes and cells. (For sc-qPCR data with hundreds of cell, it may take around five minutes. For scRNA-seq data with around 2000 cells and 3k genes, it may take around eight minutes). Once it's completed, similar to 'Precomputed results', diverging gene will be displayed based on the pair of branches users have choosen and users can interactively visualize diverging genes in subway map and stream plot on the right.
 
             <h5><b>6).Identify Transition Genes</b></h5>
-            Users can simply click the button 'perform analysis' and start the transition genes analysis. Then the button status will become 'running'. This process usually is a little faster than diverging genes analysis (For sc-qPCR data with hundreds of cell, it may take around three minutes. For scRNA-seq data with around 2000 cells and 3k genes, it may take around six minutes). Once it's completed, similar to 'Precomputed results', transition gene will be displayed based on specific branch users have choosen and users can interactively visualize transition genes in subway map and stream plot on the right. 
+            Users can simply click the button 'perform analysis' and start the transition genes analysis. Then the button status will become 'running'. This process usually is a little faster than diverging genes analysis (For sc-qPCR data with hundreds of cell, it may take around three minutes. For scRNA-seq data with around 2000 cells and 3k genes, it may take around six minutes). Once it's completed, similar to 'Precomputed results', transition gene will be displayed based on specific branch users have choosen and users can interactively visualize transition genes in subway map and stream plot on the right.
 
         </ul>
             <br>
