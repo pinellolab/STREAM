@@ -1523,7 +1523,7 @@ def num_clicks_compute(dataset):
 
 def update_input_files(pathname):
 
-	file_names = ['Data Matrix', 'Cell Labels', 'Cell Label Colors']
+	file_names = ['Data Matrix', 'Cell Labels (Optional)', 'Cell Label Colors (Optional)']
 
 	return ','.join(file_names)
 
@@ -2829,14 +2829,6 @@ def num_clicks_compute(root, figure, pathname):
 	cell_label = glob.glob(UPLOADS_FOLDER + '/Cell_Labels*')
 	cell_label_colors = glob.glob(UPLOADS_FOLDER + '/Cell_Label_Colors*')
 
-	edges = RESULTS_FOLDER + '/edges.tsv'
-	edge_list = []
-
-	with open(edges, 'r') as f:
-		for line in f:
-			line = line.strip().split('\t')
-			edge_list.append([str(line[0]), str(line[1])])
-
 	cell_label_list = []
 	if len(cell_label) > 0:
 		if cell_label[0].endswith('.gz'):
@@ -2867,6 +2859,14 @@ def num_clicks_compute(root, figure, pathname):
 		color_plot = 1
 	elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
 		color_plot = 0.5
+
+	edges = RESULTS_FOLDER + '/edges.tsv'
+	edge_list = []
+
+	with open(edges, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			edge_list.append([str(line[0]), str(line[1])])
 
 	path_coords_reordered = []
 	for e in edge_list:
@@ -3000,14 +3000,6 @@ def num_clicks_compute(root, dataset):
 		cell_label = glob.glob('/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset)
 		cell_label_colors = glob.glob('/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset)
 
-		edges = '/STREAM/precomputed/%s/STREAM_result/edges.tsv' % dataset
-		edge_list = []
-
-		with open(edges, 'r') as f:
-			for line in f:
-				line = line.strip().split('\t')
-				edge_list.append([str(line[0]), str(line[1])])
-
 		cell_label_list = []
 		if len(cell_label) > 0:
 			if cell_label[0].endswith('.gz'):
@@ -3041,6 +3033,14 @@ def num_clicks_compute(root, dataset):
 			color_plot = 1
 		elif len(cell_label_list) > 0 and len(cell_label_colors_dict) == 0:
 			color_plot = 0.5
+
+		edges = '/STREAM/precomputed/%s/STREAM_result/edges.tsv' % dataset
+		edge_list = []
+
+		with open(edges, 'r') as f:
+			for line in f:
+				line = line.strip().split('\t')
+				edge_list.append([str(line[0]), str(line[1])])
 
 		path_coords_reordered = []
 		for e in edge_list:
@@ -3580,8 +3580,25 @@ def compute_trajectories(pathname, n_clicks, root, gene):
 				genes = glob.glob(RESULTS_FOLDER + '/%s/subway_coord_*csv' % root)
 				genes = [x.split('_')[-1].strip('.csv') for x in genes]
 
-				traces = []
+				edges = RESULTS_FOLDER + '/edges.tsv'
+				edge_list = []
+
+				with open(edges, 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						edge_list.append([str(line[0]), str(line[1])])
+
+				path_coords_reordered = []
+				for e in edge_list:
+					entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
+					path_coords_reordered.append(entry[0])
+
 				for path in path_coords:
+					if path not in path_coords_reordered:
+						path_coords_reordered.append(path)
+
+				traces = []
+				for path in path_coords_reordered:
 					x_p = []
 					y_p = []
 					s1 = path.strip().split('_')[-2]
@@ -3672,7 +3689,7 @@ def compute_trajectories(pathname, n_clicks, root, gene):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -3694,8 +3711,25 @@ def compute_trajectories(dataset, gene, root):
 	cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
 	cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
-	traces = []
+	edges = '/STREAM/precomputed/%s/STREAM_result/edges.tsv' % dataset
+	edge_list = []
+
+	with open(edges, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			edge_list.append([str(line[0]), str(line[1])])
+
+	path_coords_reordered = []
+	for e in edge_list:
+		entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
+		path_coords_reordered.append(entry[0])
+
 	for path in path_coords:
+		if path not in path_coords_reordered:
+			path_coords_reordered.append(path)
+
+	traces = []
+	for path in path_coords_reordered:
 		x_p = []
 		y_p = []
 		s1 = path.strip().split('_')[-2]
@@ -3776,7 +3810,7 @@ def compute_trajectories(dataset, gene, root):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -4173,8 +4207,22 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 					new_json_string = json.dumps(param_dict)
 					f.write(new_json_string + '\n')
 
-				traces = []
+				with open(edges, 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						edge_list.append([str(line[0]), str(line[1])])
+
+				path_coords_reordered = []
+				for e in edge_list:
+					entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
+					path_coords_reordered.append(entry[0])
+
 				for path in path_coords:
+					if path not in path_coords_reordered:
+						path_coords_reordered.append(path)
+
+				traces = []
+				for path in path_coords_reordered:
 					x_p = []
 					y_p = []
 					s1 = path.strip().split('_')[-2]
@@ -4266,7 +4314,7 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -4288,7 +4336,24 @@ def compute_trajectories(dataset, root, gene):
 	cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
 	cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
+	edges = '/STREAM/precomputed/%s/STREAM_result/edges.tsv' % dataset
+	edge_list = []
+
+	with open(edges, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			edge_list.append([str(line[0]), str(line[1])])
+
+	path_coords_reordered = []
+	for e in edge_list:
+		entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
+		path_coords_reordered.append(entry[0])
+
 	for path in path_coords:
+		if path not in path_coords_reordered:
+			path_coords_reordered.append(path)
+
+	for path in path_coords_reordered:
 		x_p = []
 		y_p = []
 		s1 = path.strip().split('_')[-2]
@@ -4370,7 +4435,7 @@ def compute_trajectories(dataset, root, gene):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -4932,8 +4997,22 @@ def compute_trajectories(pathname, root, gene, n_clicks):
 					new_json_string = json.dumps(param_dict)
 					f.write(new_json_string + '\n')
 
-				traces = []
+				with open(edges, 'r') as f:
+					for line in f:
+						line = line.strip().split('\t')
+						edge_list.append([str(line[0]), str(line[1])])
+
+				path_coords_reordered = []
+				for e in edge_list:
+					entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
+					path_coords_reordered.append(entry[0])
+
 				for path in path_coords:
+					if path not in path_coords_reordered:
+						path_coords_reordered.append(path)
+
+				traces = []
+				for path in path_coords_reordered:
 					x_p = []
 					y_p = []
 					s1 = path.strip().split('_')[-2]
@@ -5026,7 +5105,7 @@ def compute_trajectories(pathname, root, gene, n_clicks):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
@@ -5048,8 +5127,25 @@ def compute_trajectories(dataset, root, gene):
 	cell_label = '/STREAM/precomputed/%s/cell_label.tsv.gz' % dataset
 	cell_label_colors = '/STREAM/precomputed/%s/cell_label_color.tsv.gz' % dataset
 
-	traces = []
+	edges = '/STREAM/precomputed/%s/STREAM_result/edges.tsv' % dataset
+	edge_list = []
+
+	with open(edges, 'r') as f:
+		for line in f:
+			line = line.strip().split('\t')
+			edge_list.append([str(line[0]), str(line[1])])
+
+	path_coords_reordered = []
+	for e in edge_list:
+		entry = [x for x in path_coords if ((e[0] in x.split('/')[-1]) and (e[1] in x.split('/')[-1]))]
+		path_coords_reordered.append(entry[0])
+
 	for path in path_coords:
+		if path not in path_coords_reordered:
+			path_coords_reordered.append(path)
+
+	traces = []
+	for path in path_coords_reordered:
 		x_p = []
 		y_p = []
 		s1 = path.strip().split('_')[-2]
@@ -5132,7 +5228,7 @@ def compute_trajectories(dataset, root, gene):
         	autosize = True,
         	margin=dict(l=0,r=0,t=0),
             hovermode='closest',
-            xaxis = dict(showgrid = False, zeroline=False, title = 'Pseudotime'),
+            xaxis = dict(showgrid = False, zeroline=False, showline=True, title = 'Pseudotime'),
             yaxis = dict(showgrid = False, zeroline=False, title = ''),
         )
     }
