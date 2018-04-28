@@ -39,7 +39,7 @@ STREAM command line interface
 To run STREAM at the command-line interface:
 
 * start a terminal session;
-* enter ```docker run pinellolab/stream [options]```
+* enter ```docker run pinellolab/stream STREAM [options]```
 
 Users can specify the following options:
 ```
@@ -270,19 +270,19 @@ Example
 **transcriptomic data**: Using the example data provided: data_Guo.tsv, cell_label.tsv and cell_label_color.tsv, and assuming that they are in the current folder, to perform trajectories analysis, users can simply run a single command (By default, LOESS is used to select most variable gene. For qPCR data, the number of genes is relatively small and often preselected, it this case it may be necessary to keep all the genes as features by setting the flag -s all):
 
 ```sh
-$ docker run pinellolab/stream -v $PWD:/data -w /data -m data_Guo.tsv -l cell_label.tsv -c cell_label_color.tsv -s all
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all
 ```
 
 To visualize genes of interest, user can provide a gene list file, for example: gene_list.tsv and add the flag  -p to use the precomputed file obtained from the first running (in this way, the analysis can will not restart from the beginning and other existing figures will not be re-generated):
 
 ```sh
-docker run pinellolab/stream -v $PWD:/data -w /data -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -s all -g gene_list.tsv -p
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -g gene_list.tsv -p
 ```
 
 To explore potential marker genes, it is possible to add the flags -d or -t to detect DE (differentially expressed) genes and transition gens respectively. The best three DE (any pair of branches) and transition genes (any branch) are automatically plotted:
 
 ```sh
-docker run pinellolab/stream -v $PWD:/data -w /data -m data_guoji.tsv -l cell_label.tsv -c cell_label_color.tsv -s all -d -t
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -d -t
 ```
 
 To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore.tsv, data_mapping.tsv (Moore, F.E. et al.2016) as an example.
@@ -290,13 +290,13 @@ To explore the feature **mapping**, users need to provide two dataset, one is us
 Users first need to run the following command to get initial inferred trajetories:
 
 ```sh
-docker run pinellolab/stream -v $PWD:/data -w /data -m data_Moore.tsv -s all --EPG_shift --EPG_trimmingradius 0.1 -o /users_path/STREAM_result
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Moore_qPCR_WT.tsv.gz -s all --EPG_shift --EPG_trimmingradius 0.1 -o /users_path/STREAM_result
 ```
 
 To map the labelled cells to the inferred trajectories, users need to specify the same output direcotry by executing the following command:
 
 ```sh
-docker run pinellolab/stream -v $PWD:/data -w /data -o /users_path/STREAM_result --new data_mapping.tsv --new_l cell_labels_mapping.tsv --new_c cell_labels_mapping_color.tsv 
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -o /users_path/STREAM_result --new data_mapping.tsv --new_l cell_labels_mapping.tsv --new_c cell_labels_mapping_color.tsv 
 ```
 
 After running this command,  a folder named 'Mapping_Result' will be created under '/users_path/STREAM_result' along with all the mapping analysis results.
@@ -307,13 +307,13 @@ After running this command,  a folder named 'Mapping_Result' will be created und
 Using these three files, users can run STREAM with the following command (note the flag --atac ):
 
 ```sh
-docker run pinellolab/stream -v $PWD:/data -w /data --atac -s PCA --atac_counts count_file.tsv --atac_sample_file.tsv --atac_regions region_file.bed -l cell_label.tsv -c cell_label_color.tsv
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM --atac -s PCA --atac_counts count_file.tsv --atac_sample_file.tsv --atac_regions region_file.bed -l cell_label.tsv -c cell_label_color.tsv
 ```
 
 This command will generate a file named df_zscores_scaled.tsv. It’s a tab-delimited z-score matrix with k-mers in row and cells in column. Each entry is a scaled z-score of the accessibility of each k-mer across cells. This operation is time consuming and it may take a couple of hours with a modest machine. STREAM also provides the option to take as input a precomputed z-score file from the previous step, for example to recover trajectories when increasing the dimensionality of the manifold. Using a precomputed z-score file, users can run STREAM with the following command:
 
 ```sh
-docker run pinellolab/stream -v $PWD:/data -w /data -m df_zscores_scaled.tsv -l cell_label.tsv -c cell_label_color.tsv --atac -s PCA
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m df_zscores_scaled.tsv -l cell_label.tsv -c cell_label_color.tsv --atac -s PCA
 ```
 
 
