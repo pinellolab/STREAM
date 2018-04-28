@@ -290,13 +290,13 @@ To explore the feature **mapping**, users need to provide two dataset, one is us
 Users first need to run the following command to get initial inferred trajetories:
 
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Moore_qPCR_WT.tsv.gz -s all --EPG_shift --EPG_trimmingradius 0.1 -o /users_path/STREAM_result
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Moore_qPCR_WT.tsv.gz -s all --EPG_shift --EPG_trimmingradius 0.1 -o STREAM_result
 ```
 
 To map the labelled cells to the inferred trajectories, users need to specify the same output direcotry by executing the following command:
 
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -o /users_path/STREAM_result --new data_mapping.tsv --new_l cell_labels_mapping.tsv --new_c cell_labels_mapping_color.tsv 
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -o STREAM_result --new data_mapping.tsv --new_l cell_labels_mapping.tsv --new_c cell_labels_mapping_color.tsv 
 ```
 
 After running this command,  a folder named 'Mapping_Result' will be created under '/users_path/STREAM_result' along with all the mapping analysis results.
