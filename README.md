@@ -285,7 +285,7 @@ To explore potential marker genes, it is possible to add the flags -d or -t to d
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -d -t
 ```
 
-To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore.tsv, data_mapping.tsv (Moore, F.E. et al.2016) as an example.
+To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore_qPCR_WT.tsv.gz, data_mapping.tsv (Moore, F.E. et al.2016) as an example.
 
 Users first need to run the following command to get initial inferred trajetories:
 
@@ -307,7 +307,7 @@ After running this command,  a folder named 'Mapping_Result' will be created und
 Using these three files, users can run STREAM with the following command (note the flag --atac ):
 
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM --atac -s PCA --atac_counts count_file.tsv --atac_sample_file.tsv --atac_regions region_file.bed -l cell_label.tsv -c cell_label_color.tsv
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM --atac -s PCA --atac_counts count_file.tsv --atac_samples sample_file.tsv --atac_regions region_file.bed -l cell_label.tsv -c cell_label_color.tsv
 ```
 
 This command will generate a file named df_zscores_scaled.tsv. It’s a tab-delimited z-score matrix with k-mers in row and cells in column. Each entry is a scaled z-score of the accessibility of each k-mer across cells. This operation is time consuming and it may take a couple of hours with a modest machine. STREAM also provides the option to take as input a precomputed z-score file from the previous step, for example to recover trajectories when increasing the dimensionality of the manifold. Using a precomputed z-score file, users can run STREAM with the following command:
