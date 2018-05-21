@@ -684,10 +684,10 @@ app.layout = html.Div([
 
 	dcc.Interval(id='common-interval', interval=5000),
 
-	dcc.Interval(id='common-interval-1', interval=1000000),
-	dcc.Interval(id='common-interval-2', interval=1000000),
-	dcc.Interval(id='common-interval-3', interval=1000000),
-	dcc.Interval(id='common-interval-4', interval=1000000),
+	dcc.Interval(id='common-interval-1', interval=2000000000),
+	dcc.Interval(id='common-interval-2', interval=2000000000),
+	dcc.Interval(id='common-interval-3', interval=2000000000),
+	dcc.Interval(id='common-interval-4', interval=2000000000),
 
 	html.Div(id = 'custom-loading-states-1',
 		children = [
@@ -1987,7 +1987,7 @@ def update_container(n_clicks, segmentation_container, pathname):
 
 	else:
 
-		return 1000000
+		return 2000000000
 
 @app.callback(
     Output('3d-scatter', 'figure'),
@@ -3550,7 +3550,7 @@ def update_container(n_clicks, figure, pathname):
 
 	else:
 
-		return 1000000
+		return 2000000000
 
 @app.callback(
     Output('2d-subway-sg', 'figure'),
@@ -4171,7 +4171,7 @@ def update_container(n_clicks, figure, pathname):
 
 	else:
 
-		return 1000000
+		return 2000000000
 
 @app.callback(
     Output('2d-subway-discovery', 'figure'),
@@ -4965,7 +4965,7 @@ def update_container(n_clicks, figure, pathname):
 
 	else:
 
-		return 1000000
+		return 2000000000
 
 @app.callback(
     Output('2d-subway-correlation', 'figure'),
