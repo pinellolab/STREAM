@@ -281,7 +281,7 @@ To visualize genes of interest, user can provide a gene list file, for example: 
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -g gene_list.tsv.gz -p
 ```
 
-Users can also provide a set of gene names separted by comma:
+Users can also provide a set of gene names separated by comma:
 
 ```sh
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -g Gata1,Pax5 -p
@@ -330,10 +330,9 @@ or
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Buenrostro_7mer_scaled.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac -s PCA
 ```
 
-Please note that for scACTA-seq analysis, if you run STREAM on counts_file, it'll be necessary to increase the allocated memory of container. 
+Please note that for scACTA-seq analysis, if you run STREAM on **counts_file**, it'll be necessary to increase the default allocated memory of container. 
 
-![alt tag](https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/docker.png)
-
+<img src="https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/docker.png" width="50%">
 
 Output description
 ------------------
