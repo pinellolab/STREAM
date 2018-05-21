@@ -39,7 +39,7 @@ STREAM command line interface
 To run STREAM at the command-line interface:
 
 * start a terminal session;
-* enter ```docker run pinellolab/stream STREAM [options]```
+* enter ```docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM --help [options]```
 
 Users can specify the following options:
 ```
