@@ -332,7 +332,7 @@ $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Buenrostr
 
 Please note that for scACTA-seq analysis, if you run STREAM on counts_file, it'll be necessary to increase the allocated memory of container. 
 
-![alt tag](https://raw.githubusercontent.com/pinellolab/STREAM/tree/master/STREAM/static/images/docker.png)
+![alt tag](https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/docker.png)
 
 
 Output description
