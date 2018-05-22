@@ -271,7 +271,25 @@ Example
 
 All the datasets used in the following examples can be found under the directory **./Datasets**
 
-**transcriptomic data**: Using the example data provided: data_Guo.tsv, cell_label.tsv and cell_label_color.tsv, and assuming that they are in the current folder, to perform trajectories analysis, users can simply run a single command (By default, LOESS is used to select most variable gene. For qPCR data, the number of genes is relatively small and often preselected, it this case it may be necessary to keep all the genes as features by setting the flag -s all):
+To download the datasets, 
+
+```
+$ git clone https://github.com/pinellolab/STREAM.git
+$ cd STREAM/Datasets/
+```
+
+Or they can also be downloaded using the following Dropbox link: 
+[https://www.dropbox.com/sh/xnw9ro22bgrz2pa/AADQWmyCjUekg3hudvhsrAWka?dl=0](https://www.dropbox.com/sh/xnw9ro22bgrz2pa/AADQWmyCjUekg3hudvhsrAWka?dl=0)
+
+
+Please note that for large dataset analysis it'll be necessary to increase the default allocated memory of container. Especially, for scACTA-seq analysis based on **counts_file**,
+
+<img src="https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/docker.png" width="50%">
+
+#### **Transcriptomic data**
+
+Using the example data provided: data_Guo.tsv.gz, ell_label.tsv.gz and cell_label_color.tsv.gz, and assuming that **they are in the current folder**, to perform trajectories analysis, users can simply run a single command (By default, LOESS is used to select most variable gene. For qPCR data, the number of genes is relatively small and often preselected, it this case it may be necessary to keep all the genes as features by setting the flag -s all):
+
 
 ```sh
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all
@@ -295,7 +313,9 @@ To explore potential marker genes, it is possible to add the flags -d or -t to d
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -d -t
 ```
 
-To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore_qPCR_WT.tsv.gz, data_mapping.tsv (Moore, F.E. et al.2016) as an example.
+#### **Mapping**
+
+To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore_qPCR_WT.tsv.gz, data_mapping.tsv (Moore, F.E. et al.2016) as an example. We assuming that **all the datasets are in the current folder**.
 
 Users first need to run the following command to get initial inferred trajetories:
 
@@ -309,12 +329,14 @@ To map the labelled cells to the inferred trajectories, users need to specify th
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -o STREAM_result --new data_mapping.tsv.gz --new_l cell_labels_mapping.tsv.gz --new_c cell_labels_mapping_color.tsv.gz 
 ```
 
-After running this command,  a folder named 'Mapping_Result' will be created under '/users_path/STREAM_result' along with all the mapping analysis results.
+After running this command,  a folder named **'Mapping_Result'** will be created under **'/users_path/STREAM_result'** along with all the mapping analysis results.
 
 
-**scATAC-seq data**: To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format:
+#### **scATAC-seq data**
 
-Using these three files, users can run STREAM with the following command (note the flag --atac ):
+To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format. We assume that **they are in the current folder**.
+
+Using these three files, users can run STREAM with the following command (note the flag **--atac** ):
 
 ```sh
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM --atac -s PCA --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
@@ -331,10 +353,6 @@ or
 ```sh
 $ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Buenrostro_7mer_scaled.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac -s PCA
 ```
-
-Please note that for scACTA-seq analysis, if you run STREAM on **counts_file**, it'll be necessary to increase the default allocated memory of container. 
-
-<img src="https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/docker.png" width="50%">
 
 Output description
 ------------------
