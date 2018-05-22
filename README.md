@@ -309,7 +309,7 @@ Please note that for large dataset analysis it'll be necessary to increase the d
 
 <img src="https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/docker.png" width="50%">
 
-#### **Transcriptomic data**
+### **Transcriptomic data**
 
 Using the example data provided: data_Guo.tsv.gz, ell_label.tsv.gz and cell_label_color.tsv.gz, and assuming that **they are in the current folder**, to perform trajectories analysis, users can simply run a single command (By default, LOESS is used to select most variable gene. For qPCR data, the number of genes is relatively small and often preselected, it this case it may be necessary to keep all the genes as features by setting the flag -s all):
 
@@ -355,7 +355,7 @@ For **Windows**:
 $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -d -t
 ```
 
-#### **Mapping**
+### **Mapping**
 
 To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore_qPCR_WT.tsv.gz, data_mapping.tsv (Moore, F.E. et al.2016) as an example. We assume that **all the datasets are in the current folder**.
 
@@ -383,7 +383,7 @@ $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -o STREAM_resul
 After running this command,  a folder named **'Mapping_Result'** will be created under **'/users_path/STREAM_result'** along with all the mapping analysis results.
 
 
-#### **scATAC-seq data**
+### **scATAC-seq data**
 
 To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format. We assume that **they are in the current folder**.
 
