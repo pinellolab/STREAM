@@ -17,10 +17,13 @@ RUN conda config --add channels bioconda
 
 #Add build tools
 RUN ln -s /bin/tar /bin/gtar
-RUN apt-get update && apt-get install build-essential zlib1g-dev -y
+RUN apt-get update && apt-get install build-essential zlib1g-dev libssl-dev -y 
 
 #Add R dependencies
 RUN git clone https://github.com/ropensci/git2r.git
+RUN cd git2r && git checkout b71da71cc16e8b82ab78613322548ed8da687c17
+RUN cd ..
+
 RUN R CMD INSTALL --configure-args='--with-zlib-lib=/usr/lib/x86_64-linux-gnu' git2r
 RUN Rscript -e 'install.packages("devtools",repos="https://cran.rstudio.com")'
 RUN Rscript -e 'options(unzip="internal");devtools::install_github("Albluca/distutils")'
