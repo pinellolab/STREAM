@@ -1,1 +1,0 @@
-docker run  -v $PWD/Datasets/Nestorowa_2016:/data -w /data  -v $PWD:/output pinellolab/stream STREAM -m data_Gottgens.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -o /output/STREAM_Results_Figure1
