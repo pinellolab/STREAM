@@ -879,6 +879,8 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',egp_co
                                   epg_lambda=0.02,epg_mu=0.1,epg_trimmingradius='Inf',
                                   epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False): 
     print('Collasping small branches ...')
+    ElPiGraph = importr('ElPiGraph.R')
+    pandas2ri.activate()
     if(reset):
         epg_obj = adata.uns['ori_epg_obj']
         epg = adata.uns['ori_epg']
@@ -930,6 +932,8 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
                        epg_lambda=0.01,epg_mu=0.1,epg_trimmingradius='Inf',
                        epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False):
     print('Optimizing branching...')
+    ElPiGraph = importr('ElPiGraph.R')
+    pandas2ri.activate()
     if(reset):
         epg_obj = adata.uns['ori_epg_obj']
         epg = adata.uns['ori_epg']
@@ -986,6 +990,8 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
                    epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False):
     
     print('Shifting branching point to denser area ...')
+    ElPiGraph = importr('ElPiGraph.R')
+    pandas2ri.activate()
     if(reset):
         epg_obj = adata.uns['ori_epg_obj']
         epg = adata.uns['ori_epg']
@@ -1042,6 +1048,8 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
 
 def extend_elastic_principal_graph(adata,egp_ext_mode = 'QuantDists',epg_ext_par = 0.5,epg_trimmingradius='Inf',reset=False):
     print('Extending leaves with additional nodes ...')
+    ElPiGraph = importr('ElPiGraph.R')
+    pandas2ri.activate()
     if(reset):
         epg_obj = adata.uns['ori_epg_obj']
         epg = adata.uns['ori_epg']
