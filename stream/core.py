@@ -44,19 +44,25 @@ import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 
 
-def read(file_name,file_path='./',file_format='tsv',delimiter='\t',key=None,dtype='float32',workdir=None):
+def read(file_name,file_path='./',file_format='tsv',delimiter='\t',
+         backed=False,key=None,dtype='float32',sparse = True,
+         workdir=None):
     if(file_format in ['tsv','txt','tab','data']):
         adata = ad.read_text(file_path+file_name,delimiter=delimiter).T
     elif(file_format == 'csv'):
         adata = ad.read_csv(file_path+file_name,delimiter=delimiter).T
-    elif(file_format == 'h5'):
-        adata = ad.read_hdf(file_path+file_name,key=key).T
     elif(file_format == 'mtx'):
         adata = ad.read_mtx(file_path+file_name,dtype=dtype).T 
+    elif(file_format == 'h5'):
+        adata = ad.read_hdf(file_path+file_name,key=key)
+    elif(file_format == 'h5ad'):
+        adata = ad.read_h5ad(file_path+file_name,backed=backed)
+    elif(file_format == 'loom'):
+        adata = ad.read_loom(file_path+file_name,backed=backed)
     else:
         print('file format ' + file_format + ' is not supported')
         return
-    adata.raw = adata    
+    adata.raw = adata
     if(workdir==None):
         workdir = os.getcwd() + '/stream_result/'
     if(not os.path.exists(workdir)):
