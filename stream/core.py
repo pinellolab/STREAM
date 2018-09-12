@@ -316,7 +316,7 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
     return None
 
 
-def plot_dimension_reduction(adata,n_components = 3,**kwargs):
+def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,**kwargs):
     options = {
             'save_fig' : False,
             'fig_size':(8,8),
@@ -359,10 +359,10 @@ def plot_dimension_reduction(adata,n_components = 3,**kwargs):
     if(n_components==2): 
         fig = plt.figure(figsize=fig_size)
         ax = fig.add_subplot(111)
-        ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
-        max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min()]).max() / 1.9
-        mid_x = (coord[0].max()+coord[0].min()) * 0.5
-        mid_y = (coord[1].max()+coord[1].min()) * 0.5
+        ax.scatter(coord[comp1], coord[comp2],c=color,s=50,linewidth=0,alpha=0.8) 
+        max_range = np.array([coord[comp1].max()-coord[comp1].min(), coord[comp2].max()-coord[comp2].min()]).max() / 1.9
+        mid_x = (coord[comp1].max()+coord[comp1].min()) * 0.5
+        mid_y = (coord[comp2].max()+coord[comp2].min()) * 0.5
         ax.set_xlim(mid_x - max_range, mid_x + max_range)
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
         ax.set_xlabel('Component1',labelpad=20)
