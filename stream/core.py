@@ -237,7 +237,7 @@ def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jo
     return None
 
 
-def select_top_principal_components(adata,n_pc = 15,max_pc = 100,first_pc = False,use_precomputed=True,**kwargs):
+def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,first_pc = False,use_precomputed=True,**kwargs):
     options = {
             'save_fig' : False,
             'fig_size':(5,5),
@@ -255,11 +255,18 @@ def select_top_principal_components(adata,n_pc = 15,max_pc = 100,first_pc = Fals
         pca_variance_ratio = adata.uns['pca_variance_ratio']
     else:
         sklearn_pca = sklearnPCA(svd_solver='full')
-        X_pca = sklearn_pca.fit_transform(adata.X)
-        pca_variance_ratio = sklearn_pca.explained_variance_ratio_
-        adata.obsm['pca'] = X_pca
-        adata.uns['pca_variance_ratio'] = pca_variance_ratio
-
+        if(feature == 'var_genes'):
+            print('using most variable genes ...')
+            X_pca = sklearn_pca.fit_transform(adata.obsm['var_genes'])
+            pca_variance_ratio = sklearn_pca.explained_variance_ratio_
+            adata.obsm['pca'] = X_pca
+            adata.uns['pca_variance_ratio'] = pca_variance_ratio                
+        else:
+            print('using all the genes ...')
+            X_pca = sklearn_pca.fit_transform(adata.X)
+            pca_variance_ratio = sklearn_pca.explained_variance_ratio_
+            adata.obsm['pca'] = X_pca
+            adata.uns['pca_variance_ratio'] = pca_variance_ratio            
     if(first_pc):
         adata.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
     else:
