@@ -45,35 +45,43 @@ from rpy2.robjects import pandas2ri
 
 
 def read(file_name,file_path='./',file_format='tsv',delimiter='\t',
-         backed=False,key=None,dtype='float32',sparse = True,
-         workdir=None):
+         backed=False,key=None,dtype='float32',workdir=None):
     if(file_format in ['tsv','txt','tab','data']):
         adata = ad.read_text(file_path+file_name,delimiter=delimiter).T
+        adata.raw = adata
+        if(workdir==None):
+            workdir = os.getcwd() + '/stream_result/'
+        if(not os.path.exists(workdir)):
+            os.makedirs(workdir)
+        adata.uns['workdir'] = workdir        
     elif(file_format == 'csv'):
         adata = ad.read_csv(file_path+file_name,delimiter=delimiter).T
+        adata.raw = adata
+        if(workdir==None):
+            workdir = os.getcwd() + '/stream_result/'
+        if(not os.path.exists(workdir)):
+            os.makedirs(workdir)
+        adata.uns['workdir'] = workdir
     elif(file_format == 'mtx'):
         adata = ad.read_mtx(file_path+file_name,dtype=dtype).T 
-    elif(file_format == 'h5'):
-        adata = ad.read_hdf(file_path+file_name,key=key)
+        adata.raw = adata
+        if(workdir==None):
+            workdir = os.getcwd() + '/stream_result/'
+        if(not os.path.exists(workdir)):
+            os.makedirs(workdir)
+        adata.uns['workdir'] = workdir
     elif(file_format == 'h5ad'):
         adata = ad.read_h5ad(file_path+file_name,backed=backed)
-    elif(file_format == 'loom'):
-        adata = ad.read_loom(file_path+file_name,backed=backed)
     else:
         print('file format ' + file_format + ' is not supported')
         return
-    adata.raw = adata
-    if(workdir==None):
-        workdir = os.getcwd() + '/stream_result/'
-    if(not os.path.exists(workdir)):
-        os.makedirs(workdir)
-    adata.uns['workdir'] = workdir
     return adata
 
 
 def add_cell_labels(adata,file_path='./',file_name=None):
     if(file_name!=None):
-        df_labels = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
+        df_labels = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
+        df_labels['label'] = df_labels['label'].str.replace('/','-')        
         df_labels.index = adata.obs_names
         adata.obs['label'] = df_labels
     else:
@@ -84,9 +92,9 @@ def add_cell_labels(adata,file_path='./',file_name=None):
 def add_cell_colors(adata,file_path='./',file_name=None):
     labels_unique = adata.obs['label'].unique()
     if(file_name!=None):
-        df_colors = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,
+        df_colors = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label','color'],
                                 compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
-
+        df_colors['label'] = df_colors['label'].str.replace('/','-')   
         adata.uns['label_color'] = {df_colors.iloc[x,0]:df_colors.iloc[x,1] for x in range(df_colors.shape[0])}
     else:
         list_colors = sns.color_palette("hls",n_colors=len(labels_unique)).as_hex()
