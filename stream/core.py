@@ -502,7 +502,7 @@ def plot_mst(adata,n_components = 3,**kwargs):
             plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
             plt.close(fig)      
 
-def plot_branches(adata,n_components = 3,comp1=0,comp2=1,**kwargs):  
+def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',**kwargs):  
     options = {
             'save_fig' : False,
             'fig_size':(8,8),
@@ -514,10 +514,19 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,**kwargs):
     fig_path = options['fig_path']
     fig_name = options['fig_name']
     
-    epg = adata.uns['epg']
+    if(key_graph=='epg'):
+        epg = adata.uns['epg']
+        flat_tree = adata.uns['flat_tree']
+    elif(key_graph=='seed_epg'):
+        epg = adata.uns['seed_epg']
+        flat_tree = adata.uns['seed_flat_tree']        
+    elif(key_graph=='ori_epg'):
+        epg = adata.uns['ori_epg']
+        flat_tree = adata.uns['ori_flat_tree'] 
+    else:
+        print("'"+key_graph+"'"+'is not supported')
     dict_nodes_pos = nx.get_node_attributes(epg,'pos')
     nodes_pos = np.array(list(dict_nodes_pos.values()))
-    flat_tree = adata.uns['flat_tree']
     coord = pd.DataFrame(adata.obsm['X_dr'])
     if(n_components>=3): 
         fig = plt.figure(figsize=fig_size)
@@ -573,7 +582,7 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,**kwargs):
             plt.close(fig)        
 
 
-def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2=1,show_all=True,**kwargs):    
+def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2=1,key_graph='epg',show_all=True,**kwargs):    
     options = {
             'save_fig' : False,
             'fig_size':(8,8),
@@ -587,10 +596,19 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
     fig_name = options['fig_name']
     fig_legend_ncol = options['fig_legend_ncol']
 
-    epg = adata.uns['epg']
+    if(key_graph=='epg'):
+        epg = adata.uns['epg']
+        flat_tree = adata.uns['flat_tree']
+    elif(key_graph=='seed_epg'):
+        epg = adata.uns['seed_epg']
+        flat_tree = adata.uns['seed_flat_tree']        
+    elif(key_graph=='ori_epg'):
+        epg = adata.uns['ori_epg']
+        flat_tree = adata.uns['ori_flat_tree'] 
+    else:
+        print("'"+key_graph+"'"+'is not supported')
     dict_nodes_pos = nx.get_node_attributes(epg,'pos')
     nodes_pos = np.array(list(dict_nodes_pos.values()))
-    flat_tree = adata.uns['flat_tree']
     
     dict_nodes_label = nx.get_node_attributes(flat_tree,'label')
     branches_color = nx.get_edge_attributes(flat_tree,'color') 
@@ -679,8 +697,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
                   ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
             plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
-            plt.close(fig)            
-
+            plt.close(fig)
 
 
 def project_point_to_line_segment_matrix(XP,p):
@@ -801,68 +818,183 @@ def construct_flat_tree(dict_branches):
     nx.set_edge_attributes(flat_tree,values=dict_branches_len,name='len')    
     return flat_tree
 
+def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clustering='ap',damping=0.75,pref_perc=50,n_clusters=20,nb_pct=0.1):
+    
+    """Seeding the initial elastic principal graph.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    init_nodes_pos: `array`, shape = [n_nodes,n_dimension], optional (default: `None`)
+        initial node positions
+    init_edges: `array`, shape = [n_edges,2], optional (default: `None`)
+        initial edges, all the initial nodes should be included in the tree structure
+    clustering: `str`, optional (default: 'ap')
+        Choose from {{'ap', 'sc'}}
+        clustering method used to seed the initial structure.
+        'ap' affinity propagation
+        'sc' spectral clustering
+    damping: `float`, optional (default: 0.75)
+        Damping factor (between 0.5 and 1) for affinity propagation.
+    pref_perc: `int`, optional (default: 50)
+        Preference percentile (between 0 and 100). The percentile of the input similarities for affinity propagation.
+    n_clusters: `int`, optional (default: 20)
+        Number of clusters for spectral clustering.
+    nb_pct: `float`, optional (default: 0.1)
+        Neighbor percentage. The percentage of points used as neighbors for spectral clustering.
 
-def elastic_principal_graph(adata,clustering='ap',damping=0.75,pref_perc=50,n_clusters=20,incr_n_nodes =30,nb_pct=0.1,epg_n_nodes = 50,
-                             epg_lambda=0.02,epg_mu=0.1,epg_trimmingradius='Inf',
-                             epg_finalenergy = 'Penalized',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,use_precomputed=False,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(8,8),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'Initial_ElPigraph.pdf',}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
-
+    Returns
+    -------
+    updates `adata` with the following fields.
+    epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
+        Elastic principal graph structure. It contains node attributes ('pos')
+    flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
+        It contains node attribtutes ('pos','label','pseudotime') and edge attributes ('nodes','id','len','color').
+    seed_epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
+        Store seeded elastic principal graph structure
+    seed_flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        Store seeded flat_tree
+    """
+    print('Seeding initial elastic principal graph...')
     input_data = adata.obsm['X_dr']
-    if(use_precomputed and ('epg_init_nodes' in adata.uns_keys())):
-        print('Importing precomputed initial node positions ...')
-        XC = adata.uns['epg_init_nodes']
-    else:
+    if(init_nodes_pos is None):
         print('Clustering...')
         if(clustering=='ap'):
-        # print('There are no precomputed initial node positions yet, calculating it ...')
+            print('Affinity propagation ...')
             ap = AffinityPropagation(damping=damping,preference=np.percentile(-euclidean_distances(input_data,squared=True),pref_perc)).fit(input_data)
             # ap = AffinityPropagation(damping=damping).fit(input_data)
             cluster_labels = ap.labels_
-            XC = ap.cluster_centers_
-            adata.uns['epg_init_nodes'] = XC  
-        if(clustering=='sc'):
-            # print('There are no precomputed initial node positions yet, calculating it ...')
+            init_nodes_pos = ap.cluster_centers_
+            epg_nodes_pos = init_nodes_pos  
+        elif(clustering=='sc'):
+            print('Spectral clustering ...')
             sc = SpectralClustering(n_clusters=n_clusters,affinity='nearest_neighbors',
                                     n_neighbors=np.int(input_data.shape[0]*nb_pct)).fit(input_data)
             cluster_labels = sc.labels_ 
-            XC = np.empty((0,input_data.shape[1])) #cluster centers
+            init_nodes_pos = np.empty((0,input_data.shape[1])) #cluster centers
             for x in np.unique(cluster_labels):
                 id_cells = np.array(range(input_data.shape[0]))[cluster_labels==x]
-                XC = np.vstack((XC,np.median(input_data[id_cells,:],axis=0)))
-            adata.uns['epg_init_nodes'] = XC   
-    #Minimum Spanning Tree
-    print('Calculatng minimum spanning tree...')
-    D=pairwise_distances(XC)
-    G=nx.from_numpy_matrix(D)
-    mst=nx.minimum_spanning_tree(G)
-    dict_nodes_pos = {i:x for i,x in enumerate(XC)}
-    nx.set_node_attributes(mst,values=dict_nodes_pos,name='pos')
-    dict_mst_branches = extract_branches(mst)
-    adata.uns['mst'] = mst
-    print('Number of initial branches: ' + str(len(dict_mst_branches))) 
-    plot_mst(adata,n_components=input_data.shape[1],save_fig=save_fig)    
+                init_nodes_pos = np.vstack((init_nodes_pos,np.median(input_data[id_cells,:],axis=0)))
+            epg_nodes_pos = init_nodes_pos
+        else:
+            print("'"+clustering+"'" + ' is not supported')
+    else:
+        epg_nodes_pos = init_nodes_pos
+        print('Setting initial nodes...')
+
+    print('The number of initial nodes is ' + str(epg_nodes_pos.shape[0]))
+
+    if(init_edges is None):
+        #Minimum Spanning Tree
+        print('Calculatng minimum spanning tree...')
+        D=pairwise_distances(epg_nodes_pos)
+        G=nx.from_numpy_matrix(D)
+        mst=nx.minimum_spanning_tree(G)
+        epg_edges = np.array(mst.edges())
+    else:
+        print('Setting initial edges...')
+        epg_edges = init_edges
+
+    #store graph information and update adata
+    epg=nx.Graph()
+    epg.add_nodes_from(range(epg_nodes_pos.shape[0]))
+    epg.add_edges_from(epg_edges)
+    dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
+    nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
+    dict_branches = extract_branches(epg)
+    flat_tree = construct_flat_tree(dict_branches)
+    nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
+    adata.uns['epg'] = deepcopy(epg)
+    adata.uns['flat_tree'] = deepcopy(flat_tree)
+    adata.uns['seed_epg'] = deepcopy(epg)
+    adata.uns['seed_flat_tree'] = deepcopy(flat_tree)
+    project_cells_to_epg(adata)
+    calculate_pseudotime(adata)    
+    print('Number of initial branches: ' + str(len(dict_branches))) 
+
+
+def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.02,epg_mu=0.1,epg_trimmingradius='Inf',
+                            epg_finalenergy = 'Penalized',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,
+                            save_fig=False,fig_name='ElPiGraph_analysis.pdf',fig_path=None,fig_size=(8,8),**kwargs):
+    """Elastic principal graph learning.
     
-    ##seeding the structure   
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    epg_n_nodes: `int`, optional (default: 50)
+        Number of nodes for elastic principal graph.
+    incr_n_nodes: `int`, optional (default: 50)
+        Incremental number of nodes for elastic principal graph when epg_n_nodes is not big enough.
+    epg_lambda: `float`, optional (default: 0.02)
+        lambda parameter used to compute the elastic energy.
+    epg_mu: `float`, optional (default: 0.1)
+        mu parameter used to compute the elastic energy.
+    epg_trimmingradius: `float`, optional (default: 'Inf')  
+        maximal distance from a node to the points it controls in the embedding.
+    epg_finalenergy: `str`, optional (default: 'Penalized')
+        indicate the final elastic energy associated with the configuration.
+    epg_alpha: `float`, optional (default: 0.02)
+        alpha parameter of the penalized elastic energy.
+    epg_beta: `float`, optional (default: 0.0)
+        beta parameter of the penalized elastic energy.
+    epg_n_processes: `int`, optional (default: 1)
+        the number of processes to use.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: adata.uns['workdir'])
+        if save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'ElPigraph_analysis.pdf')
+        if save_fig is True, specify figure name.
+    **kwargs: additional arguments to `ElPiGraph.computeElasticPrincipalTree`
+   
+    Returns
+    -------
+    updates `adata` with the following fields.
+    
+    epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
+        Elastic principal graph structure. It contains node attributes ('pos')
+    ori_epg : `networkx.classes.graph.Graph` (`adata.uns['ori_epg']`)
+        Store original elastic principal graph structure
+    epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['epg_obj']`)
+        R object of elastic principal graph learning.
+    ori_epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['ori_epg_obj']`)
+        Store original R object of elastic principal graph learning
+    flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
+        It contains node attribtutes ('pos','label','pseudotime') and edge attributes ('nodes','id','len','color').
+    ori_flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        Store original flat_tree
+    """
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
+    input_data = adata.obsm['X_dr']
+    if('seed_epg' in adata.uns_keys()):
+        epg = adata.uns['seed_epg']
+        dict_nodes_pos = nx.get_node_attributes(epg,'pos')
+        init_nodes_pos = np.array(list(dict_nodes_pos.values()))
+        init_edges = np.array(list(epg.edges())) 
+        R_init_edges = init_edges + 1
+        if((init_nodes_pos.shape[0]+incr_n_nodes)>=epg_n_nodes):
+            print('epg_n_nodes is too small. It is corrected to the initial number of nodes plus incr_n_nodes')
+            epg_n_nodes = init_nodes_pos.shape[0]+incr_n_nodes
+    else:
+        print('No initial structure is seeded')
+        init_nodes_pos = robjects.NULL
+        R_init_edges = robjects.NULL
+        
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
-    init_nodes_pos = XC
-    init_edges = np.array(mst.edges())
-    epg_n_nodes = max(epg_n_nodes,XC.shape[0]+incr_n_nodes)
-    print('Initial elastic principal graph...')
+    print('Learning elastic principal graph...')
     R.pdf(fig_path +fig_name)
     epg_obj = ElPiGraph.computeElasticPrincipalTree(X=input_data,
                                                     NumNodes = epg_n_nodes, 
                                                     InitNodePositions = init_nodes_pos,
-                                                    InitEdges=init_edges + 1,
+                                                    InitEdges=R_init_edges,
                                                     Lambda=epg_lambda, Mu=epg_mu,
                                                     TrimmingRadius= epg_trimmingradius,
                                                     FinalEnergy = epg_finalenergy,
@@ -871,7 +1003,8 @@ def elastic_principal_graph(adata,clustering='ap',damping=0.75,pref_perc=50,n_cl
                                                     Do_PCA=False,CenterData=False,
                                                     n_cores = epg_n_processes,
                                                     nReps=1,
-                                                    ProbPoint=1.0)
+                                                    ProbPoint=1.0,
+                                                    **kwargs)
     R('dev.off()')
 
     epg_nodes_pos = np.array(epg_obj[0].rx2('NodePositions'))
@@ -893,7 +1026,7 @@ def elastic_principal_graph(adata,clustering='ap',damping=0.75,pref_perc=50,n_cl
     adata.uns['flat_tree'] = deepcopy(flat_tree)
     project_cells_to_epg(adata)
     calculate_pseudotime(adata)
-    print('Number of branches after initial ElPiGraph: ' + str(len(dict_branches)))
+    print('Number of branches after learning elastic principal graph: ' + str(len(dict_branches)))
 
 
 def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',egp_collapse_par = 5,   
