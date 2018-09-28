@@ -37,6 +37,9 @@ from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
 import matplotlib.ticker as ticker
+import pickle
+import gzip
+
 
 from rpy2.robjects.packages import importr
 from rpy2.robjects import r as R
