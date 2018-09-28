@@ -44,10 +44,31 @@ import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 
 
-def read(file_name,file_path='./',file_format='tsv',delimiter='\t',
-         backed=False,key=None,dtype='float32',workdir=None):
+def read(file_name,file_path='./',file_format='tsv',delimiter='\t',workdir=None,**kwargs):
+    """Read gene expression matrix into anndata object.
+    
+    Parameters
+    ----------
+    file_name: `str`
+        File name.
+    file_path: `str`, optional (default: './')
+        File path. By default it's the current directory
+    file_format: `str`, optional (default: 'tsv')
+        File format. currently supported file formats: 'tsv','txt','tab','data','csv','mtx','h5ad','pklz','pkl'
+    delimiter: `str`, optional (default: '\t')
+        Delimiter to use.
+    workdir: `float`, optional (default: None)
+        Working directory. If it's not specified, a folder named 'stream_result' will be created under the current directory
+    **kwargs: additional arguments to `Anndata` reading functions
+   
+    Returns
+    -------
+    AnnData object
+
+    """
+
     if(file_format in ['tsv','txt','tab','data']):
-        adata = ad.read_text(file_path+file_name,delimiter=delimiter).T
+        adata = ad.read_text(file_path+file_name,delimiter=delimiter,**kwargs).T
         adata.raw = adata
         if(workdir==None):
             workdir = os.getcwd() + '/stream_result/'
@@ -55,7 +76,7 @@ def read(file_name,file_path='./',file_format='tsv',delimiter='\t',
             os.makedirs(workdir)
         adata.uns['workdir'] = workdir        
     elif(file_format == 'csv'):
-        adata = ad.read_csv(file_path+file_name,delimiter=delimiter).T
+        adata = ad.read_csv(file_path+file_name,delimiter=delimiter,**kwargs).T
         adata.raw = adata
         if(workdir==None):
             workdir = os.getcwd() + '/stream_result/'
@@ -63,7 +84,7 @@ def read(file_name,file_path='./',file_format='tsv',delimiter='\t',
             os.makedirs(workdir)
         adata.uns['workdir'] = workdir
     elif(file_format == 'mtx'):
-        adata = ad.read_mtx(file_path+file_name,dtype=dtype).T 
+        adata = ad.read_mtx(file_path+file_name,**kwargs).T 
         adata.raw = adata
         if(workdir==None):
             workdir = os.getcwd() + '/stream_result/'
@@ -71,11 +92,53 @@ def read(file_name,file_path='./',file_format='tsv',delimiter='\t',
             os.makedirs(workdir)
         adata.uns['workdir'] = workdir
     elif(file_format == 'h5ad'):
-        adata = ad.read_h5ad(file_path+file_name,backed=backed)
+        adata = ad.read_h5ad(file_path+file_name,**kwargs)
+    elif(file_format == 'pklz'):
+        f = gzip.open(file_path+file_name, 'rb')
+        adata = pickle.load(f)
+        f.close()  
+    elif(file_format == 'pkl'):
+        f = open(file_path+file_name, 'rb')
+        adata = pickle.load(f)
+        f.close()            
     else:
         print('file format ' + file_format + ' is not supported')
         return
     return adata
+
+def write(adata,file_name=None,file_path=None,file_format='pklz'):
+    """Write Anndate object to file
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix. 
+    file_name: `str`, optional (default: None)
+        File name. If it's not specified, a file named 'stream_result' with the specified file format will be created 
+        under the working directory
+    file_path: `str`, optional (default: None)
+        File path. If it's not specified, it's set to working directory
+    file_format: `str`, optional (default: 'pklz')
+        File format. By default it's compressed pickle file. Currently two file formats are supported:
+        'pklz': compressed pickle file
+        'pkl': pickle file
+    """
+
+    if(file_name is None):
+        file_name = 'stream_result.'+file_format
+    if(file_path is None):
+        file_path = adata.uns['workdir']
+    if(file_format == 'pklz'):
+        f = gzip.open(file_path+file_name, 'wb')
+        pickle.dump(adata, f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.close()  
+    elif(file_format == 'pkl'):
+        f = open(file_path+file_name, 'wb')
+        pickle.dump(adata, f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.close()            
+    else:
+        print('file format ' + file_format + ' is not supported')
+        return
 
 
 def add_cell_labels(adata,file_path='./',file_name=None):
@@ -903,15 +966,15 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clu
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
+    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
+    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
     adata.uns['seed_epg'] = deepcopy(epg)
-    adata.uns['seed_flat_tree'] = deepcopy(flat_tree)
-    project_cells_to_epg(adata)
-    calculate_pseudotime(adata)    
+    adata.uns['seed_flat_tree'] = deepcopy(flat_tree)    
     print('Number of initial branches: ' + str(len(dict_branches))) 
 
 
@@ -1016,16 +1079,16 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
+    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
+    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['ori_epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)    
     adata.uns['ori_epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
-    project_cells_to_epg(adata)
-    calculate_pseudotime(adata)
     print('Number of branches after learning elastic principal graph: ' + str(len(dict_branches)))
 
 
@@ -1071,14 +1134,14 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',egp_co
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
+    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
+    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
-    project_cells_to_epg(adata)
-    calculate_pseudotime(adata)
     print('Number of branches after pruning ElPiGraph: ' + str(len(dict_branches)))
 
 
@@ -1127,15 +1190,14 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
+    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
-
+    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
-    project_cells_to_epg(adata)
-    calculate_pseudotime(adata)
     print('Number of branches after optimizing branching: ' + str(len(dict_branches)))   
 
 
@@ -1189,14 +1251,14 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
+    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
+    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
-    project_cells_to_epg(adata)
-    calculate_pseudotime(adata)
     print('Number of branches after shifting branching: ' + str(len(dict_branches)))
 
 
@@ -1227,14 +1289,14 @@ def extend_elastic_principal_graph(adata,egp_ext_mode = 'QuantDists',epg_ext_par
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
+    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
+    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
 #     adata.uns['epg_obj'] = deepcopy(epg_obj_extend)
-    project_cells_to_epg(adata)
-    calculate_pseudotime(adata)
     print('Number of branches after extending leaves: ' + str(len(dict_branches)))    
 
 
