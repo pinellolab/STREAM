@@ -856,6 +856,7 @@ def calculate_pseudotime(adata):
                 df_pseudotime[indices] = len_pre_edges + (flat_tree.edges[edge]['len']-adata.obs.loc[indices,'branch_lam'])
         dict_nodes_pseudotime[root_node] = df_pseudotime
     nx.set_node_attributes(flat_tree,values=dict_nodes_pseudotime,name='pseudotime')
+    adata.uns['flat_tree'] = flat_tree
     return None
 
 def construct_flat_tree(dict_branches):
@@ -969,15 +970,15 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clu
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
-    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
-    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
     adata.uns['seed_epg'] = deepcopy(epg)
-    adata.uns['seed_flat_tree'] = deepcopy(flat_tree)    
+    adata.uns['seed_flat_tree'] = deepcopy(flat_tree)  
+    project_cells_to_epg(adata)
+    calculate_pseudotime(adata)
     print('Number of initial branches: ' + str(len(dict_branches))) 
 
 
@@ -1082,16 +1083,16 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
-    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
-    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['ori_epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)    
     adata.uns['ori_epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
+    project_cells_to_epg(adata)
+    calculate_pseudotime(adata)
     print('Number of branches after learning elastic principal graph: ' + str(len(dict_branches)))
 
 
@@ -1137,14 +1138,14 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',egp_co
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
-    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
-    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
+    project_cells_to_epg(adata)
+    calculate_pseudotime(adata)
     print('Number of branches after pruning ElPiGraph: ' + str(len(dict_branches)))
 
 
@@ -1193,14 +1194,14 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
-    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
-    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
+    project_cells_to_epg(adata)
+    calculate_pseudotime(adata)
     print('Number of branches after optimizing branching: ' + str(len(dict_branches)))   
 
 
@@ -1254,14 +1255,14 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
-    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
-    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['epg_obj'] = deepcopy(epg_obj)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
+    project_cells_to_epg(adata)
+    calculate_pseudotime(adata)
     print('Number of branches after shifting branching: ' + str(len(dict_branches)))
 
 
@@ -1292,14 +1293,14 @@ def extend_elastic_principal_graph(adata,egp_ext_mode = 'QuantDists',epg_ext_par
     epg.add_edges_from(epg_edges)
     dict_nodes_pos = {i:x for i,x in enumerate(epg_nodes_pos)}
     nx.set_node_attributes(epg,values=dict_nodes_pos,name='pos')
-    project_cells_to_epg(adata)
     dict_branches = extract_branches(epg)
     flat_tree = construct_flat_tree(dict_branches)
     nx.set_node_attributes(flat_tree,values={x:dict_nodes_pos[x] for x in flat_tree.nodes()},name='pos')
-    calculate_pseudotime(adata)
     adata.uns['epg'] = deepcopy(epg)
     adata.uns['flat_tree'] = deepcopy(flat_tree)
 #     adata.uns['epg_obj'] = deepcopy(epg_obj_extend)
+    project_cells_to_epg(adata)
+    calculate_pseudotime(adata)
     print('Number of branches after extending leaves: ' + str(len(dict_branches)))    
 
 
@@ -3601,7 +3602,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_diff=0.2, percent
 
 def plot_transition_genes(adata,num_genes = 15,**kwargs):
     options = {
-            'save_fig' : True,
+            'save_fig' : False,
             'fig_size':(12,8),
             'fig_path' : adata.uns['workdir'] + 'transition_genes/',}
     options.update(kwargs)
@@ -3800,7 +3801,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_foldchange = 1.5,cutoff_diff=0.
 
 def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 1.5,**kwargs):
     options = {
-            'save_fig' : True,
+            'save_fig' : False,
             'fig_size':(12,8),
             'fig_path' : adata.uns['workdir'] + 'de_genes/',}
     options.update(kwargs)
