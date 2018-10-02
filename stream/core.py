@@ -1096,7 +1096,7 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     print('Number of branches after learning elastic principal graph: ' + str(len(dict_branches)))
 
 
-def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',egp_collapse_par = 5,   
+def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_collapse_par = 5,   
                                   epg_lambda=0.02,epg_mu=0.1,epg_trimmingradius='Inf',
                                   epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False): 
     print('Collasping small branches ...')
