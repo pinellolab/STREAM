@@ -13,7 +13,7 @@ import os
 from sklearn.decomposition import PCA as sklearnPCA
 from sklearn import preprocessing
 from sklearn.manifold import LocallyLinearEmbedding,TSNE
-from sklearn.cluster import SpectralClustering,AffinityPropagation
+from sklearn.cluster import SpectralClustering,AffinityPropagation,KMeans
 from sklearn.metrics.pairwise import pairwise_distances,pairwise_distances_argmin_min,euclidean_distances
 import matplotlib.patches as Patches
 from matplotlib.patches import Polygon
@@ -109,7 +109,7 @@ def read(file_name,file_path='./',file_format='tsv',delimiter='\t',workdir=None,
         return
     return adata
 
-def write(adata,file_name=None,file_path=None,file_format='pklz'):
+def write(adata,file_name=None,file_path=None,file_format='pkl'):
     """Write Anndate object to file
     
     Parameters
@@ -121,7 +121,7 @@ def write(adata,file_name=None,file_path=None,file_format='pklz'):
         under the working directory
     file_path: `str`, optional (default: None)
         File path. If it's not specified, it's set to working directory
-    file_format: `str`, optional (default: 'pklz')
+    file_format: `str`, optional (default: 'pkl')
         File format. By default it's compressed pickle file. Currently two file formats are supported:
         'pklz': compressed pickle file
         'pkl': pickle file
@@ -146,7 +146,8 @@ def write(adata,file_name=None,file_path=None,file_format='pklz'):
 
 def add_cell_labels(adata,file_path='./',file_name=None):
     if(file_name!=None):
-        df_labels = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
+        df_labels = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label'],
+                                dtype=str,compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
         df_labels['label'] = df_labels['label'].str.replace('/','-')        
         df_labels.index = adata.obs_names
         adata.obs['label'] = df_labels
@@ -159,7 +160,7 @@ def add_cell_colors(adata,file_path='./',file_name=None):
     labels_unique = adata.obs['label'].unique()
     if(file_name!=None):
         df_colors = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label','color'],
-                                compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
+                                dtype=str,compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
         df_colors['label'] = df_colors['label'].str.replace('/','-')   
         adata.uns['label_color'] = {df_colors.iloc[x,0]:df_colors.iloc[x,1] for x in range(df_colors.shape[0])}
     else:
@@ -370,6 +371,52 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
 
 
 def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiprocessing.cpu_count(),feature='var_genes',method = 'mlle'):
+
+    """Perform dimension reduction.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    nb_pct: `float`, optional (default: 0.1)
+        The percentage neighbor cells used for lle.
+    n_components: `int`, optional (default: 3)
+        Number of components to keep.
+    n_jobs: `int`, optional (default: all available cpus)
+        The number of parallel jobs to run.
+    feature: `str`, optional (default: 'var_genes')
+        Choose from {{'var_genes','top_pcs','all'}}
+        Feature used for dimension reduction.
+        'var_genes': most variable genes
+        'top_pcs': top principal components
+        'all': all genes
+    method: `str`, optional (default: 'mlle')
+        Choose from {{'mlle','umap','pca'}}
+        Method used for dimension reduction.
+        'mlle': Modified locally linear embedding algorithm
+        'umap': Uniform Manifold Approximation and Projection
+        'pca': Principal component analysis
+   
+    Returns
+    -------
+    updates `adata` with the following fields.
+    
+    X_dr : `numpy.ndarray` (`adata.obsm['X_dr']`)
+        A #observations × n_components data matrix after dimension reduction.
+    X_mlle : `numpy.ndarray` (`adata.obsm['X_mlle']`)
+        Store #observations × n_components data matrix after mlle.
+    X_umap : `numpy.ndarray` (`adata.obsm['X_umap']`)
+        Store #observations × n_components data matrix after umap.
+    X_pca : `numpy.ndarray` (`adata.obsm['X_pca']`)
+        Store #observations × n_components data matrix after pca.
+    trans_mlle : `sklearn.manifold.locally_linear.LocallyLinearEmbedding` (`adata.uns['trans_mlle']`)
+        Store mlle object
+    trans_umap : `umap.UMAP` (`adata.uns['trans_umap']`)
+        Store umap object
+    trans_pca : `sklearn.decomposition.PCA` (`adata.uns['trans_pca']`)
+        Store pca object 
+    """
+
     if(feature == 'var_genes'):
         input_data = adata.obsm['var_genes']
     if(feature == 'top_pcs'):
@@ -393,6 +440,12 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
         adata.uns['trans_umap'] = trans
         adata.obsm['X_umap'] = trans.embedding_
         adata.obsm['X_dr'] = trans.embedding_
+    if(method == 'pca'):
+        reducer = sklearnPCA(n_components=n_components,svd_solver='full')
+        trans = reducer.fit(input_data)
+        adata.uns['trans_pca'] = trans
+        adata.obsm['X_pca'] = trans.transform(input_data) 
+        adata.obsm['X_dr'] = adata.obsm['X_pca']
     return None
 
 
@@ -508,77 +561,101 @@ def extract_branches(epg):
     return dict_branches
 
 
-def plot_mst(adata,n_components = 3,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(8,8),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'dimension_reduction.pdf',}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
+# def plot_mst(adata,n_components = 3,**kwargs):
+#     options = {
+#             'save_fig' : False,
+#             'fig_size':(8,8),
+#             'fig_path' :  adata.uns['workdir'],
+#             'fig_name' : 'dimension_reduction.pdf',}
+#     options.update(kwargs)
+#     save_fig = options['save_fig']
+#     fig_size = options['fig_size']
+#     fig_path = options['fig_path']
+#     fig_name = options['fig_name']
 
-    mst = adata.uns['mst']
-    XC = nx.get_node_attributes(mst,'pos')
-    df_coord = pd.DataFrame(adata.obsm['X_dr'],index=adata.obs_names)
-    coord = df_coord.sample(frac=1,random_state=100)
+#     mst = adata.uns['mst']
+#     XC = nx.get_node_attributes(mst,'pos')
+#     df_coord = pd.DataFrame(adata.obsm['X_dr'],index=adata.obs_names)
+#     coord = df_coord.sample(frac=1,random_state=100)
     
-    if(n_components>=3): 
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111, projection='3d')
-        for n in mst.nodes():
-            ax.scatter(XC[n][0],XC[n][1],XC[n][2],color='#EC4E4E',s=80,marker='o',alpha=0.9,zorder=100)
-        for edge in mst.edges():
-            x_pos = (XC[edge[0]][0],XC[edge[1]][0])
-            y_pos = (XC[edge[0]][1],XC[edge[1]][1])
-            z_pos = (XC[edge[0]][2],XC[edge[1]][2])
-            ax.plot(x_pos,y_pos,z_pos,'#3182bd',lw=2,zorder=10)
-        max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min(), coord[2].max()-coord[2].min()]).max() / 1.9
-        mid_x = (coord[0].max()+coord[0].min()) * 0.5
-        mid_y = (coord[1].max()+coord[1].min()) * 0.5
-        mid_z = (coord[2].max()+coord[2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_zlim(mid_z - max_range, mid_z + max_range)
-        ax.set_xlabel('Component1',labelpad=20)
-        ax.set_ylabel('Component2',labelpad=20)
-        ax.set_zlabel('Component3',labelpad=20)
-        if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
-            plt.close(fig)
-    if(n_components==2): 
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111)
-        for n in mst.nodes():
-            ax.scatter(XC[n][0],XC[n][1],color='#EC4E4E',s=80,marker='o',alpha=0.9,zorder=100)
-        for edge in mst.edges():
-            x_pos = (XC[edge[0]][0],XC[edge[1]][0])
-            y_pos = (XC[edge[0]][1],XC[edge[1]][1])
-            ax.plot(x_pos,y_pos,'#3182bd',lw=2,zorder=10)    
-        max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min()]).max() / 1.9
-        mid_x = (coord[0].max()+coord[0].min()) * 0.5
-        mid_y = (coord[1].max()+coord[1].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_xlabel('Component1',labelpad=20)
-        ax.set_ylabel('Component2',labelpad=20)
-        if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
-            plt.close(fig)      
+#     if(n_components>=3): 
+#         fig = plt.figure(figsize=fig_size)
+#         ax = fig.add_subplot(111, projection='3d')
+#         for n in mst.nodes():
+#             ax.scatter(XC[n][0],XC[n][1],XC[n][2],color='#EC4E4E',s=80,marker='o',alpha=0.9,zorder=100)
+#         for edge in mst.edges():
+#             x_pos = (XC[edge[0]][0],XC[edge[1]][0])
+#             y_pos = (XC[edge[0]][1],XC[edge[1]][1])
+#             z_pos = (XC[edge[0]][2],XC[edge[1]][2])
+#             ax.plot(x_pos,y_pos,z_pos,'#3182bd',lw=2,zorder=10)
+#         max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min(), coord[2].max()-coord[2].min()]).max() / 1.9
+#         mid_x = (coord[0].max()+coord[0].min()) * 0.5
+#         mid_y = (coord[1].max()+coord[1].min()) * 0.5
+#         mid_z = (coord[2].max()+coord[2].min()) * 0.5
+#         ax.set_xlim(mid_x - max_range, mid_x + max_range)
+#         ax.set_ylim(mid_y - max_range, mid_y + max_range)
+#         ax.set_zlim(mid_z - max_range, mid_z + max_range)
+#         ax.set_xlabel('Component1',labelpad=20)
+#         ax.set_ylabel('Component2',labelpad=20)
+#         ax.set_zlabel('Component3',labelpad=20)
+#         if(save_fig):
+#             plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+#             plt.close(fig)
+#     if(n_components==2): 
+#         fig = plt.figure(figsize=fig_size)
+#         ax = fig.add_subplot(111)
+#         for n in mst.nodes():
+#             ax.scatter(XC[n][0],XC[n][1],color='#EC4E4E',s=80,marker='o',alpha=0.9,zorder=100)
+#         for edge in mst.edges():
+#             x_pos = (XC[edge[0]][0],XC[edge[1]][0])
+#             y_pos = (XC[edge[0]][1],XC[edge[1]][1])
+#             ax.plot(x_pos,y_pos,'#3182bd',lw=2,zorder=10)    
+#         max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min()]).max() / 1.9
+#         mid_x = (coord[0].max()+coord[0].min()) * 0.5
+#         mid_y = (coord[1].max()+coord[1].min()) * 0.5
+#         ax.set_xlim(mid_x - max_range, mid_x + max_range)
+#         ax.set_ylim(mid_y - max_range, mid_y + max_range)
+#         ax.set_xlabel('Component1',labelpad=20)
+#         ax.set_ylabel('Component2',labelpad=20)
+#         if(save_fig):
+#             plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+#             plt.close(fig)      
 
-def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',**kwargs):  
-    options = {
-            'save_fig' : False,
-            'fig_size':(8,8),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'branches.pdf',}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
+def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=(8,8)):  
+    """Plot branches skeleton with all nodes.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    n_components: `int`, optional (default: 3)
+        Number of components to be plotted.
+    comp1: `int`, optional (default: 0)
+        Component used for x axis.
+    comp2: `int`, optional (default: 1)
+        Component used for y axis.
+    key_graph `str`, optional (default: None): 
+        Choose from {{'epg','seed_epg','ori_epg'}}
+        Specify gragh to be plotted.
+        'epg' current elastic principal graph
+        'seed_epg' seed structure used for elastic principal graph learning, which is obtained by running seed_elastic_principal_graph()
+        'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'branches.pdf')
+        if save_fig is True, specify figure name.
+
+    Returns
+    -------
+    None
+    
+    """
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
     
     if(key_graph=='epg'):
         epg = adata.uns['epg']
@@ -601,10 +678,10 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',**kwarg
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for egp_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[egp_sub_edge[0]][0],dict_nodes_pos[egp_sub_edge[1]][0])
-                y_pos = (dict_nodes_pos[egp_sub_edge[0]][1],dict_nodes_pos[egp_sub_edge[1]][1])
-                z_pos = (dict_nodes_pos[egp_sub_edge[0]][2],dict_nodes_pos[egp_sub_edge[1]][2])
+            for epg_sub_edge in epg_sub.edges():
+                x_pos = (dict_nodes_pos[epg_sub_edge[0]][0],dict_nodes_pos[epg_sub_edge[1]][0])
+                y_pos = (dict_nodes_pos[epg_sub_edge[0]][1],dict_nodes_pos[epg_sub_edge[1]][1])
+                z_pos = (dict_nodes_pos[epg_sub_edge[0]][2],dict_nodes_pos[epg_sub_edge[1]][2])
                 ax.plot(x_pos,y_pos,z_pos,c = branch_i_color,lw=5,zorder=None)
         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],nodes_pos[:,2],color='gray',s=12,alpha=1,zorder=5)
         for i in dict_nodes_pos.keys():
@@ -629,9 +706,9 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',**kwarg
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for egp_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[egp_sub_edge[0]][comp1],dict_nodes_pos[egp_sub_edge[1]][comp1])
-                y_pos = (dict_nodes_pos[egp_sub_edge[0]][comp2],dict_nodes_pos[egp_sub_edge[1]][comp2])
+            for epg_sub_edge in epg_sub.edges():
+                x_pos = (dict_nodes_pos[epg_sub_edge[0]][comp1],dict_nodes_pos[epg_sub_edge[1]][comp1])
+                y_pos = (dict_nodes_pos[epg_sub_edge[0]][comp2],dict_nodes_pos[epg_sub_edge[1]][comp2])
                 ax.plot(x_pos,y_pos,c = branch_i_color,lw=5,zorder=None)
         ax.scatter(nodes_pos[:,comp1],nodes_pos[:,comp2],color='gray',s=12,alpha=1,zorder=5)
         for i in dict_nodes_pos.keys():
@@ -648,20 +725,49 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',**kwarg
             plt.close(fig)        
 
 
-def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2=1,key_graph='epg',show_all=True,**kwargs):    
-    options = {
-            'save_fig' : False,
-            'fig_size':(8,8),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'branches_with_cells.pdf',
-            'fig_legend_ncol':3,}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
-    fig_legend_ncol = options['fig_legend_ncol']
+def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2=1,key_graph='epg',show_all_cells=True,
+                             save_fig=False,fig_name='branches_with_cells.pdf',fig_path=None,fig_size=(8,8),fig_legend_ncol=3):    
+    """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for mapped data.
+    n_components: `int`, optional (default: 3)
+        Number of components to be plotted.
+    comp1: `int`, optional (default: 0)
+        Component used for x axis.
+    comp2: `int`, optional (default: 1)
+        Component used for y axis.
+    key_graph `str`, optional (default: None): 
+        Choose from {{'epg','seed_epg','ori_epg'}}
+        Specify gragh to be plotted.
+        'epg' current elastic principal graph
+        'seed_epg' seed structure used for elastic principal graph learning, which is obtained by running seed_elastic_principal_graph()
+        'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
+    show_all_cells: `bool`, optional (default: False)
+        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'branches_with_cells.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend_ncol: `int`, optional (default: 3)
+        The number of columns that the legend has.
 
+    Returns
+    -------
+    None
+
+    """
+
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
     if(key_graph=='epg'):
         epg = adata.uns['epg']
         flat_tree = adata.uns['flat_tree']
@@ -696,7 +802,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
         if(adata_new is None):
             ax.scatter(coord[0], coord[1],coord[2],c=color,s=50,linewidth=0,alpha=0.8) 
         else:
-            if(show_all):
+            if(show_all_cells):
                 ax.scatter(coord[0], coord[1],coord[2],c=color,s=50,linewidth=0,alpha=0.8) 
                 ax.scatter(coord_new[0], coord_new[1],coord_new[2],c=color_new,s=50,linewidth=0,alpha=0.8)
             else:
@@ -705,10 +811,10 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for egp_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[egp_sub_edge[0]][0],dict_nodes_pos[egp_sub_edge[1]][0])
-                y_pos = (dict_nodes_pos[egp_sub_edge[0]][1],dict_nodes_pos[egp_sub_edge[1]][1])
-                z_pos = (dict_nodes_pos[egp_sub_edge[0]][2],dict_nodes_pos[egp_sub_edge[1]][2])
+            for epg_sub_edge in epg_sub.edges():
+                x_pos = (dict_nodes_pos[epg_sub_edge[0]][0],dict_nodes_pos[epg_sub_edge[1]][0])
+                y_pos = (dict_nodes_pos[epg_sub_edge[0]][1],dict_nodes_pos[epg_sub_edge[1]][1])
+                z_pos = (dict_nodes_pos[epg_sub_edge[0]][2],dict_nodes_pos[epg_sub_edge[1]][2])
                 ax.plot(x_pos,y_pos,z_pos,c = branch_i_color,lw=5,zorder=None)
 #         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],nodes_pos[:,2],color='gray',s=12,alpha=1,zorder=5)
         for node_i in flat_tree.nodes():
@@ -735,7 +841,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
         if(adata_new is None):
             ax.scatter(coord[comp1], coord[comp2],c=color,s=50,linewidth=0,alpha=0.8) 
         else:
-            if(show_all):
+            if(show_all_cells):
                 ax.scatter(coord[comp1], coord[comp2],c=color,s=50,linewidth=0,alpha=0.8) 
                 ax.scatter(coord_new[comp1], coord_new[comp2],c=color_new,s=50,linewidth=0,alpha=0.8)
             else:
@@ -744,9 +850,9 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for egp_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[egp_sub_edge[0]][comp1],dict_nodes_pos[egp_sub_edge[1]][comp1])
-                y_pos = (dict_nodes_pos[egp_sub_edge[0]][comp2],dict_nodes_pos[egp_sub_edge[1]][comp2])
+            for epg_sub_edge in epg_sub.edges():
+                x_pos = (dict_nodes_pos[epg_sub_edge[0]][comp1],dict_nodes_pos[epg_sub_edge[1]][comp1])
+                y_pos = (dict_nodes_pos[epg_sub_edge[0]][comp2],dict_nodes_pos[epg_sub_edge[1]][comp2])
                 ax.plot(x_pos,y_pos,c = branch_i_color,lw=5,zorder=None)
 #         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],color='gray',s=12,alpha=1,zorder=5)
         for node_i in flat_tree.nodes():
@@ -836,7 +942,8 @@ def project_cells_to_epg(adata):
 def calculate_pseudotime(adata):
     flat_tree = adata.uns['flat_tree']
     dict_edge_len = nx.get_edge_attributes(flat_tree,'len')
-    dict_nodes_pseudotime = dict()
+    adata.obs = adata.obs[adata.obs.columns.drop(list(adata.obs.filter(regex='_pseudotime')))].copy()
+    # dict_nodes_pseudotime = dict()
     for root_node in flat_tree.nodes():
         df_pseudotime = pd.Series(index=adata.obs.index)
         list_bfs_edges = list(nx.bfs_edges(flat_tree,source=root_node))
@@ -854,9 +961,10 @@ def calculate_pseudotime(adata):
                 df_pseudotime[indices] = len_pre_edges + adata.obs.loc[indices,'branch_lam']
             else:
                 df_pseudotime[indices] = len_pre_edges + (flat_tree.edges[edge]['len']-adata.obs.loc[indices,'branch_lam'])
-        dict_nodes_pseudotime[root_node] = df_pseudotime
-    nx.set_node_attributes(flat_tree,values=dict_nodes_pseudotime,name='pseudotime')
-    adata.uns['flat_tree'] = flat_tree
+        adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'] = df_pseudotime
+        # dict_nodes_pseudotime[root_node] = df_pseudotime
+    # nx.set_node_attributes(flat_tree,values=dict_nodes_pseudotime,name='pseudotime')
+    # adata.uns['flat_tree'] = flat_tree
     return None
 
 def construct_flat_tree(dict_branches):
@@ -885,7 +993,70 @@ def construct_flat_tree(dict_branches):
     nx.set_edge_attributes(flat_tree,values=dict_branches_len,name='len')    
     return flat_tree
 
-def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clustering='ap',damping=0.75,pref_perc=50,n_clusters=20,nb_pct=0.1):
+
+def switch_to_low_dimension(adata,n_components=2):
+    """Switch to low dimension space, in which the preliminary structure will be learnt.    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix
+    n_components: `int`, optional (default: 2)
+        Number of components used to infer the initial elastic principal graph.
+
+    Returns
+    -------
+    adata_low: AnnData
+        Annotated data matrix used in low dimensional space
+    """
+    if('X_dr' not in adata.obsm_keys()):
+        print('Please run dimension reduction first')
+        return
+    if(adata.obsm['X_dr'].shape[1]<=n_components):         
+        print('The number of components in adata should be greater than n_components ' + str(n_components))
+        return
+    adata_low = adata.copy()
+    adata_low.obsm['X_dr'] = adata.obsm['X_dr'][:,:n_components]
+    adata_low.obsm['X_dr_ori'] = adata.obsm['X_dr']
+    return adata_low
+
+
+def infer_initial_structure(adata_low,nb_min=5):
+    """Infer the initial node positions and edges. It helps infer the initial structure used in high-dimensional space
+    
+    Parameters
+    ----------
+    adata_low: AnnData
+        Annotated data matrix used in low dimensional space
+    nb_min: `int`, optional (default: 2)
+        Minimum number of neighbour cells when mapping elastic principal graph from low-dimension to high-dimension.
+        if the number of cells within one node is greater than nb_min, these cells will be used to calculate the new position of this node in high dimensional space
+        if the number of cells within one node is less than or equal to nb_min, then nb_min nearest neighbor cells of this node will be used to calculate its new position in high dimensional space    
+
+    Returns
+    -------
+    init_nodes_pos: `array`, shape = [n_nodes,n_dimension], optional (default: `None`)
+        initial node positions
+    init_edges: `array`, shape = [n_edges,2], optional (default: `None`)
+        initial edges, all the initial nodes should be included in the tree structure
+    """    
+    n_components = adata_low.obsm['X_dr'].shape[1]
+    epg_low = adata_low.uns['epg']
+    kdtree=cKDTree(adata_low.obsm['X_dr'])
+    dict_nodes_pos = dict()
+    nx.set_node_attributes(epg_low,values=False,name='inferred_by_knn')
+    for node_i in epg_low.nodes():
+        ids = np.where(adata_low.obs['node'] == node_i)[0]
+        if(ids.shape[0]<=nb_min):
+            ids = kdtree.query(nx.get_node_attributes(epg_low,'pos')[node_i],k=nb_min)[1]
+            print('node '+ str(node_i) +' is calculated using ' + str(nb_min) + 'nearest neighbor cells')
+            epg_low.nodes[node_i]['inferred_by_knn'] = True
+        dict_nodes_pos[node_i] = np.concatenate((nx.get_node_attributes(epg_low,'pos')[node_i],
+                                                 np.mean(adata_low.obsm['X_dr_ori'][ids,n_components:],axis=0)))
+        init_nodes_pos = np.array(list(dict_nodes_pos.values()))
+        init_edges = epg_low.edges()
+    return init_nodes_pos,init_edges
+
+def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='ap',damping=0.75,pref_perc=50,n_clusters=20,max_n_clusters=200,nb_pct=0.1):
     
     """Seeding the initial elastic principal graph.
     
@@ -898,32 +1069,46 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clu
     init_edges: `array`, shape = [n_edges,2], optional (default: `None`)
         initial edges, all the initial nodes should be included in the tree structure
     clustering: `str`, optional (default: 'ap')
-        Choose from {{'ap', 'sc'}}
-        clustering method used to seed the initial structure.
+        Choose from {{'ap','kmeans','sc'}}
+        clustering method used to infer the initial nodes.
         'ap' affinity propagation
+        'kmeans' K-Means clustering
         'sc' spectral clustering
     damping: `float`, optional (default: 0.75)
         Damping factor (between 0.5 and 1) for affinity propagation.
     pref_perc: `int`, optional (default: 50)
         Preference percentile (between 0 and 100). The percentile of the input similarities for affinity propagation.
     n_clusters: `int`, optional (default: 20)
-        Number of clusters for spectral clustering.
+        Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').
+    max_n_clusters: `int`, optional (default: 200)
+        The allowed maximum number of clusters for 'ap'.
     nb_pct: `float`, optional (default: 0.1)
         Neighbor percentage. The percentage of points used as neighbors for spectral clustering.
 
     Returns
     -------
     updates `adata` with the following fields.
+
+    adata.obs: `pandas.core.frame.DataFrame` (`adata.obs`)
+        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.        
     epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
         Elastic principal graph structure. It contains node attributes ('pos')
     flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
         An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
-        It contains node attribtutes ('pos','label','pseudotime') and edge attributes ('nodes','id','len','color').
+        It contains node attribtutes ('pos','label') and edge attributes ('nodes','id','len','color').
     seed_epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
         Store seeded elastic principal graph structure
     seed_flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
         Store seeded flat_tree
+
+    Notes
+    -------
+    The default procedure is fast and good enough when seeding structure in low-dimensional space.
+
+    when seeding structure in high-dimensional space, it's strongly recommended that using 'infer_initial_structure' to get the initial node positions and edges
+
     """
+
     print('Seeding initial elastic principal graph...')
     input_data = adata.obsm['X_dr']
     if(init_nodes_pos is None):
@@ -932,6 +1117,10 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clu
             print('Affinity propagation ...')
             ap = AffinityPropagation(damping=damping,preference=np.percentile(-euclidean_distances(input_data,squared=True),pref_perc)).fit(input_data)
             # ap = AffinityPropagation(damping=damping).fit(input_data)
+            if(ap.cluster_centers_.shape[0]>max_n_clusters):
+                print('The number of clusters is ' + str(ap.cluster_centers_.shape[0]))
+                print('Too many clusters are generated, please lower pref_perc or increase damping and retry it')
+                return
             cluster_labels = ap.labels_
             init_nodes_pos = ap.cluster_centers_
             epg_nodes_pos = init_nodes_pos  
@@ -945,12 +1134,17 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clu
                 id_cells = np.array(range(input_data.shape[0]))[cluster_labels==x]
                 init_nodes_pos = np.vstack((init_nodes_pos,np.median(input_data[id_cells,:],axis=0)))
             epg_nodes_pos = init_nodes_pos
+        elif(clustering=='kmeans'):
+            print('K-Means clustering ...')
+            kmeans = KMeans(n_clusters=n_clusters,init='k-means++').fit(input_data)
+            cluster_labels = kmeans.labels_
+            init_nodes_pos = kmeans.cluster_centers_
+            epg_nodes_pos = init_nodes_pos     
         else:
             print("'"+clustering+"'" + ' is not supported')
     else:
         epg_nodes_pos = init_nodes_pos
         print('Setting initial nodes...')
-
     print('The number of initial nodes is ' + str(epg_nodes_pos.shape[0]))
 
     if(init_edges is None):
@@ -963,6 +1157,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None, init_edges=None, clu
     else:
         print('Setting initial edges...')
         epg_edges = init_edges
+
 
     #store graph information and update adata
     epg=nx.Graph()
@@ -993,7 +1188,7 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
         Annotated data matrix.
     epg_n_nodes: `int`, optional (default: 50)
         Number of nodes for elastic principal graph.
-    incr_n_nodes: `int`, optional (default: 50)
+    incr_n_nodes: `int`, optional (default: 30)
         Incremental number of nodes for elastic principal graph when epg_n_nodes is not big enough.
     epg_lambda: `float`, optional (default: 0.02)
         lambda parameter used to compute the elastic energy.
@@ -1013,8 +1208,8 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
         if True,save the figure.
     fig_size: `tuple`, optional (default: (8,8))
         figure size.
-    fig_path: `str`, optional (default: adata.uns['workdir'])
-        if save_fig is True, specify figure path.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'ElPigraph_analysis.pdf')
         if save_fig is True, specify figure name.
     **kwargs: additional arguments to `ElPiGraph.computeElasticPrincipalTree`
@@ -1023,6 +1218,8 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     -------
     updates `adata` with the following fields.
     
+    adata.obs: `pandas.core.frame.DataFrame` (`adata.obs`)
+        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.
     epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
         Elastic principal graph structure. It contains node attributes ('pos')
     ori_epg : `networkx.classes.graph.Graph` (`adata.uns['ori_epg']`)
@@ -1030,10 +1227,10 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['epg_obj']`)
         R object of elastic principal graph learning.
     ori_epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['ori_epg_obj']`)
-        Store original R object of elastic principal graph learning
+        Store original R object of elastic principal graph learning.
     flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
         An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
-        It contains node attribtutes ('pos','label','pseudotime') and edge attributes ('nodes','id','len','color').
+        It contains node attribtutes ('pos','label') and edge attributes ('nodes','id','len','color').
     ori_flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
         Store original flat_tree
     """
@@ -1098,7 +1295,56 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
 
 def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_collapse_par = 5,   
                                   epg_lambda=0.02,epg_mu=0.1,epg_trimmingradius='Inf',
-                                  epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False): 
+                                  epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False,**kwargs): 
+    """Prune the learnt elastic principal graph by filtering out 'trivial' branches.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    epg_collapse_mode: `str`, optional (default: 'PointNumber')
+        The mode used to prune the graph.
+        Choose from {{'PointNumber','PointNumber_Extrema','PointNumber_Leaves','EdgesNumber','EdgesLength'}}
+        'PointNumber': branches with less than epg_collapse_par points (points projected on the extreme points are not considered) are removed
+        'PointNumber_Extrema', branches with less than epg_collapse_par (points projected on the extreme points are not considered) are removed
+        'PointNumber_Leaves', branches with less than epg_collapse_par points (points projected on non-leaf extreme points are not considered) are removed
+        'EdgesNumber', branches with less than epg_collapse_par edges are removed
+        'EdgesLength', branches shorter than epg_collapse_par are removed        
+    epg_collapse_par: `float`, optional (default: 5)
+        The paramter used to control different modes.
+    epg_lambda: `float`, optional (default: 0.02)
+        lambda parameter used to compute the elastic energy.
+    epg_mu: `float`, optional (default: 0.1)
+        mu parameter used to compute the elastic energy.
+    epg_trimmingradius: `float`, optional (default: 'Inf')  
+        maximal distance from a node to the points it controls in the embedding.
+    epg_finalenergy: `str`, optional (default: 'Penalized')
+        indicate the final elastic energy associated with the configuration.
+    epg_alpha: `float`, optional (default: 0.02)
+        alpha parameter of the penalized elastic energy.
+    epg_beta: `float`, optional (default: 0.0)
+        beta parameter of the penalized elastic energy.
+    epg_n_processes: `int`, optional (default: 1)
+        The number of processes to use.
+    reset: `bool`, optional (default: False)
+        If true, reset the current elastic principal graph to the initial elastic principal graph (i.e. the graph obtained from running 'elastic_principal_graph')
+    **kwargs: additional arguments to `ElPiGraph.CollapseBrances`
+   
+    Returns
+    -------
+    updates `adata` with the following fields.
+
+    adata.obs: `pandas.core.frame.DataFrame` (`adata.obs`)
+        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.    
+    epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
+        Elastic principal graph structure. It contains node attributes ('pos')
+    epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['epg_obj']`)
+        R object of elastic principal graph learning.
+    flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
+        It contains node attribtutes ('pos','label') and edge attributes ('nodes','id','len','color').
+    """
+
     print('Collasping small branches ...')
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
@@ -1109,7 +1355,7 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_co
         epg_obj = adata.uns['epg_obj']
         epg = adata.uns['epg']
     input_data = adata.obsm['X_dr']
-    epg_obj_collapse = ElPiGraph.CollapseBrances(X = input_data, TargetPG = epg_obj[0], Mode = epg_collapse_mode, ControlPar = egp_collapse_par)
+    epg_obj_collapse = ElPiGraph.CollapseBrances(X = input_data, TargetPG = epg_obj[0], Mode = epg_collapse_mode, ControlPar = epg_collapse_par, **kwargs)
 
     init_nodes_pos = np.array(epg_obj_collapse.rx2('Nodes'))
     init_edges = np.array(epg_obj_collapse.rx2('Edges')) - 1    
@@ -1151,7 +1397,52 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_co
 
 def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,                                  
                        epg_lambda=0.01,epg_mu=0.1,epg_trimmingradius='Inf',
-                       epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False):
+                       epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False,**kwargs):
+    """Optimize branching node by expanding the nodes around a branching point.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    incr_n_nodes: `int`, optional (default: 30)
+        Incremental number of nodes for elastic principal graph.       
+    epg_maxsteps: `float`, optional (default: 50)
+        The maximum number of iteration steps .
+    mode: `int`, optional (default: 2)
+        The energy computation mode.
+    epg_lambda: `float`, optional (default: 0.02)
+        lambda parameter used to compute the elastic energy.
+    epg_mu: `float`, optional (default: 0.1)
+        mu parameter used to compute the elastic energy.
+    epg_trimmingradius: `float`, optional (default: 'Inf')  
+        maximal distance from a node to the points it controls in the embedding.
+    epg_finalenergy: `str`, optional (default: 'Penalized')
+        indicate the final elastic energy associated with the configuration.
+    epg_alpha: `float`, optional (default: 0.02)
+        alpha parameter of the penalized elastic energy.
+    epg_beta: `float`, optional (default: 0.0)
+        beta parameter of the penalized elastic energy.
+    epg_n_processes: `int`, optional (default: 1)
+        The number of processes to use.
+    reset: `bool`, optional (default: False)
+        If true, reset the current elastic principal graph to the initial elastic principal graph (i.e. the graph obtained from running 'elastic_principal_graph')
+    **kwargs: additional arguments to `ElPiGraph.CollapseBrances`
+   
+    Returns
+    -------
+    updates `adata` with the following fields.
+
+    adata.obs: `pandas.core.frame.DataFrame` (`adata.obs`)
+        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.        
+    epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
+        Elastic principal graph structure. It contains node attributes ('pos')
+    epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['epg_obj']`)
+        R object of elastic principal graph learning.
+    flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
+        It contains node attribtutes ('pos','label') and edge attributes ('nodes','id','len','color').
+    """
+
     print('Optimizing branching...')
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
@@ -1183,7 +1474,8 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
                                     drawAccuracyComplexity = False, drawEnergy = False,drawPCAView = False,
                                     n_cores = epg_n_processes,
                                     nReps=1,
-                                    ProbPoint=1.0)
+                                    ProbPoint=1.0,
+                                    **kwargs)
     
     epg_nodes_pos = np.array(epg_obj[0].rx2('NodePositions'))
     epg_edges = np.array((epg_obj[0].rx2('Edges')).rx2('Edges'),dtype=int)-1    
@@ -1207,7 +1499,52 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
 
 def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05,epg_shift_max=5,                             
                    epg_lambda=0.01,epg_mu=0.1,epg_trimmingradius='Inf',
-                   epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False):
+                   epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False,**kwargs):
+    """Move branching node to the area with higher density.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    epg_shift_mode: `str`, optional (default: 'NodeDensity')
+        The mode used to shift the branching nodes.
+        Choose from {{'NodePoints','NodeDensity'}}
+    epg_shift_radius: `float`, optional (default: 0.05)
+        The radius used when computing point density if epg_shift_mode = 'NodeDensity'.
+    epg_shift_max: `float`, optional (default: 5)
+        The maxium distance (defined as the number of edges) to consider when exploring the neighborhood of branching point
+    epg_lambda: `float`, optional (default: 0.02)
+        lambda parameter used to compute the elastic energy.
+    epg_mu: `float`, optional (default: 0.1)
+        mu parameter used to compute the elastic energy.
+    epg_trimmingradius: `float`, optional (default: 'Inf')  
+        maximal distance from a node to the points it controls in the embedding.
+    epg_finalenergy: `str`, optional (default: 'Penalized')
+        indicate the final elastic energy associated with the configuration.
+    epg_alpha: `float`, optional (default: 0.02)
+        alpha parameter of the penalized elastic energy.
+    epg_beta: `float`, optional (default: 0.0)
+        beta parameter of the penalized elastic energy.
+    epg_n_processes: `int`, optional (default: 1)
+        The number of processes to use.
+    reset: `bool`, optional (default: False)
+        If true, reset the current elastic principal graph to the initial elastic principal graph (i.e. the graph obtained from running 'elastic_principal_graph')
+    **kwargs: additional arguments to `ElPiGraph.CollapseBrances`
+   
+    Returns
+    -------
+    updates `adata` with the following fields.
+
+    adata.obs: `pandas.core.frame.DataFrame` (`adata.obs`)
+        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.        
+    epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
+        Elastic principal graph structure. It contains node attributes ('pos')
+    epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['epg_obj']`)
+        R object of elastic principal graph learning.
+    flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
+        It contains node attribtutes ('pos','label') and edge attributes ('nodes','id','len','color').
+    """
     
     print('Shifting branching point to denser area ...')
     ElPiGraph = importr('ElPiGraph.R')
@@ -1225,7 +1562,8 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
                                            TrimmingRadius = epg_trimmingradius,                       
                                            SelectionMode = epg_shift_mode, 
                                            DensityRadius = epg_shift_radius,
-                                           MaxShift = epg_shift_max)
+                                           MaxShift = epg_shift_max,
+                                           **kwargs)
 
     init_nodes_pos = np.array(epg_obj_shift.rx2('NodePositions'))
     init_edges = np.array(epg_obj_shift.rx2('Edges')) - 1  
@@ -1266,7 +1604,42 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
     print('Number of branches after shifting branching: ' + str(len(dict_branches)))
 
 
-def extend_elastic_principal_graph(adata,egp_ext_mode = 'QuantDists',epg_ext_par = 0.5,epg_trimmingradius='Inf',reset=False):
+def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par = 0.5,epg_trimmingradius='Inf',reset=False,**kwargs):
+    """Extend the leaves of elastic principal graph with additional nodes.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    epg_ext_mode: `str`, optional (default: 'QuantDists')
+        The mode used to extend the leaves.
+        Choose from {{'QuantDists','QuantCentroid','WeigthedCentroid'}}
+        'QuantCentroid':for each leaf node, the extreme points are ordered by their distance from the node and the centroid of the points further than epg_ext_par is returned.
+        'WeigthedCentroid':for each leaf node, a weight is computed for each points by raising the distance to the epg_ext_par power. Larger epg_ext_par results in a bigger influence of points further than the node
+        'QuantDists':for each leaf node, the extreme points are ordered by their distance from the node and the 100*epg_ext_par th percentile of the points farther than epg_ext_par is returned
+    epg_ext_par: `float`, optional (default: 0.5)
+        The paramter used to control different modes.
+    epg_trimmingradius: `float`, optional (default: 'Inf')  
+        maximal distance from a node to the points it controls in the embedding.
+    reset: `bool`, optional (default: False)
+        If true, reset the current elastic principal graph to the initial elastic principal graph (i.e. the graph obtained from running 'elastic_principal_graph')
+    **kwargs: additional arguments to `ElPiGraph.CollapseBrances`
+   
+    Returns
+    -------
+    updates `adata` with the following fields.
+
+    adata.obs: `pandas.core.frame.DataFrame` (`adata.obs`)
+        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.        
+    epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
+        Elastic principal graph structure. It contains node attributes ('pos')
+    epg_obj : `rpy2.rinterface.ListSexpVector` (`adata.uns['epg_obj']`)
+        R object of elastic principal graph learning.
+    flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
+        An abstract of elastic principle graph structure by only keeping leaf nodes and branching nodes. 
+        It contains node attribtutes ('pos','label') and edge attributes ('nodes','id','len','color').
+    """
+
     print('Extending leaves with additional nodes ...')
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
@@ -1281,9 +1654,10 @@ def extend_elastic_principal_graph(adata,egp_ext_mode = 'QuantDists',epg_ext_par
     epg_obj_extend = ElPiGraph.ExtendLeaves(X = input_data, 
                                           TargetPG = epg_obj[0],
                                           TrimmingRadius = epg_trimmingradius,
-                                          Mode = egp_ext_mode, 
+                                          Mode = epg_ext_mode, 
                                           ControlPar = epg_ext_par,
-                                          PlotSelected = False)
+                                          PlotSelected = False,
+                                          **kwargs)
     epg_nodes_pos = np.array(epg_obj_extend.rx2('NodePositions'))
     epg_edges = np.array((epg_obj_extend.rx2('Edges')).rx2('Edges'),dtype=int)-1   
         
@@ -1304,19 +1678,9 @@ def extend_elastic_principal_graph(adata,egp_ext_mode = 'QuantDists',epg_ext_par
     print('Number of branches after extending leaves: ' + str(len(dict_branches)))    
 
 
-def plot_flat_tree(adata,adata_new=None,show_all=True,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(8,8),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'flat_tree.pdf',
-            'fig_legend_ncol':3,}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
-    fig_legend_ncol = options['fig_legend_ncol']
+def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_path=None,fig_name='flat_tree.pdf',fig_size=(8,8),fig_legend_ncol=3):  
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
 
     flat_tree = adata.uns['flat_tree']
     dict_nodes_pos = nx.spring_layout(flat_tree,random_state=10)
@@ -1416,7 +1780,7 @@ def plot_flat_tree(adata,adata_new=None,show_all=True,**kwargs):
         coord_new = df_coord_new.sample(frac=1,random_state=100)  
         for x in adata_new.uns['label_color'].keys():
             list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))
-        if(show_all):
+        if(show_all_cells):
             ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
             ax.scatter(coord_new[0], coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
         else:
@@ -1429,55 +1793,60 @@ def plot_flat_tree(adata,adata_new=None,show_all=True,**kwargs):
         plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
-def plot_visualization_2D(adata,adata_new=None,show_all=False,method='umap',nb_pct=0.1,perplexity=30.0,color_by='label',use_precomputed=True,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(10,10),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'visualization_2D.pdf',
-            'fig_legend_ncol':3,}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
-    fig_legend_ncol = options['fig_legend_ncol']
-
+def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',nb_pct=0.1,perplexity=30.0,color_by='label',use_precomputed=True,
+                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend_ncol=3):  
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
     input_data = adata.obsm['X_dr']
     if(adata_new != None):
         input_data = np.vstack((input_data,adata_new.obsm['X_dr']))
     if(method == 'umap'):
-        if(use_precomputed and ('X_vis_umap' in adata.obsm_keys())):
-            print('Importing precomputed umap visualization ...')
-            embedding = adata.obsm['X_vis_umap']
+        if(adata_new is None):
+            if(use_precomputed and ('X_vis_umap' in adata.obsm_keys())):
+                print('Importing precomputed umap visualization ...')
+                embedding = adata.obsm['X_vis_umap']
+            else:
+                reducer = umap.UMAP(n_neighbors=int(input_data.shape[0]*nb_pct),n_components=2,random_state=42)
+                embedding = reducer.fit_transform(input_data)
+                adata.obsm['X_vis_umap'] = embedding
         else:
-            reducer = umap.UMAP(n_neighbors=int(input_data.shape[0]*nb_pct),n_components=2,random_state=42)
-            embedding = reducer.fit_transform(input_data)
-            if(adata_new is None):
-                adata.obsm['X_vis_umap'] = embedding     
-    if(method == 'tsne'):
-        if(use_precomputed and ('X_vis_tsne' in adata.obsm_keys())):
-            print('Importing precomputed tsne visualization ...')
-            embedding = adata.obsm['X_vis_tsne']
-        else:
-            reducer = TSNE(n_components=2, init='pca',perplexity=perplexity, random_state=0)
-            embedding = reducer.fit_transform(input_data)
-            if(adata_new is None):
-                adata.obsm['X_vis_tsne'] = embedding
+            if(use_precomputed and ('merged_X_vis_umap' in adata_new.uns_keys())):
+                print('Importing precomputed umap visualization ...')
+                embedding = adata_new.uns['merged_X_vis_umap']
+            else:
+                reducer = umap.UMAP(n_neighbors=int(input_data.shape[0]*nb_pct),n_components=2,random_state=42)
+                embedding = reducer.fit_transform(input_data)  
+                adata_new.uns['merged_X_vis_umap'] = embedding
 
+    if(method == 'tsne'):
+        if(adata_new is None):
+            if(use_precomputed and ('X_vis_tsne' in adata.obsm_keys())):
+                print('Importing precomputed tsne visualization ...')
+                embedding = adata.obsm['X_vis_tsne']
+            else:
+                reducer = TSNE(n_components=2, init='pca',perplexity=perplexity, random_state=0)
+                embedding = reducer.fit_transform(input_data)
+                adata.obsm['X_vis_tsne'] = embedding
+        else:
+            if(use_precomputed and ('merged_X_vis_tsne' in adata_new.uns_keys())):
+                print('Importing precomputed tsne visualization ...')
+                embedding = adata_new.uns['X_vis_tsne']
+            else:
+                reducer = TSNE(n_components=2, init='pca',perplexity=perplexity, random_state=0)
+                embedding = reducer.fit_transform(input_data)
+                adata_new.uns['merged_X_vis_tsne'] = embedding            
     fig = plt.figure(figsize=fig_size)
     ax = fig.add_subplot(1,1,1)        
-    if(color_by=='label'):
-        if(adata_new is None):
-            df_sample = adata.obs.copy()
-            df_coord = pd.DataFrame(embedding,index=adata.obs_names)
+    if(adata_new is None):
+        df_sample = adata.obs.copy()
+        df_coord = pd.DataFrame(embedding,index=adata.obs_names)
+        if(color_by=='label'):
             list_patches = []
             for x in adata.uns['label_color'].keys():
                 list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))
             color = df_sample.sample(frac=1,random_state=100)['label_color'] 
             coord = df_coord.sample(frac=1,random_state=100)    
-    if(color_by=='branch'):
-        if(adata_new is None):
+        if(color_by=='branch'):
             df_sample = adata.obs.copy()
             df_coord = pd.DataFrame(embedding,index=adata.obs_names)
             flat_tree = adata.uns['flat_tree']
@@ -1490,34 +1859,59 @@ def plot_visualization_2D(adata,adata_new=None,show_all=False,method='umap',nb_p
                 list_patches.append(Patches.Patch(color = flat_tree.edges[edge]['color'],
                     label='branch '+flat_tree.nodes[br_id[0]]['label']+'_'+flat_tree.nodes[br_id[1]]['label']))
             color = df_sample.sample(frac=1,random_state=100)['branch_color'] 
-            coord = df_coord.sample(frac=1,random_state=100)   
-    if(adata_new != None):  
-        df_sample = adata.obs.copy()
-        df_coord = pd.DataFrame(embedding[:adata.shape[0],:],index=adata.obs_names)
-        color = df_sample.sample(frac=1,random_state=100)['label_color'] 
-        coord = df_coord.sample(frac=1,random_state=100)    
-        df_sample_new = adata_new.obs.copy()
-        df_coord_new = pd.DataFrame(embedding[adata.shape[0]:embedding.shape[0],:],index=adata_new.obs_names)
-        color_new = df_sample_new.sample(frac=1,random_state=100)['label_color'] 
-        coord_new = df_coord_new.sample(frac=1,random_state=100)         
-        if(show_all):
+            coord = df_coord.sample(frac=1,random_state=100) 
+        ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8)   
+    else:
+        if(color_by=='label'):  
+            df_sample = adata.obs.copy()
+            df_coord = pd.DataFrame(embedding[:adata.shape[0],:],index=adata.obs_names)
+            color = df_sample.sample(frac=1,random_state=100)['label_color'] 
+            coord = df_coord.sample(frac=1,random_state=100)    
+            df_sample_new = adata_new.obs.copy()
+            df_coord_new = pd.DataFrame(embedding[adata.shape[0]:embedding.shape[0],:],index=adata_new.obs_names)
+            color_new = df_sample_new.sample(frac=1,random_state=100)['label_color'] 
+            coord_new = df_coord_new.sample(frac=1,random_state=100)         
+            if(show_all_colors):
+                list_patches = []
+                for x in adata.uns['label_color'].keys():
+                    list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))            
+                ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
+                for x in adata_new.uns['label_color'].keys():
+                    if(x not in adata.uns['label_color'].keys()):
+                        list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))            
+                ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
+            else:
+                ax.scatter(coord[0], coord[1],c='gray',s=50,linewidth=0,alpha=0.8) 
+                list_patches = [Patches.Patch(color = 'gray',label='trajectory_cells')]
+                for x in adata_new.uns['label_color'].keys():
+                    if(x not in adata.uns['label_color'].keys()):
+                        list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))            
+                ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)  
+        if(color_by=='branch'):
+            df_sample = adata.obs.copy()
+            df_coord = pd.DataFrame(embedding[:adata.shape[0],:],index=adata.obs_names)
+            flat_tree = adata.uns['flat_tree']
             list_patches = []
-            for x in adata.uns['label_color'].keys():
-                list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))            
-            ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
-            for x in adata_new.uns['label_color'].keys():
-                if(x not in adata.uns['label_color'].keys()):
-                    list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))            
-            ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
-        else:
-            ax.scatter(coord[0], coord[1],c='gray',s=50,linewidth=0,alpha=0.8) 
-            list_patches = [Patches.Patch(color = 'gray',label='trajectory_cells')]
-            for x in adata_new.uns['label_color'].keys():
-                if(x not in adata.uns['label_color'].keys()):
-                    list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))            
-            ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)            
-    else:    
-        ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
+            df_sample['branch_color'] = '' 
+            for edge in flat_tree.edges():
+                br_id = flat_tree.edges[edge]['id']
+                id_cells = np.where(df_sample['branch_id']==br_id)[0]
+                df_sample.loc[df_sample.index[id_cells],'branch_color'] = flat_tree.edges[edge]['color']
+                list_patches.append(Patches.Patch(color = flat_tree.edges[edge]['color'],
+                    label='branch '+flat_tree.nodes[br_id[0]]['label']+'_'+flat_tree.nodes[br_id[1]]['label']))
+            color = df_sample.sample(frac=1,random_state=100)['branch_color'] 
+            coord = df_coord.sample(frac=1,random_state=100)   
+            df_sample_new = adata_new.obs.copy()
+            df_coord_new = pd.DataFrame(embedding[adata.shape[0]:embedding.shape[0],:],index=adata_new.obs_names)
+            df_sample_new['branch_color'] = '' 
+            for edge in flat_tree.edges():
+                br_id = flat_tree.edges[edge]['id']
+                id_cells = np.where(df_sample_new['branch_id']==br_id)[0]
+                df_sample_new.loc[df_sample_new.index[id_cells],'branch_color'] = flat_tree.edges[edge]['color']  
+            color_new = df_sample_new.sample(frac=1,random_state=100)['branch_color'] 
+            coord_new = df_coord_new.sample(frac=1,random_state=100)               
+            ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8)           
+            ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)                    
     ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
               ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
     if(save_fig):
@@ -1551,19 +1945,10 @@ def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0):
     return dict_edge_shift_dist
 
 
-def subwaymap_plot(adata,adata_new=None,show_all=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(10,6),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'subway_map.pdf',
-            'fig_legend_ncol':3,}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
-    fig_legend_ncol = options['fig_legend_ncol']
+def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',
+                   save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend_ncol=3):  
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
 
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -1586,7 +1971,8 @@ def subwaymap_plot(adata,adata_new=None,show_all=True,root='S0',percentile_dist=
             node_pos_ed = np.array([dict_path_len[edge[1]],dict_edge_shift_dist[edge]])  
             br_id = flat_tree.edges[edge]['id']
             id_cells = np.where(adata.obs['branch_id']==br_id)[0]
-            cells_pos_x = flat_tree.nodes[root_node]['pseudotime'].iloc[id_cells]
+            # cells_pos_x = flat_tree.nodes[root_node]['pseudotime'].iloc[id_cells]
+            cells_pos_x = adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
             np.random.seed(100)
             cells_pos_y = node_pos_st[1] + adata.obs.iloc[id_cells,]['branch_dist']*np.random.choice([1,-1],size=id_cells.shape[0])
             cells_pos = np.array((cells_pos_x,cells_pos_y)).T
@@ -1605,7 +1991,8 @@ def subwaymap_plot(adata,adata_new=None,show_all=True,root='S0',percentile_dist=
                 flat_tree_new = adata_new.uns['flat_tree']
                 if(br_id in list_br_id_new):
                     id_cells = np.where(adata_new.obs['branch_id']==br_id)[0]
-                    cells_pos_x = flat_tree_new.nodes[root_node]['pseudotime'].iloc[id_cells]
+                    # cells_pos_x = flat_tree_new.nodes[root_node]['pseudotime'].iloc[id_cells]
+                    cells_pos_x = adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
                     np.random.seed(100)
                     cells_pos_y = node_pos_st[1] + adata_new.obs.iloc[id_cells,]['branch_dist']*np.random.choice([1,-1],size=id_cells.shape[0])
                     cells_pos = np.array((cells_pos_x,cells_pos_y)).T
@@ -1653,7 +2040,7 @@ def subwaymap_plot(adata,adata_new=None,show_all=True,root='S0',percentile_dist=
             color = df_sample.sample(frac=1,random_state=100)['label_color'] 
             coord = df_coord.sample(frac=1,random_state=100)
             if(adata_new!=None):
-                if(not show_all):
+                if(not show_all_cells):
                     list_patches = []
                 for x in adata_new.uns['label_color'].keys():
                     list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))
@@ -1688,7 +2075,7 @@ def subwaymap_plot(adata,adata_new=None,show_all=True,root='S0',percentile_dist=
         if(adata_new is None):   
             ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8,zorder=10) 
         else:
-            if(show_all):
+            if(show_all_cells):
                 ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8,zorder=10) 
                 ax.scatter(coord_new[0], coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8,zorder=10) 
             else:
@@ -1895,18 +2282,10 @@ def find_outline_edges(bfs_flat_tree,start_node):
     return list_up_edges,list_down_edges
 
 
-def subwaymap_plot_gene(adata,adata_new=None,show_all=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(10,6),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_legend_ncol':3,}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_legend_ncol = options['fig_legend_ncol']
-
+def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,
+                        save_fig=False,fig_path=None,fig_size=(10,6)):  
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
     if(genes is None):
         print('Please provide gene names');
     else: 
@@ -1939,7 +2318,8 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all=True,genes=None,root='S0',
                 node_pos_ed = np.array([dict_path_len[edge[1]],dict_edge_shift_dist[edge]])  
                 br_id = flat_tree.edges[edge]['id']
                 id_cells = np.where(adata.obs['branch_id']==br_id)[0]
-                cells_pos_x = flat_tree.nodes[root_node]['pseudotime'].iloc[id_cells]
+                # cells_pos_x = flat_tree.nodes[root_node]['pseudotime'].iloc[id_cells]
+                cells_pos_x = adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
                 np.random.seed(100)
                 cells_pos_y = node_pos_st[1] + adata.obs.iloc[id_cells,]['branch_dist']*np.random.choice([1,-1],size=id_cells.shape[0])
                 cells_pos = np.array((cells_pos_x,cells_pos_y)).T
@@ -1958,7 +2338,8 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all=True,genes=None,root='S0',
                     flat_tree_new = adata_new.uns['flat_tree']
                     if(br_id in list_br_id_new):
                         id_cells = np.where(adata_new.obs['branch_id']==br_id)[0]
-                        cells_pos_x = flat_tree_new.nodes[root_node]['pseudotime'].iloc[id_cells]
+                        # cells_pos_x = flat_tree_new.nodes[root_node]['pseudotime'].iloc[id_cells]
+                        cells_pos_x = adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
                         np.random.seed(100)
                         cells_pos_y = node_pos_st[1] + adata_new.obs.iloc[id_cells,]['branch_dist']*np.random.choice([1,-1],size=id_cells.shape[0])
                         cells_pos = np.array((cells_pos_x,cells_pos_y)).T
@@ -2009,7 +2390,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all=True,genes=None,root='S0',
                 df_coord_new = pd.DataFrame(df_cells_pos_new['cells_pos'].tolist(),index=adata_new.obs_names)
                 color_new = pd.Series(gene_expr_new).sample(frac=1,random_state=100)
                 coord_new = df_coord_new.sample(frac=1,random_state=100)     
-                if(show_all):
+                if(show_all_cells):
                     sc=ax.scatter(pd.concat([coord[0],coord_new[0]]), pd.concat([coord[1],coord_new[1]]),c=pd.concat([color,color_new]),
                                   vmin=0, vmax=max(max_gene_expr,max_gene_expr_new), s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
                 else:
@@ -2082,23 +2463,10 @@ def find_paths(dict_tree,bfs_nodes):
                 dict_paths_top[(node_i,next_nodes[i_mid+1])] = stack_top
     return dict_paths_top,dict_paths_base
 
-def stream_plot(adata,adata_new=None,show_all=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = True,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(12,8),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'stream_plot.pdf',
-            'fig_legend_ncol':3,
-            'tick_fontsize':20,
-            'label_fontsize':25}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
-    fig_legend_ncol = options['fig_legend_ncol']
-    tick_fontsize = options['tick_fontsize']
-    label_fontsize = options['label_fontsize']
+def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = True,
+                save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
 
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -2153,7 +2521,7 @@ def stream_plot(adata,adata_new=None,show_all=False,root='S0',factor_num_win=10,
                     id_cells = np.where(df_rooted_tree_new['branch_id']==(x[1],x[0]))[0]
                     df_rooted_tree_new.loc[df_rooted_tree_new.index[id_cells],'edge'] = [x]
                     df_rooted_tree_new.loc[df_rooted_tree_new.index[id_cells],'lam_ordered'] = flat_tree.edges[x]['len'] - df_rooted_tree_new.loc[df_rooted_tree_new.index[id_cells],'branch_lam']    
-            if(show_all):
+            if(show_all_colors):
                 input_cell_label_uni = list(set(input_cell_label_uni + input_cell_label_uni_new))
                 input_cell_label_uni_color = {x: input_cell_label_uni_color[x] if x in input_cell_label_uni_color.keys() 
                                               else input_cell_label_uni_color_new[x]
@@ -2776,19 +3144,10 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
     return dict_im_array
 
 
-def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = True,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(12,8),
-            'fig_path' :  adata.uns['workdir'],
-            'tick_fontsize':20,
-            'label_fontsize':25,}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    tick_fontsize = options['tick_fontsize']
-    label_fontsize = options['label_fontsize']    
+def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = True,
+                    save_fig=False,fig_path=None,fig_size=(12,8),tick_fontsize=20,label_fontsize=25):  
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
 
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -3824,7 +4183,7 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 1.5,*
                 pos_greater = np.arange(dict_de_greater[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
             else:
                 val_greater = np.repeat(0,num_genes)
-                pos_greater = arange(num_genes)-1
+                pos_greater = np.arange(num_genes)-1
             ax.bar(pos_greater,val_greater, align='center',color = colors[0])
             ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_zscore, cutoff_zscore], "k--",lw=2)
             q_vals = dict_de_greater[sub_edges_i].iloc[:num_genes,:]['qval'].values
@@ -3867,10 +4226,10 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 1.5,*
         else:
             if(not dict_de_greater[sub_edges_i].empty):
                 val_greater = dict_de_greater[sub_edges_i].iloc[:num_genes,:]['fold_change'].values  # the bar lengths
-                pos_greater = arange(dict_DE_greater[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
+                pos_greater = np.arange(dict_DE_greater[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
             else:
                 val_greater = np.repeat(0,num_genes)
-                pos_greater = arange(num_genes)-1
+                pos_greater = np.arange(num_genes)-1
             ax.bar(pos_greater,val_greater, align='center',color = colors[0])
             ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [1.5, 1.5], "k--",lw=2)
             plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
@@ -3884,7 +4243,7 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 1.5,*
                 pos_less = np.arange(dict_de_less[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
             else:
                 val_less = np.repeat(0,num_genes)
-                pos_less = arange(num_genes)-1
+                pos_less = np.arange(num_genes)-1
             ax1.bar(pos_less,val_less, align='center',color = colors[1])
             ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-1.5, -1.5], "k--",lw=2)
             plt.xticks(pos_less,dict_de_less[sub_edges_i].index)
@@ -3916,5 +4275,9 @@ def map_new_data(adata,adata_new,method='mlle'):
         trans = adata.uns['trans_umap']
         adata_new.obsm['X_umap_mapping'] = trans.transform(input_data)
         adata_new.obsm['X_dr'] = adata_new.obsm['X_umap_mapping'].copy()
+    if(method == 'pca'):
+        trans = adata.uns['trans_pca']
+        adata_new.obsm['X_pca_mapping'] = trans.transform(input_data)
+        adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
