@@ -1126,8 +1126,8 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
             epg_nodes_pos = init_nodes_pos  
         elif(clustering=='sc'):
             print('Spectral clustering ...')
-            sc = SpectralClustering(n_clusters=n_clusters,affinity='nearest_neighbors',
-                                    n_neighbors=np.int(input_data.shape[0]*nb_pct)).fit(input_data)
+            sc = SpectralClustering(n_clusters=n_clusters,affinity='nearest_neighbors',n_neighbors=np.int(input_data.shape[0]*nb_pct),
+                                    eigen_solver='arpack',random_state=6).fit(input_data)
             cluster_labels = sc.labels_ 
             init_nodes_pos = np.empty((0,input_data.shape[1])) #cluster centers
             for x in np.unique(cluster_labels):
@@ -1992,7 +1992,7 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
                 if(br_id in list_br_id_new):
                     id_cells = np.where(adata_new.obs['branch_id']==br_id)[0]
                     # cells_pos_x = flat_tree_new.nodes[root_node]['pseudotime'].iloc[id_cells]
-                    cells_pos_x = adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
+                    cells_pos_x = adata_new.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
                     np.random.seed(100)
                     cells_pos_y = node_pos_st[1] + adata_new.obs.iloc[id_cells,]['branch_dist']*np.random.choice([1,-1],size=id_cells.shape[0])
                     cells_pos = np.array((cells_pos_x,cells_pos_y)).T
@@ -2339,7 +2339,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                     if(br_id in list_br_id_new):
                         id_cells = np.where(adata_new.obs['branch_id']==br_id)[0]
                         # cells_pos_x = flat_tree_new.nodes[root_node]['pseudotime'].iloc[id_cells]
-                        cells_pos_x = adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
+                        cells_pos_x = adata_new.obs[flat_tree.node[root_node]['label']+'_pseudotime'].iloc[id_cells]
                         np.random.seed(100)
                         cells_pos_y = node_pos_st[1] + adata_new.obs.iloc[id_cells,]['branch_dist']*np.random.choice([1,-1],size=id_cells.shape[0])
                         cells_pos = np.array((cells_pos_x,cells_pos_y)).T
