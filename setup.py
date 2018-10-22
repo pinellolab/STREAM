@@ -8,7 +8,7 @@ if sys.version_info.major != 3:
 
 
 setup(name='stream',
-      version="0.2.0",
+      version="0.2.6",
       description='Single-cell Trajectories Reconstruction, Exploration And Mapping of single-cell data',
       url='https://github.com/pinellolab/stream',
       author='Huidong Chen',
