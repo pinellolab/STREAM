@@ -47,19 +47,25 @@ import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 
 
-def read(file_name,file_path='./',file_format='tsv',delimiter='\t',workdir=None,**kwargs):
+def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',file_format='tsv',delimiter='\t',experiment='rna-seq', workdir=None,**kwargs):
     """Read gene expression matrix into anndata object.
     
     Parameters
     ----------
     file_name: `str`
-        File name.
+        File name. For atac-seq data, it's the count file name.
+    file_name_sample: `str`
+        Sample file name. Only valid when atac_seq = True.
+    file_name_region: `str`
+        Region file name. Only valid when atac_seq = True.
     file_path: `str`, optional (default: './')
         File path. By default it's the current directory
     file_format: `str`, optional (default: 'tsv')
         File format. currently supported file formats: 'tsv','txt','tab','data','csv','mtx','h5ad','pklz','pkl'
     delimiter: `str`, optional (default: '\t')
         Delimiter to use.
+    file_type: `str`, optional (default: 'rna-seq')
+        Choose from {{'rna-seq','atac-seq'}}       
     workdir: `float`, optional (default: None)
         Working directory. If it's not specified, a folder named 'stream_result' will be created under the current directory
     **kwargs: additional arguments to `Anndata` reading functions
@@ -67,47 +73,146 @@ def read(file_name,file_path='./',file_format='tsv',delimiter='\t',workdir=None,
     Returns
     -------
     AnnData object
-
     """
-
-    if(file_format in ['tsv','txt','tab','data']):
-        adata = ad.read_text(file_path+file_name,delimiter=delimiter,**kwargs).T
-        adata.raw = adata
-        if(workdir==None):
-            workdir = os.getcwd() + '/stream_result/'
-        if(not os.path.exists(workdir)):
-            os.makedirs(workdir)
-        adata.uns['workdir'] = workdir        
-    elif(file_format == 'csv'):
-        adata = ad.read_csv(file_path+file_name,delimiter=delimiter,**kwargs).T
-        adata.raw = adata
+    if(experiment == 'rna-seq'):
+        if(file_format in ['tsv','txt','tab','data']):
+            adata = ad.read_text(file_path+file_name,delimiter=delimiter,**kwargs).T
+            adata.raw = adata
+            if(workdir==None):
+                workdir = os.getcwd() + '/stream_result/'
+            if(not os.path.exists(workdir)):
+                os.makedirs(workdir)
+            adata.uns['workdir'] = workdir        
+        elif(file_format == 'csv'):
+            adata = ad.read_csv(file_path+file_name,delimiter=delimiter,**kwargs).T
+            adata.raw = adata
+            if(workdir==None):
+                workdir = os.getcwd() + '/stream_result/'
+            if(not os.path.exists(workdir)):
+                os.makedirs(workdir)
+            adata.uns['workdir'] = workdir
+        elif(file_format == 'mtx'):
+            adata = ad.read_mtx(file_path+file_name,**kwargs).T 
+            adata.raw = adata
+            if(workdir==None):
+                workdir = os.getcwd() + '/stream_result/'
+            if(not os.path.exists(workdir)):
+                os.makedirs(workdir)
+            adata.uns['workdir'] = workdir
+        elif(file_format == 'h5ad'):
+            adata = ad.read_h5ad(file_path+file_name,**kwargs)
+        elif(file_format == 'pklz'):
+            f = gzip.open(file_path+file_name, 'rb')
+            adata = pickle.load(f)
+            f.close()  
+        elif(file_format == 'pkl'):
+            f = open(file_path+file_name, 'rb')
+            adata = pickle.load(f)
+            f.close()            
+        else:
+            print('file format ' + file_format + ' is not supported')
+            return
+    if(experiment == 'atac-seq'):
+        if(file_name_sample is None):
+            print('sample file must be provided')
+        if(file_name_region is None):
+            print('region file must be provided')
+        df_counts = pd.read_csv(file_name,sep='\t',header=None,names=['i','j','x'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
+        df_regions = pd.read_csv(file_name_region,sep='\t',header=None,compression= 'gzip' if file_name_region.split('.')[-1]=='gz' else None)
+        df_regions = df_regions.iloc[:,:3]
+        df_regions.columns = ['seqnames','start','end']
+        df_samples = pd.read_csv(file_name_sample,sep='\t',header=None,names=['cell_id'],compression= 'gzip' if file_name_sample.split('.')[-1]=='gz' else None)
+        adata = ad.AnnData()
+        adata.uns['atac-seq'] = dict()
+        adata.uns['atac-seq']['count'] = df_counts
+        adata.uns['atac-seq']['region'] = df_regions
+        adata.uns['atac-seq']['sample'] = df_samples
         if(workdir==None):
             workdir = os.getcwd() + '/stream_result/'
         if(not os.path.exists(workdir)):
             os.makedirs(workdir)
         adata.uns['workdir'] = workdir
-    elif(file_format == 'mtx'):
-        adata = ad.read_mtx(file_path+file_name,**kwargs).T 
-        adata.raw = adata
-        if(workdir==None):
-            workdir = os.getcwd() + '/stream_result/'
-        if(not os.path.exists(workdir)):
-            os.makedirs(workdir)
-        adata.uns['workdir'] = workdir
-    elif(file_format == 'h5ad'):
-        adata = ad.read_h5ad(file_path+file_name,**kwargs)
-    elif(file_format == 'pklz'):
-        f = gzip.open(file_path+file_name, 'rb')
-        adata = pickle.load(f)
-        f.close()  
-    elif(file_format == 'pkl'):
-        f = open(file_path+file_name, 'rb')
-        adata = pickle.load(f)
-        f.close()            
-    else:
-        print('file format ' + file_format + ' is not supported')
-        return
+    adata.uns['experiment'] = experiment
     return adata
+
+
+def counts_to_kmers(adata,k=7,n_jobs = multiprocessing.cpu_count()):
+    """Covert counts files to kmer files.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    k: `int`, optional (default: 7)
+        k mer.  
+    n_jobs: `int`, optional (default: all available cpus)
+        The number of parallel jobs to run
+        
+    Returns
+    -------
+    updates `adata` with the following fields.
+    
+    X : `numpy.ndarray` (`adata.X`)
+        A #observations × #k-mers scaled z-score matrix.
+    z_score: `numpy.ndarray` (`adata.layers['z_score']`)
+        A #observations × #k-mers z-score matrix.
+    atac-seq: `dict` (`adata.uns['atac-seq']`)   
+        A dictionary containing the following keys:
+        'count': (`adata.uns['atac-seq']['count']`), dataframe in sparse format, 
+                the first column specifies the rows indices (the regions) for non-zero entry. 
+                the second column specifies the columns indices (the sample) for non-zero entry. 
+                the last column contains the number of reads in a given region for a particular cell.
+        'region': (`adata.uns['atac-seq']['region']`), dataframe
+                the first column specifies chromosome names.
+                the second column specifies the start position of the region.
+                the third column specifies the end position of the region.
+        'sample': (`adata.uns['atac-seq']['sample']`), dataframe, the name of samples
+    """
+    chromVAR = importr('chromVAR')
+    GenomicRanges = importr('GenomicRanges')
+    SummarizedExperiment = importr('SummarizedExperiment')
+    BSgenome_Hsapiens_UCSC_hg19 = importr('BSgenome.Hsapiens.UCSC.hg19')
+    r_Matrix = importr('Matrix')
+    BiocParallel = importr('BiocParallel')
+    BiocParallel.register(BiocParallel.MulticoreParam(n_jobs))
+    pandas2ri.activate()
+    df_regions = adata.uns['atac-seq']['region']
+    r_regions_dataframe = pandas2ri.py2ri(df_regions)
+    regions = GenomicRanges.makeGRangesFromDataFrame(r_regions_dataframe)
+    
+    df_counts = adata.uns['atac-seq']['count']
+    counts = r_Matrix.sparseMatrix(i = df_counts['i'], j = df_counts['j'], x=df_counts['x'])
+    
+    df_samples = adata.uns['atac-seq']['sample']
+    samples = pandas2ri.py2ri(df_samples)
+    samples.rownames = df_samples['cell_id']
+    
+    SE = SummarizedExperiment.SummarizedExperiment(rowRanges = regions,colData = samples,assays = robjects.ListVector({'counts':counts}))
+    SE = chromVAR.addGCBias(SE, genome = BSgenome_Hsapiens_UCSC_hg19.BSgenome_Hsapiens_UCSC_hg19)
+    
+    # compute kmer deviations
+    KmerMatch = chromVAR.matchKmers(k, SE, BSgenome_Hsapiens_UCSC_hg19.BSgenome_Hsapiens_UCSC_hg19)
+    BiocParallel.register(BiocParallel.SerialParam())
+    Kmerdev = chromVAR.computeDeviations(SE, KmerMatch)
+    KmerdevTable = SummarizedExperiment.assays(Kmerdev)
+    cn = pandas2ri.ri2py((Kmerdev.do_slot('colData')).do_slot('listData').rx2('cell_id'))
+    rn = pandas2ri.ri2py(Kmerdev.do_slot('NAMES'))
+    scores = pandas2ri.ri2py(KmerdevTable.do_slot('listData').rx2('deviations'))    
+
+    df_zscores = pd.DataFrame(scores,index=rn,columns=cn)
+    df_zscores_scaled = preprocessing.scale(df_zscores,axis=1)
+    df_zscores_scaled = pd.DataFrame(df_zscores_scaled,index=df_zscores.index,columns=df_zscores.columns)
+    adata_new = ad.AnnData(X=df_zscores_scaled.values.T, obs={'obs_names':df_zscores_scaled.columns},var={'var_names':df_zscores_scaled.index})
+    adata_new.raw = adata_new
+    adata_new.uns['workdir'] = adata.uns['workdir']
+    adata_new.uns['experiment'] = adata.uns['experiment']
+    adata_new.uns['atac-seq'] = dict()
+    adata_new.uns['atac-seq']['count'] = df_counts
+    adata_new.uns['atac-seq']['region'] = df_regions
+    adata_new.uns['atac-seq']['sample'] = df_samples
+    adata_new.layers["z_score"] = df_zscores.values.T
+    return adata_new
+
 
 def write(adata,file_name=None,file_path=None,file_format='pkl'):
     """Write Anndate object to file
@@ -269,18 +374,43 @@ def project_point_to_curve_distance(XP,p):
     return dist_p_to_c    
 
 
-def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jobs = multiprocessing.cpu_count(),**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(5,5),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'std_vs_means.pdf',}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
+def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jobs = multiprocessing.cpu_count(),
+                          save_fig=False,fig_name='std_vs_means.pdf',fig_path=None,fig_size=(5,5)):
 
+    """Select the most variable genes.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    loess_frac: `float`, optional (default: 0.1)
+        Between 0 and 1. The fraction of the data used when estimating each y-value in LOWESS function.
+    percentile: `int`, optional (default: 95)
+        Between 0 and 100. Specify the percentile to select genes.Genes are ordered based on its distance from the fitted curve.
+    n_genes: `int`, optional (default: None)
+        Specify the number of selected genes. Genes are ordered based on its distance from the fitted curve.
+    n_jobs: `int`, optional (default: all available cpus)
+        The number of parallel jobs to run when calculating the distance from each gene to the fitted curve
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (5,5))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'std_vs_means.pdf')
+        if save_fig is True, specify figure name.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    var_genes: `numpy.ndarray` (`adata.obsm['var_genes']`)
+        Store #observations × #var_genes data matrix used for subsequent dimension reduction.
+    var_genes: `pandas.core.indexes.base.Index` (`adata.uns['var_genes']`)
+        The selected variable gene names.
+    """
+
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']  
     mean_genes = np.mean(adata.X,axis=0)
     std_genes = np.std(adata.X,ddof=1,axis=0)
     loess_fitted = lowess(std_genes,mean_genes,return_sorted=False,frac=loess_frac)
@@ -299,9 +429,7 @@ def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jo
     else:
         id_var_genes = np.argsort(dist_point_to_curve)[::-1][:n_genes]
         id_non_var_genes = np.argsort(dist_point_to_curve)[::-1][n_genes:]
-#     adata.uns['all_genes'] = adata.var_names
-#     adata.uns['variable_genes'] = adata.var_names[id_var_genes]
-#     adata._inplace_subset_var(id_var_genes)   
+ 
     adata.obsm['var_genes'] = adata.X[:,id_var_genes].copy()
     adata.uns['var_genes'] = adata.var_names[id_var_genes]
     print(str(len(id_var_genes))+' variable genes are selected')
@@ -318,18 +446,49 @@ def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jo
     return None
 
 
-def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,first_pc = False,use_precomputed=True,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(5,5),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'variance_vs_PC.pdf.pdf',}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
+def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,first_pc = False,use_precomputed=True,
+                                    save_fig=False,fig_name='top_pcs.pdf',fig_path=None,fig_size=(5,5)):
+    """Select top principal components.
 
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    feature: `str`, optional (default: None)
+        Choose from {{'var_genes'}}
+        Features used for pricipal component analysis
+        If None, all the genes will be used.
+        IF 'var_genes', the most variable genes obtained from select_variable_genes() will be used.
+    n_pc: `int`, optional (default: 15)
+        The number of selected principal components.
+    max_pc: `int`, optional (default: 100)
+        The maximum number of principal components used for variance Ratio plot.
+    first_pc: `bool`, optional (default: False)
+        If True, the first principal component will be included
+    use_precomputed: `bool`, optional (default: True)
+        If True, the PCA results from previous computing will be used
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (5,5))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'top_pcs.pdf')
+        if save_fig is True, specify figure name.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    pca: `numpy.ndarray` (`adata.obsm['pca']`)
+        Store #observations × n_components data matrix after pca. Number of components to keep is min(#observations,#variables)
+    top_pcs: `numpy.ndarray` (`adata.obsm['top_pcs']`)
+        Store #observations × n_pc data matrix used for subsequent dimension reduction.
+    pca_variance_ratio: `numpy.ndarray` (`adata.uns['pca_variance_ratio']`)
+        Percentage of variance explained by each of the selected components.
+    """
+    
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']    
     if(use_precomputed and ('pca' in adata.obsm_keys())):
         print('Importing precomputed principal components')
         X_pca = adata.obsm['pca']
@@ -450,20 +609,38 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
     return None
 
 
-def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,**kwargs):
-    options = {
-            'save_fig' : False,
-            'fig_size':(8,8),
-            'fig_path' :  adata.uns['workdir'],
-            'fig_name' : 'dimension_reduction.pdf',
-            'fig_legend_ncol':3,}
-    options.update(kwargs)
-    save_fig = options['save_fig']
-    fig_size = options['fig_size']
-    fig_path = options['fig_path']
-    fig_name = options['fig_name']
-    fig_legend_ncol = options['fig_legend_ncol']
+def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
+                             save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=(8,8),fig_legend_ncol=3):
+    """Plot cells after dimension reduction.
 
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    n_components: `int`, optional (default: 3)
+        Number of components to be plotted.
+    comp1: `int`, optional (default: 0)
+        Component used for x axis.
+    comp2: `int`, optional (default: 1)
+        Component used for y axis.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'dimension_reduction.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend_ncol: `int`, optional (default: 3)
+        The number of columns that the legend has.
+        
+    Returns
+    -------
+    None
+    
+    """
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
     df_sample = adata.obs[['label','label_color']].copy()
     df_coord = pd.DataFrame(adata.obsm['X_dr'],index=adata.obs_names)
     list_patches = []
@@ -2289,7 +2466,8 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
         fig_path = adata.uns['workdir']
     if(genes is None):
         print('Please provide gene names');
-    else: 
+    else:
+        experiment = adata.uns['experiment']
         genes = np.unique(genes).tolist()
         df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
                                     data = adata.raw[:,genes].X,
@@ -2378,26 +2556,58 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 ax.text(dict_nodes_pos[node_i][0],dict_nodes_pos[node_i][1],
                         flat_tree.nodes[node_i]['label'],color='black',
                         fontsize = 15,horizontalalignment='center',verticalalignment='center',zorder=20)  
-            gene_expr = df_gene_expr[g].copy()
-            max_gene_expr = np.percentile(gene_expr[gene_expr>0],percentile_expr)
-            gene_expr[gene_expr>max_gene_expr] = max_gene_expr                
+            if(experiment=='rna-seq'):
+                gene_expr = df_gene_expr[g].copy()
+                max_gene_expr = np.percentile(gene_expr[gene_expr>0],percentile_expr)
+                gene_expr[gene_expr>max_gene_expr] = max_gene_expr   
+                vmin = 0
+                vmax = max_gene_expr
+            elif(experiment=='atac-seq'):
+                gene_expr = df_gene_expr[g].copy()
+                min_gene_expr = np.percentile(gene_expr[gene_expr<0],100-percentile_expr)
+                max_gene_expr = np.percentile(gene_expr[gene_expr>0],percentile_expr)
+                gene_expr[gene_expr>max_gene_expr] = max_gene_expr
+                gene_expr[gene_expr<min_gene_expr] = min_gene_expr
+                vmin = -max(abs(min_gene_expr),max_gene_expr)
+                vmax = max(abs(min_gene_expr),max_gene_expr)
+            else:
+                print('The experiment '+experiment +' is not supported')
+                return
             df_coord = pd.DataFrame(df_cells_pos['cells_pos'].tolist(),index=adata.obs_names)
             color = pd.Series(gene_expr).sample(frac=1,random_state=100)
             coord = df_coord.sample(frac=1,random_state=100)
             if(adata_new!=None):
-                gene_expr_new = df_gene_expr_new[g].copy()
-                max_gene_expr_new = np.percentile(gene_expr_new[gene_expr_new>0],percentile_expr)
-                gene_expr_new[gene_expr_new>max_gene_expr_new] = max_gene_expr_new
+                if(experiment=='rna-seq'):
+                    gene_expr_new = df_gene_expr_new[g].copy()
+                    max_gene_expr_new = np.percentile(gene_expr_new[gene_expr_new>0],percentile_expr)
+                    gene_expr_new[gene_expr_new>max_gene_expr_new] = max_gene_expr_new   
+                elif(experiment=='atac-seq'):
+                    gene_expr_new = df_gene_expr_new[g].copy()
+                    min_gene_expr_new = np.percentile(gene_expr_new[gene_expr_new<0],100-percentile_expr)
+                    max_gene_expr_new = np.percentile(gene_expr_new[gene_expr_new>0],percentile_expr)
+                    gene_expr_new[gene_expr_new>max_gene_expr_new] = max_gene_expr_new
                 df_coord_new = pd.DataFrame(df_cells_pos_new['cells_pos'].tolist(),index=adata_new.obs_names)
                 color_new = pd.Series(gene_expr_new).sample(frac=1,random_state=100)
                 coord_new = df_coord_new.sample(frac=1,random_state=100)     
                 if(show_all_cells):
+                    if(experiment=='rna-seq'):
+                        vmin = 0
+                        vmax = max(max_gene_expr,max_gene_expr_new)   
+                    if(experiment=='atac-seq'):
+                        vmin = -max(max(abs(min_gene_expr),abs(min_gene_expr_new)),max(max_gene_expr,max_gene_expr_new))
+                        vmax = max(max_gene_expr,max_gene_expr_new)                    
                     sc=ax.scatter(pd.concat([coord[0],coord_new[0]]), pd.concat([coord[1],coord_new[1]]),c=pd.concat([color,color_new]),
-                                  vmin=0, vmax=max(max_gene_expr,max_gene_expr_new), s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
+                                  vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
                 else:
-                    sc=ax.scatter(coord_new[0], coord_new[1],c=color_new,vmin=0, vmax=max_gene_expr_new, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)                      
+                    if(experiment=='rna-seq'):
+                        vmin = 0
+                        vmax = max_gene_expr_new
+                    if(experiment=='atac-seq'):
+                        vmin = -max(abs(min_gene_expr_new),max_gene_expr_new)
+                        vmax = max(abs(min_gene_expr_new),max_gene_expr_new)
+                    sc=ax.scatter(coord_new[0], coord_new[1],c=color_new,vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)                      
             else:            
-                sc=ax.scatter(coord[0], coord[1],c=color,vmin=0, vmax=max_gene_expr, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10) 
+                sc=ax.scatter(coord[0], coord[1],c=color,vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10) 
             cbar=plt.colorbar(sc)
             cbar.ax.tick_params(labelsize=20)
             tick_locator = ticker.MaxNLocator(nbins=5)
@@ -3149,7 +3359,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                     save_fig=False,fig_path=None,fig_size=(12,8),tick_fontsize=20,label_fontsize=25):  
     if(fig_path is None):
         fig_path = adata.uns['workdir']
-
+    experiment = adata.uns['experiment']
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
     if(root not in dict_label_node.keys()):
@@ -3452,12 +3662,25 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
         df_bins_base.iloc[:-4,:] = df_bins_top.iloc[1:-3,:].values
         df_bins_base.iloc[-4,:] = 0-df_bins_cumsum_norm.iloc[0,:]/2.0
         dict_genes_norm = deepcopy(dict_genes)
-        for gene in genes:
-            gene_values = dict_genes[gene].iloc[0,].values
-            max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
-            dict_genes_norm[gene] = dict_genes[gene].reindex(cell_list_sorted)
-            dict_genes_norm[gene][dict_genes_norm[gene]>max_gene_values] = max_gene_values
-
+        
+        if(experiment=='rna-seq'):
+            for gene in genes:
+                gene_values = dict_genes[gene].iloc[0,].values
+                max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
+                dict_genes_norm[gene] = dict_genes[gene].reindex(cell_list_sorted)
+                dict_genes_norm[gene][dict_genes_norm[gene]>max_gene_values] = max_gene_values
+        elif(experiment=='atac-seq'):
+            for gene in genes:
+                gene_values = dict_genes[gene].iloc[0,].values
+                min_gene_values = np.percentile(gene_values[gene_values<0],100-percentile_expr)
+                max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
+                dict_genes_norm[gene] = dict_genes[gene].reindex(cell_list_sorted)
+                dict_genes_norm[gene][dict_genes_norm[gene]<min_gene_values] = min_gene_values
+                dict_genes_norm[gene][dict_genes_norm[gene]>max_gene_values] = max_gene_values             
+        else:
+            print('The experiment '+experiment +' is not supported')
+            return
+            
         df_bins_top = df_bins_cumsum_norm.copy()
         df_bins_top.iloc[:-3,:] = df_bins_cumsum_norm.iloc[:-3,:].subtract(df_bins_cumsum_norm.iloc[0,:]/2.0)
         df_bins_base = df_bins_top.copy()
@@ -3841,8 +4064,17 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             cmap1 = mpl.colors.ListedColormap(sns.color_palette("RdBu_r", 256))
             # cmap1 = mpl.colors.ListedColormap(sns.diverging_palette(250, 10,s=90,l=35, n=256))
             for cellname in cell_list_sorted:
+                if(experiment=='rna-seq'):
+                    vmin = 0
+                    vmax = df_bins_gene.values.max()
+                elif(experiment=='atac-seq'):
+                    vmin = -max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                    vmax = max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                else:
+                    print('The experiment '+experiment +' is not supported')
+                    return                
                 im = ax.imshow(dict_im_array[cellname], cmap=cmap1,interpolation='bicubic',\
-                               extent=[xmin,xmax,ymin,ymax],vmin=0,vmax=df_bins_gene.values.max()) 
+                               extent=[xmin,xmax,ymin,ymax],vmin=vmin,vmax=vmax) 
                 dict_imshow[cellname] = im
                 verts_cell = verts[cellname]
                 clip_path = Polygon(verts_cell, facecolor='none', edgecolor='none', closed=True)
@@ -3886,6 +4118,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             if(save_fig):
                 plt.savefig(file_path_S+'stream_plot_' + slugify(gene_name) + '.pdf',dpi=120)
                 plt.close(fig) 
+
 
 def scale_gene_expr(params):
     df_gene_detection = params[0]
