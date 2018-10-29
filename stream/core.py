@@ -425,6 +425,7 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
         input_data = adata.X
     print(str(n_jobs)+' cpus are being used ...')
     if(method == 'mlle'):
+        np.random.seed(2)
         reducer = LocallyLinearEmbedding(n_neighbors=int(input_data.shape[0]*nb_pct), 
                                              n_components=n_components,
                                              n_jobs = n_jobs,
@@ -634,7 +635,7 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
         Component used for x axis.
     comp2: `int`, optional (default: 1)
         Component used for y axis.
-    key_graph `str`, optional (default: None): 
+    key_graph: `str`, optional (default: None): 
         Choose from {{'epg','seed_epg','ori_epg'}}
         Specify gragh to be plotted.
         'epg' current elastic principal graph
@@ -741,7 +742,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
         Component used for x axis.
     comp2: `int`, optional (default: 1)
         Component used for y axis.
-    key_graph `str`, optional (default: None): 
+    key_graph: `str`, optional (default: None): 
         Choose from {{'epg','seed_epg','ori_epg'}}
         Specify gragh to be plotted.
         'epg' current elastic principal graph
@@ -2463,7 +2464,7 @@ def find_paths(dict_tree,bfs_nodes):
                 dict_paths_top[(node_i,next_nodes[i_mid+1])] = stack_top
     return dict_paths_top,dict_paths_base
 
-def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = True,
+def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,
                 save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
     if(fig_path is None):
         fig_path = adata.uns['workdir']
@@ -3144,7 +3145,7 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
     return dict_im_array
 
 
-def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = True,
+def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,
                     save_fig=False,fig_path=None,fig_size=(12,8),tick_fontsize=20,label_fontsize=25):  
     if(fig_path is None):
         fig_path = adata.uns['workdir']
