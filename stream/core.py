@@ -64,7 +64,7 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
         File format. currently supported file formats: 'tsv','txt','tab','data','csv','mtx','h5ad','pklz','pkl'
     delimiter: `str`, optional (default: '\t')
         Delimiter to use.
-    file_type: `str`, optional (default: 'rna-seq')
+    experiment: `str`, optional (default: 'rna-seq')
         Choose from {{'rna-seq','atac-seq'}}       
     workdir: `float`, optional (default: None)
         Working directory. If it's not specified, a folder named 'stream_result' will be created under the current directory
@@ -112,7 +112,7 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
         else:
             print('file format ' + file_format + ' is not supported')
             return
-    if(experiment == 'atac-seq'):
+    elif(experiment == 'atac-seq'):
         if(file_name_sample is None):
             print('sample file must be provided')
         if(file_name_region is None):
@@ -132,6 +132,9 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
         if(not os.path.exists(workdir)):
             os.makedirs(workdir)
         adata.uns['workdir'] = workdir
+    else:
+        print('The experiment '+experiment +' is not supported')
+        return        
     adata.uns['experiment'] = experiment
     return adata
 
