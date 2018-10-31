@@ -1308,7 +1308,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
         elif(clustering=='sc'):
             print('Spectral clustering ...')
             sc = SpectralClustering(n_clusters=n_clusters,affinity='nearest_neighbors',n_neighbors=np.int(input_data.shape[0]*nb_pct),
-                                    eigen_solver='arpack',random_state=6).fit(input_data)
+                                    eigen_solver='arpack',random_state=42).fit(input_data)
             cluster_labels = sc.labels_ 
             init_nodes_pos = np.empty((0,input_data.shape[1])) #cluster centers
             for x in np.unique(cluster_labels):
