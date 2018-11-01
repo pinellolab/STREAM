@@ -1091,7 +1091,9 @@ def project_cells_to_epg(adata):
     flat_tree = adata.uns['flat_tree']
     dict_branches_nodes = nx.get_edge_attributes(flat_tree,'nodes')
     dict_branches_id = nx.get_edge_attributes(flat_tree,'id')
+    dict_node_state = nx.get_node_attributes(flat_tree,'label')
     list_x_br_id = list()
+    list_x_br_id_alias = list()
     list_x_lam = list()
     list_x_dist = list()
     for ix,xp in enumerate(input_data): 
@@ -1105,6 +1107,7 @@ def project_cells_to_epg(adata):
             dict_results[br_id] = project_point_to_line_segment_matrix(dict_br_matrix[br_id],xp)
             list_dist_xp.append(dict_results[br_id][2])
         x_br_id = list_br_id[np.argmin(list_dist_xp)]
+        x_br_id_alias = dict_node_state[x_br_id[0]],dict_node_state[x_br_id[1]]
         br_len = flat_tree.edges[x_br_id]['len']
         results = dict_results[x_br_id]
         x_dist = results[2]
@@ -1112,9 +1115,11 @@ def project_cells_to_epg(adata):
         if(x_lam>br_len):
             x_lam = br_len 
         list_x_br_id.append(x_br_id)
+        list_x_br_id_alias.append(x_br_id_alias)
         list_x_lam.append(x_lam)
         list_x_dist.append(x_dist)
     adata.obs['branch_id'] = list_x_br_id
+    adata.obs['branch_id_alias'] = list_x_br_id_alias
 #     adata.uns['branch_id'] = list(set(adata.obs['branch_id'].tolist()))
     adata.obs['branch_lam'] = list_x_lam
     adata.obs['branch_dist'] = list_x_dist
