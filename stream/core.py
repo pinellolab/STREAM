@@ -2104,7 +2104,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
-def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0):
+def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0, dfs_nodes=None):
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}  
     root_node = dict_label_node[root]
@@ -2116,7 +2116,10 @@ def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0):
     dict_bfs_pre = dict(nx.bfs_predecessors(flat_tree,root_node))
     dict_bfs_suc = dict(nx.bfs_successors(flat_tree,root_node))
     #depth first search
-    dfs_nodes = list(nx.dfs_preorder_nodes(flat_tree,root_node))
+    if(dfs_nodes is None):
+        dfs_nodes = list(nx.dfs_preorder_nodes(flat_tree,root_node))
+    else:
+        dfs_nodes = [dict_label_node[x] for x in dfs_nodes]
     dfs_nodes_copy = deepcopy(dfs_nodes)
     id_leaf = 0
     while(len(dfs_nodes_copy)>1):
@@ -2131,7 +2134,7 @@ def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0):
     return dict_edge_shift_dist
 
 
-def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',
+def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',dfs_nodes=None,
                    save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend_ncol=3):  
     if(fig_path is None):
         fig_path = adata.uns['workdir']
@@ -2147,7 +2150,7 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
         root_node = dict_label_node[root]
         dict_bfs_pre = dict(nx.bfs_predecessors(flat_tree,root_node))
         dict_bfs_suc = dict(nx.bfs_successors(flat_tree,root_node))
-        dict_edge_shift_dist = calculate_shift_distance(adata,root=root,percentile=percentile_dist)
+        dict_edge_shift_dist = calculate_shift_distance(adata,root=root,percentile=percentile_dist,factor=factor,dfs_nodes=dfs_nodes)
         dict_path_len = nx.shortest_path_length(flat_tree,source=root_node,weight='len')
         df_cells_pos = pd.DataFrame(index=adata.obs.index,columns=['cells_pos'])
         dict_edges_pos = {}
@@ -2468,7 +2471,7 @@ def find_outline_edges(bfs_flat_tree,start_node):
     return list_up_edges,list_down_edges
 
 
-def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,
+def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,dfs_nodes=None,
                         save_fig=False,fig_path=None,fig_size=(10,6)):  
     if(fig_path is None):
         fig_path = adata.uns['workdir']
@@ -2495,7 +2498,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
             root_node = dict_label_node[root]
             dict_bfs_pre = dict(nx.bfs_predecessors(flat_tree,root_node))
             dict_bfs_suc = dict(nx.bfs_successors(flat_tree,root_node))
-            dict_edge_shift_dist = calculate_shift_distance(adata,root=root,percentile=percentile_dist)
+            dict_edge_shift_dist = calculate_shift_distance(adata,root=root,percentile=percentile_dist,factor=factor,dfs_nodes=dfs_nodes)
             dict_path_len = nx.shortest_path_length(flat_tree,source=root_node,weight='len')
             df_cells_pos = pd.DataFrame(index=adata.obs.index,columns=['cells_pos'])
             dict_edges_pos = {}
@@ -2682,7 +2685,7 @@ def find_paths(dict_tree,bfs_nodes):
                 dict_paths_top[(node_i,next_nodes[i_mid+1])] = stack_top
     return dict_paths_top,dict_paths_base
 
-def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,
+def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,dfs_nodes=None,
                 save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
     if(fig_path is None):
         fig_path = adata.uns['workdir']
@@ -2750,7 +2753,7 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
                 input_cell_label_uni =  ['trajectory_cells'] + input_cell_label_uni_new
                 input_cell_label_uni_color = deepcopy(input_cell_label_uni_color_new)
                 input_cell_label_uni_color['trajectory_cells'] = 'grey'
-            df_stream = pd.concat([df_rooted_tree,df_rooted_tree_new])[['CELL_LABEL','edge','lam_ordered']].copy()
+            df_stream = pd.concat([df_rooted_tree,df_rooted_tree_new],sort=True)[['CELL_LABEL','edge','lam_ordered']].copy()
         len_ori = {}
         for x in bfs_edges:
             if(x in dict_branches.keys()):
@@ -2771,7 +2774,10 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         ##shift distance of each branch
         dict_shift_dist = dict()
         #depth first search
-        dfs_nodes = list(nx.dfs_preorder_nodes(flat_tree,node_start))
+        if(dfs_nodes is None):
+            dfs_nodes = list(nx.dfs_preorder_nodes(flat_tree,node_start))
+        else:
+            dfs_nodes = [dict_label_node[x] for x in dfs_nodes]
         leaves=[n for n,d in flat_tree.degree() if d==1]
         id_leaf = 0
         dfs_nodes_copy = deepcopy(dfs_nodes)
@@ -3363,7 +3369,7 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
     return dict_im_array
 
 
-def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,
+def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,dfs_nodes=None,
                     save_fig=False,fig_path=None,fig_size=(12,8),tick_fontsize=20,label_fontsize=25):  
     if(fig_path is None):
         fig_path = adata.uns['workdir']
@@ -3433,7 +3439,10 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
         ##shift distance of each branch
         dict_shift_dist = dict()
         #depth first search
-        dfs_nodes = list(nx.dfs_preorder_nodes(flat_tree,node_start))
+        if(dfs_nodes is None):
+            dfs_nodes = list(nx.dfs_preorder_nodes(flat_tree,node_start))
+        else:
+            dfs_nodes = [dict_label_node[x] for x in dfs_nodes]
         leaves=[n for n,d in flat_tree.degree() if d==1]
         id_leaf = 0
         dfs_nodes_copy = deepcopy(dfs_nodes)
