@@ -588,7 +588,7 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
     print(str(n_jobs)+' cpus are being used ...')
     if(method == 'mlle'):
         np.random.seed(2)
-        reducer = LocallyLinearEmbedding(n_neighbors=int(input_data.shape[0]*nb_pct), 
+        reducer = LocallyLinearEmbedding(n_neighbors=int(np.around(input_data.shape[0]*nb_pct)), 
                                              n_components=n_components,
                                              n_jobs = n_jobs,
                                              method = 'modified',eigen_solver = 'dense',random_state=10,
