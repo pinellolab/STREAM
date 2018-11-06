@@ -260,7 +260,8 @@ def add_cell_labels(adata,file_path='./',file_name=None):
         df_labels.index = adata.obs_names
         adata.obs['label'] = df_labels
     else:
-        print('Please provide cell label file')
+        print('No cell label file is provided, \'unknown\' is used as the default cell labels')
+        adata.obs['label'] = 'unknown'
     return None
 
 
@@ -272,8 +273,12 @@ def add_cell_colors(adata,file_path='./',file_name=None):
         df_colors['label'] = df_colors['label'].str.replace('/','-')   
         adata.uns['label_color'] = {df_colors.iloc[x,0]:df_colors.iloc[x,1] for x in range(df_colors.shape[0])}
     else:
-        list_colors = sns.color_palette("hls",n_colors=len(labels_unique)).as_hex()
-        adata.uns['label_color'] = {x:list_colors[i] for i,x in enumerate(labels_unique)}
+        print('No cell color file is provided, random color is generated for each cell label')
+        if(len(labels_unique)==1):
+            adata.uns['label_color'] = {labels_unique[0]:'gray'}
+        else:
+            list_colors = sns.color_palette("hls",n_colors=len(labels_unique)).as_hex()
+            adata.uns['label_color'] = {x:list_colors[i] for i,x in enumerate(labels_unique)}
     df_cell_colors = adata.obs.copy()
     df_cell_colors['label_color'] = ''
     for x in labels_unique:
