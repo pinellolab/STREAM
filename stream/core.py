@@ -304,7 +304,7 @@ def add_cell_colors(adata,file_path='./',file_name=None):
 def filter_genes(adata,min_num_cells = None,min_pct_cells = None,min_count = None, expr_cutoff = 1):
     n_counts = np.sum(adata.X,axis=0)
     adata.var['n_counts'] = n_counts
-    n_cells = np.sum(adata.X>=expr_cutoff,axis=0)
+    n_cells = np.sum(adata.X>expr_cutoff,axis=0)
     adata.var['n_cells'] = n_cells 
     if(sum(list(map(lambda x: x is None,[min_num_cells,min_pct_cells,min_count])))==3):
         print('No filtering')
@@ -312,13 +312,13 @@ def filter_genes(adata,min_num_cells = None,min_pct_cells = None,min_count = Non
         gene_subset = np.ones(len(adata.var_names),dtype=bool)
         if(min_num_cells!=None):
             print('filter genes based on min_num_cells')
-            gene_subset = (n_cells>=min_num_cells) & gene_subset
+            gene_subset = (n_cells>min_num_cells) & gene_subset
         if(min_pct_cells!=None):
             print('filter genes based on min_pct_cells')
-            gene_subset = (n_cells>=adata.shape[0]*min_pct_cells) & gene_subset
+            gene_subset = (n_cells>adata.shape[0]*min_pct_cells) & gene_subset
         if(min_count!=None):
             print('filter genes based on min_count')
-            gene_subset = (n_counts>=min_count) & gene_subset 
+            gene_subset = (n_counts>min_count) & gene_subset 
         adata._inplace_subset_var(gene_subset)
         print('after filtering out low-expressed genes: ')
         print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' genes')
