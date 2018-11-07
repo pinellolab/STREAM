@@ -978,6 +978,10 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
     color = df_sample.sample(frac=1,random_state=100)['label_color'] 
     coord = df_coord.sample(frac=1,random_state=100)
     if(adata_new !=None):
+        if(not show_all_cells):
+            list_patches = []
+        for x in adata_new.uns['label_color'].keys():
+            list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))
         df_sample_new = adata_new.obs[['label','label_color']].copy()
         df_coord_new = pd.DataFrame(adata_new.obsm['X_dr'],index=adata_new.obs_names)
         color_new = df_sample_new.sample(frac=1,random_state=100)['label_color'] 
@@ -4517,12 +4521,15 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 1.5,*
                 plt.close(fig) 
 
 
-def map_new_data(adata,adata_new,method='mlle'):
-    adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
-    adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
+def map_new_data(adata,adata_new,feature='var_genes',method='mlle'):
+    if(feature == 'var_genes'):
+        adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
+        adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
+        input_data = adata_new.obsm['var_genes']
+    if(feature == 'all'):
+        input_data = adata_new[:,adata.var.index].X
     adata_new.uns['epg'] = adata.uns['epg'].copy()
-    adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy()
-    input_data = adata_new.obsm['var_genes'] 
+    adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy() 
     if(method == 'mlle'):
         trans = adata.uns['trans_mlle']
         adata_new.obsm['X_mlle_mapping'] = trans.transform(input_data)
