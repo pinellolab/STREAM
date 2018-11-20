@@ -32,6 +32,7 @@ from scipy import stats,interpolate
 from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline,UnivariateSpline
 from scipy.signal import savgol_filter
+from scipy.linalg import eigh, svd, qr, solve
 import scipy as sp
 from slugify import slugify
 from decimal import *
@@ -2146,14 +2147,19 @@ def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0, preferen
 ## modified depth first search
 def dfs_modified(tree, source, preference=None):
     visited, stack = [], [source]
+    bfs_tree = nx.bfs_tree(tree,source=source)
     while stack:
         vertex = stack.pop()
         if vertex not in visited:
             visited.append(vertex)
             unvisited = set(tree[vertex]) - set(visited)
             if(preference != None):
-                weights = [preference.index(x) if x in preference else len(unvisited) for i,x in enumerate(unvisited)]
-                unvisited = [x for _,x in sorted(zip(weights,unvisited),reverse=True)]
+                weights = list()
+                for x in unvisited:
+                    successors = dict(nx.bfs_successors(bfs_tree,source=x))
+                    successors_nodes = list(itertools.chain.from_iterable(successors.values()))
+                    weights.append(min([preference.index(s) if s in preference else len(preference) for s in successors_nodes+[x]]))
+                unvisited = [x for _,x in sorted(zip(weights,unvisited),reverse=True,key=lambda x: x[0])]
             stack.extend(unvisited)
     return visited
 
@@ -4536,8 +4542,47 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 1.5,*
                             + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf',pad_inches=1,bbox_inches='tight')
                 plt.close(fig) 
 
+def barycenter_weights_modified(X, Z, reg=1e-3):
+    """Compute barycenter weights of X from Y along the first axis
+    We estimate the weights to assign to each point in Y[i] to recover
+    the point X[i]. The barycenter weights sum to 1.
+    Parameters
+    ----------
+    X : array-like, shape (1, n_dim)
+    Z : array-like, shape (n_neighbors, n_dim)
+    reg : float, optional
+        amount of regularization to add for the problem to be
+        well-posed in the case of n_neighbors > n_dim
+    Returns
+    -------
+    B : array-like, shape (1, n_neighbors)
+    Notes
+    -----
+    See developers note for more information.
+    """
+#     X = check_array(X, dtype=FLOAT_DTYPES)
+#     Z = check_array(Z, dtype=FLOAT_DTYPES, allow_nd=True)
 
-def map_new_data(adata,adata_new,feature='var_genes',method='mlle'):
+    n_samples, n_neighbors = 1, Z.shape[0]
+    B = np.empty((n_samples, n_neighbors), dtype=X.dtype)
+    v = np.ones(n_neighbors, dtype=X.dtype)
+
+    # this might raise a LinalgError if G is singular and has trace
+    # zero
+    C = Z - X  # broadcasting
+    G = np.dot(C, C.T)
+    trace = np.trace(G)
+    if trace > 0:
+        R = reg * trace
+    else:
+        R = reg
+    G.flat[::Z.shape[0] + 1] += R
+    w = solve(G, v, sym_pos=True)
+    B = w / np.sum(w)
+    return B
+
+
+def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=True):
     if(feature == 'var_genes'):
         adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
         adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
@@ -4548,7 +4593,16 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle'):
     adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy() 
     if(method == 'mlle'):
         trans = adata.uns['trans_mlle']
-        adata_new.obsm['X_mlle_mapping'] = trans.transform(input_data)
+        if(use_radius):
+            dist_nb = trans.nbrs_.kneighbors(input_data, n_neighbors=trans.n_neighbors,return_distance=True)[0]
+            ind = trans.nbrs_.radius_neighbors(input_data, radius = dist_nb.max(),return_distance=False)    
+            new_X_mlle = np.empty((input_data.shape[0], trans.n_components))
+            for i in range(input_data.shape[0]):
+                weights = barycenter_weights_modified(input_data[i], trans.nbrs_._fit_X[ind[i]],reg=trans.reg)
+                new_X_mlle[i] = np.dot(trans.embedding_[ind[i]].T, weights) 
+            adata_new.obsm['X_mlle_mapping'] = new_X_mlle              
+        else:
+            adata_new.obsm['X_mlle_mapping'] = trans.transform(input_data)
         adata_new.obsm['X_dr'] = adata_new.obsm['X_mlle_mapping'].copy()
     if(method == 'umap'):
         trans = adata.uns['trans_umap']
