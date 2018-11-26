@@ -4440,14 +4440,14 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_foldchange = 1.5,cutoff_diff=0.
             for genename in input_genes_expressed:
                 sub1_values = df_cells_sub1.loc[:,genename].tolist()
                 sub2_values = df_cells_sub2.loc[:,genename].tolist()
-                diff_mean = mean(sub1_values) - mean(sub2_values)
+                diff_mean = np.mean(sub1_values) - np.mean(sub2_values)
                 if(abs(diff_mean)>cutoff_diff):
                     df_de_pval_qval.loc[genename] = np.nan
                     #make sure the largest fold change is 5
-                    df_de_pval_qval.loc[genename,'fold_change'] = log2((mean(sub1_values)+1/24.0)/(mean(sub2_values)+1/24.0))
+                    df_de_pval_qval.loc[genename,'fold_change'] = log2((np.mean(sub1_values)+1/24.0)/(np.mean(sub2_values)+1/24.0))
                     df_de_pval_qval.loc[genename,'diff'] = diff_mean
-                    df_de_pval_qval.loc[genename,'mean_up'] = mean(sub1_values)
-                    df_de_pval_qval.loc[genename,'mean_down'] = mean(sub2_values)
+                    df_de_pval_qval.loc[genename,'mean_up'] = np.mean(sub1_values)
+                    df_de_pval_qval.loc[genename,'mean_down'] = np.mean(sub2_values)
             if(df_de_pval_qval.shape[0]==0):
                 print('No DE genes are detected between branches ' + dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]]+\
                       ' and '+dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]])
