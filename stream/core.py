@@ -4444,7 +4444,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_foldchange = 1.5,cutoff_diff=0.
                 if(abs(diff_mean)>cutoff_diff):
                     df_de_pval_qval.loc[genename] = np.nan
                     #make sure the largest fold change is 5
-                    df_de_pval_qval.loc[genename,'fold_change'] = log2((np.mean(sub1_values)+1/24.0)/(np.mean(sub2_values)+1/24.0))
+                    df_de_pval_qval.loc[genename,'fold_change'] = np.log2((np.mean(sub1_values)+1/24.0)/(np.mean(sub2_values)+1/24.0))
                     df_de_pval_qval.loc[genename,'diff'] = diff_mean
                     df_de_pval_qval.loc[genename,'mean_up'] = np.mean(sub1_values)
                     df_de_pval_qval.loc[genename,'mean_down'] = np.mean(sub2_values)
