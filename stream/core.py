@@ -4463,7 +4463,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_foldchange = 0.25,percentile_ex
             print('There are not sufficient cells (should be greater than 20) between branches '+\
                   dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] +' and '+\
                   dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]]+ '. fold_change is calculated')
-            df_de_pval_qval = pd.DataFrame(columns = ['fold_change','diff','mean_up','mean_down'],dtype=float)
+            df_de_pval_qval = pd.DataFrame(columns = ['fold_change','mean_up','mean_down'],dtype=float)
             for genename in input_genes_expressed:
                 sub1_values = df_cells_sub1.loc[:,genename].tolist()
                 sub2_values = df_cells_sub2.loc[:,genename].tolist()
