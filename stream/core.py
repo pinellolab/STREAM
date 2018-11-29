@@ -4599,7 +4599,7 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
                 plt.close(fig) 
 
 
-def detect_leaf_genes(adata,cutoff_zscore=1.5,logfc = 0.25,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
                       use_precomputed=True, root='S0',preference=None):
 
     file_path = adata.uns['workdir'] + 'leaf_genes/'
