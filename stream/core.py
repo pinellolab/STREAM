@@ -4599,7 +4599,7 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
                 plt.close(fig) 
 
 
-def detect_leaf_genes(adata,cutoff_logfc = 0.25,cutoff_pvalue=1e-3,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+def detect_leaf_genes(adata,cutoff_zscore=1.5,logfc = 0.25,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
                       use_precomputed=True, root='S0',preference=None):
 
     file_path = adata.uns['workdir'] + 'leaf_genes/'
@@ -4650,31 +4650,24 @@ def detect_leaf_genes(adata,cutoff_logfc = 0.25,cutoff_pvalue=1e-3,percentile_ex
         if x not in bfs_edges:
             df_gene_detection.loc[id_,'bfs_edges'] =pd.Series(index=id_,data=[(x[1],x[0])]*len(id_))
     
-    df_leaf_genes = pd.DataFrame(columns=['logfc','H_statistic','H_pvalue']+leaf_edges)
+    df_leaf_genes = pd.DataFrame(columns=['zscore','H_statistic','H_pvalue']+leaf_edges)
     for gene in input_genes_expressed:
         meann_values = df_gene_detection[['bfs_edges',gene]].groupby(by = 'bfs_edges')[gene].mean()
         br_values = df_gene_detection[['bfs_edges',gene]].groupby(by = 'bfs_edges')[gene].apply(list)
         leaf_mean_values = meann_values[leaf_edges]
         leaf_mean_values.sort_values(inplace=True)
         leaf_br_values = br_values[leaf_edges]
-        if(leaf_mean_values.shape[0]>2):
-            diff_mean_1 = abs(leaf_mean_values[1] - leaf_mean_values[0])
-            if(diff_mean_1>0):
-                fc_1 = leaf_mean_values[1]/(leaf_mean_values[0]+diff_mean_1/1000.0)
-            else:
-                fc_1 = 1
-            diff_mean_2 = abs(leaf_mean_values[-1] - leaf_mean_values[-2])
-            if(diff_mean_2>0):
-                fc_2 = leaf_mean_values[-1]/(leaf_mean_values[-2]+diff_mean_2/1000.0)
-            else:
-                fc_2 = 1
-            if(fc_1>fc_2):
-                cand_br = leaf_mean_values.index[0]
-                logfc = -np.log2(max(fc_1,fc_2))
-            else:
-                cand_br = leaf_mean_values.index[-1]
-                logfc = np.log2(max(fc_1,fc_2))
-            if(abs(logfc)>cutoff_logfc):
+        if(leaf_mean_values.shape[0]<=2):
+            print('There are not enough leaf branches')
+        else:
+            zscores = stats.zscore(leaf_mean_values)
+            if(abs(zscores)[abs(zscores)>cutoff_zscore].shape[0]>=1):
+                if(any(zscores>cutoff_zscore)):
+                    cand_br = leaf_mean_values.index[-1]
+                    cand_zscore = zscores[-1]
+                else:
+                    cand_br = leaf_mean_values.index[0]
+                    cand_zscore = zscores[0]
                 list_br_values = [leaf_br_values[x] for x in leaf_edges]
                 kurskal_statistic,kurskal_pvalue = stats.kruskal(*list_br_values)
                 if(kurskal_pvalue<cutoff_pvalue):  
@@ -4683,7 +4676,7 @@ def detect_leaf_genes(adata,cutoff_logfc = 0.25,cutoff_pvalue=1e-3,percentile_ex
                     cand_conover_pvalues = df_conover_pvalues[~df_conover_pvalues.columns.isin([cand_br])][cand_br]
                     if(all(cand_conover_pvalues < cutoff_pvalue)):
                         df_leaf_genes.loc[gene,:] = "Null"
-                        df_leaf_genes.loc[gene,['logfc','H_statistic','H_pvalue']] = [logfc,kurskal_statistic,kurskal_pvalue]
+                        df_leaf_genes.loc[gene,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
                         df_leaf_genes.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
     df_leaf_genes.rename(columns={x:dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue' for x in leaf_edges},inplace=True)
     df_leaf_genes.sort_values(by='H_pvalue',inplace=True)
