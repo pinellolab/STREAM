@@ -29,11 +29,11 @@ mpl.rc('pdf', fonttype=42)
 import matplotlib.ticker as ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats,interpolate
-from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde
+from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde,kruskal
+import scikit_posthocs as sp
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline,UnivariateSpline
 from scipy.signal import savgol_filter
 from scipy.linalg import eigh, svd, qr, solve
-import scipy as sp
 from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
@@ -4197,14 +4197,20 @@ def scale_gene_expr(params):
     gene = params[1]
     percentile_expr = params[2]
     gene_values = df_gene_detection[gene].copy()
-    gene_values = gene_values + max(0,0-min(gene_values))
-    max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
-    gene_values[gene_values>max_gene_values] = max_gene_values
+    if(min(gene_values)<0):
+        min_gene_values = np.percentile(gene_values[gene_values<0],100-percentile_expr)
+        gene_values[gene_values<min_gene_values] = min_gene_values
+        max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
+        gene_values[gene_values>max_gene_values] = max_gene_values
+        gene_values = gene_values - min(gene_values)
+    else:
+        max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
+        gene_values[gene_values>max_gene_values] = max_gene_values
     gene_values = gene_values/max_gene_values
     return gene_values
 
 
-def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_foldchange = 0.25, percentile_expr=95, n_jobs = multiprocessing.cpu_count(),
+def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = multiprocessing.cpu_count(),
                              use_precomputed=True, root='S0',preference=None):
 
     file_path = adata.uns['workdir'] + 'transition_genes/'
@@ -4253,7 +4259,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_foldchange = 0.25
             df_cells_edge_i = deepcopy(df_gene_detection[df_gene_detection.branch_id==(edge_i[1],edge_i[0])])
             df_cells_edge_i['lam_ordered'] = flat_tree.edges[edge_i]['len'] - df_cells_edge_i['lam']
         df_cells_edge_i_sort = df_cells_edge_i.sort_values(['lam_ordered'])
-        df_stat_pval_qval = pd.DataFrame(columns = ['stat','fold_change','pval','qval'],dtype=float)
+        df_stat_pval_qval = pd.DataFrame(columns = ['stat','logfc','pval','qval'],dtype=float)
         for genename in input_genes_expressed:
             id_initial = range(0,int(df_cells_edge_i_sort.shape[0]*0.2))
             id_final = range(int(df_cells_edge_i_sort.shape[0]*0.8),int(df_cells_edge_i_sort.shape[0]*1))
@@ -4261,14 +4267,14 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_foldchange = 0.25
             values_final = df_cells_edge_i_sort.iloc[id_final,:][genename]
             diff_initial_final = abs(values_final.mean() - values_initial.mean())
             if(diff_initial_final>0):
-                fold_change = np.log2(max(values_final.mean(),values_initial.mean())/(min(values_final.mean(),values_initial.mean())+diff_initial_final/1000.0))
+                logfc = np.log2(max(values_final.mean(),values_initial.mean())/(min(values_final.mean(),values_initial.mean())+diff_initial_final/1000.0))
             else:
-                fold_change = 0
-            if(fold_change>cutoff_foldchange):
+                logfc = 0
+            if(logfc>cutoff_logfc):
                 df_stat_pval_qval.loc[genename] = np.nan
                 df_stat_pval_qval.loc[genename,['stat','pval']] = spearmanr(df_cells_edge_i_sort.loc[:,genename],\
                                                                             df_cells_edge_i_sort.loc[:,'lam_ordered'])
-                df_stat_pval_qval.loc[genename,'fold_change'] = fold_change
+                df_stat_pval_qval.loc[genename,'logfc'] = logfc
         if(df_stat_pval_qval.shape[0]==0):
             print('No Transition genes are detected in branch ' + dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]])
         else:
@@ -4357,7 +4363,7 @@ def adjust_spines(ax, spines):
 
 
 ### Find differentially expressed genes between different sub-branches
-def detect_de_genes(adata,cutoff_zscore=2,cutoff_foldchange = 0.25,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
                     use_precomputed=True, root='S0',preference=None):
 
     file_path = adata.uns['workdir'] + 'de_genes/'
@@ -4417,19 +4423,19 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_foldchange = 0.25,percentile_ex
             df_cells_sub2 = df_gene_detection[df_gene_detection.branch_id==(pair_i[1][1],pair_i[1][0])]
         #only use Mann-Whitney U test when the number of observation in each sample is > 20
         if(df_cells_sub1.shape[0]>20 and df_cells_sub2.shape[0]>20):
-            df_de_pval_qval = pd.DataFrame(columns = ['z_score','U','fold_change','mean_up','mean_down','pval','qval'],dtype=float)
+            df_de_pval_qval = pd.DataFrame(columns = ['z_score','U','logfc','mean_up','mean_down','pval','qval'],dtype=float)
             for genename in input_genes_expressed:
                 sub1_values = df_cells_sub1.loc[:,genename].tolist()
                 sub2_values = df_cells_sub2.loc[:,genename].tolist()
                 diff_mean = abs(np.mean(sub1_values) - np.mean(sub2_values))
                 if(diff_mean>0):
-                    fold_change = np.log2(max(np.mean(sub1_values),np.mean(sub2_values))/(min(np.mean(sub1_values),np.mean(sub2_values))+diff_mean/1000.0))
+                    logfc = np.log2(max(np.mean(sub1_values),np.mean(sub2_values))/(min(np.mean(sub1_values),np.mean(sub2_values))+diff_mean/1000.0))
                 else:
-                    fold_change = 0
-                if(fold_change>cutoff_foldchange):
+                    logfc = 0
+                if(logfc>cutoff_logfc):
                     df_de_pval_qval.loc[genename] = np.nan
                     df_de_pval_qval.loc[genename,['U','pval']] = mannwhitneyu(sub1_values,sub2_values,alternative='two-sided')
-                    df_de_pval_qval.loc[genename,'fold_change'] = fold_change
+                    df_de_pval_qval.loc[genename,'logfc'] = logfc
                     df_de_pval_qval.loc[genename,'mean_up'] = np.mean(sub1_values)
                     df_de_pval_qval.loc[genename,'mean_down'] = np.mean(sub2_values)
                     sub1_sub2_values = sub1_values + sub2_values
@@ -4463,39 +4469,39 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_foldchange = 0.25,percentile_ex
             print('There are not sufficient cells (should be greater than 20) between branches '+\
                   dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] +' and '+\
                   dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]]+ '. fold_change is calculated')
-            df_de_pval_qval = pd.DataFrame(columns = ['fold_change','mean_up','mean_down'],dtype=float)
+            df_de_pval_qval = pd.DataFrame(columns = ['logfc','mean_up','mean_down'],dtype=float)
             for genename in input_genes_expressed:
                 sub1_values = df_cells_sub1.loc[:,genename].tolist()
                 sub2_values = df_cells_sub2.loc[:,genename].tolist()
                 diff_mean = abs(np.mean(sub1_values) - np.mean(sub2_values))
                 if(diff_mean>0):
-                    fold_change = np.log2(max(np.mean(sub1_values),np.mean(sub2_values))/(min(np.mean(sub1_values),np.mean(sub2_values))+diff_mean/1000.0))
+                    logfc = np.log2(max(np.mean(sub1_values),np.mean(sub2_values))/(min(np.mean(sub1_values),np.mean(sub2_values))+diff_mean/1000.0))
                 else:
-                    fold_change = 0
-                if(fold_change>cutoff_foldchange):
+                    logfc = 0
+                if(logfc>cutoff_logfc):
                     df_de_pval_qval.loc[genename] = np.nan
                     # #make sure the largest fold change is 5
                     # df_de_pval_qval.loc[genename,'fold_change'] = np.log2((np.mean(sub1_values)+1/24.0)/(np.mean(sub2_values)+1/24.0))
-                    df_de_pval_qval.loc[genename,'fold_change'] = fold_change
+                    df_de_pval_qval.loc[genename,'logfc'] = logfc
                     df_de_pval_qval.loc[genename,'mean_up'] = np.mean(sub1_values)
                     df_de_pval_qval.loc[genename,'mean_down'] = np.mean(sub2_values)
             if(df_de_pval_qval.shape[0]==0):
                 print('No DE genes are detected between branches ' + dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]]+\
                       ' and '+dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]])
             else:
-                dict_de_greater[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['fold_change'])>cutoff_foldchange)&
-                                                          (df_de_pval_qval['fold_change']>0)].sort_values(['fold_change'],ascending=False)
+                dict_de_greater[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
+                                                          (df_de_pval_qval['logfc']>0)].sort_values(['logfc'],ascending=False)
                 dict_de_greater[pair_i].to_csv(file_path+'de_genes_greater_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
                                         + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv',sep = '\t',index = True)                
-                dict_de_less[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['fold_change'])>cutoff_foldchange)&
-                                                       (df_de_pval_qval['fold_change']<0)].sort_values(['fold_change'])
+                dict_de_less[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
+                                                       (df_de_pval_qval['logfc']<0)].sort_values(['logfc'])
                 dict_de_less[pair_i].to_csv(file_path+'de_genes_less_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
                                      + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv',sep = '\t',index = True)   
     adata.uns['de_genes_greater'] = dict_de_greater
     adata.uns['de_genes_less'] = dict_de_less
 
 
-def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 0.25,
+def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
                   save_fig=False,fig_path=None,fig_size=(12,8)):
     if(fig_path is None):
         fig_path = adata.uns['workdir'] + 'de_genes/'
@@ -4557,31 +4563,31 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 0.25,
                 plt.close(fig)
         else:
             if(not dict_de_greater[sub_edges_i].empty):
-                val_greater = dict_de_greater[sub_edges_i].iloc[:num_genes,:]['fold_change'].values  # the bar lengths
+                val_greater = dict_de_greater[sub_edges_i].iloc[:num_genes,:]['logfc'].values  # the bar lengths
                 pos_greater = np.arange(dict_DE_greater[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
             else:
                 val_greater = np.repeat(0,num_genes)
                 pos_greater = np.arange(num_genes)-1
             ax.bar(pos_greater,val_greater, align='center',color = colors[0])
-            ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_foldchange, cutoff_foldchange], "k--",lw=2)
+            ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_logfc, cutoff_logfc], "k--",lw=2)
             plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
             ax.set_ylim(0,max(val_greater)+1.5)
-            ax.set_ylabel('fold_change')
+            ax.set_ylabel('log_fold_change')
             ax.set_title('DE genes between branches ' + dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and ' + \
                          dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]])
             ax1 = fig.add_subplot(gs[1], adjustable='box')
             if(not dict_de_less[sub_edges_i].empty):
-                val_less = dict_de_less[sub_edges_i].iloc[:num_genes,:]['fold_change'].values  # the bar lengths
+                val_less = dict_de_less[sub_edges_i].iloc[:num_genes,:]['logfc'].values  # the bar lengths
                 pos_less = np.arange(dict_de_less[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
             else:
                 val_less = np.repeat(0,num_genes)
                 pos_less = np.arange(num_genes)-1
             ax1.bar(pos_less,val_less, align='center',color = colors[1])
-            ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_foldchange, -cutoff_foldchange], "k--",lw=2)
+            ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_logfc, -cutoff_logfc], "k--",lw=2)
             plt.xticks(pos_less,dict_de_less[sub_edges_i].index)
             ax1.set_ylim(min(val_less)-1.5,0)
             ax1.set_xticklabels(dict_de_less[sub_edges_i].index,rotation=90)
-            ax1.set_ylabel('fold_change')
+            ax1.set_ylabel('log_fold_change')
 
             ax.set_xlim(-2,14)
             ax1.set_xlim(-2,14)
@@ -4591,6 +4597,104 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_foldchange = 0.25,
                 plt.savefig(fig_path+'de_genes_'+dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and '\
                             + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf',pad_inches=1,bbox_inches='tight')
                 plt.close(fig) 
+
+
+def detect_leaf_genes(adata,cutoff_logfc = 0.25,cutoff_pvalue=1e-3,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+                      use_precomputed=True, root='S0',preference=None):
+
+    file_path = adata.uns['workdir'] + 'leaf_genes/'
+    if(not os.path.exists(file_path)):
+        os.makedirs(file_path)    
+
+    flat_tree = adata.uns['flat_tree']
+    dict_node_state = nx.get_node_attributes(flat_tree,'label')
+    df_gene_detection = adata.obs.copy()
+    df_gene_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
+    df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
+                         data = adata.raw.X,
+                         columns=adata.raw.var_names.tolist())
+    input_genes = adata.raw.var_names.tolist()
+    #exclude genes that are expressed in fewer than min_num_cells cells
+    min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
+    print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+    input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+    df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
+
+    if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
+        print('Importing precomputed scaled gene expression matrix ...')
+        results = adata.uns['scaled_gene_expr']          
+    else:
+        params = [(df_gene_detection,x,percentile_expr) for x in input_genes_expressed]
+        pool = multiprocessing.Pool(processes=n_jobs)
+        results = pool.map(scale_gene_expr,params)
+        pool.close()
+        adata.uns['scaled_gene_expr'] = results
+
+    df_gene_detection[input_genes_expressed] = pd.DataFrame(results).T    
+
+    #### find marker genes that are specific to one leaf branch
+    dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
+    if(preference!=None):
+        preference_nodes = [dict_label_node[x] for x in preference]
+    else:
+        preference_nodes = None
+    root_node = dict_label_node[root]
+    bfs_edges = bfs_edges_modified(flat_tree,root_node,preference=preference_nodes)
+    leaves = [k for k,v in flat_tree.degree() if v==1]
+    leaf_edges = [x for x in bfs_edges if (x[0] in leaves) or (x[1] in leaves)]    
+
+    df_gene_detection['bfs_edges'] = df_gene_detection['branch_id']
+    df_gene_detection.astype('object')
+    for x in df_gene_detection['branch_id'].unique():
+        id_ = df_gene_detection[df_gene_detection['branch_id']==x].index
+        if x not in bfs_edges:
+            df_gene_detection.loc[id_,'bfs_edges'] =pd.Series(index=id_,data=[(x[1],x[0])]*len(id_))
+    
+    df_leaf_genes = pd.DataFrame(columns=['logfc','H_statistic','H_pvalue']+leaf_edges)
+    for gene in input_genes_expressed:
+        meann_values = df_gene_detection[['bfs_edges',gene]].groupby(by = 'bfs_edges')[gene].mean()
+        br_values = df_gene_detection[['bfs_edges',gene]].groupby(by = 'bfs_edges')[gene].apply(list)
+        leaf_mean_values = meann_values[leaf_edges]
+        leaf_mean_values.sort_values(inplace=True)
+        leaf_br_values = br_values[leaf_edges]
+        if(leaf_mean_values.shape[0]>2):
+            diff_mean_1 = abs(leaf_mean_values[1] - leaf_mean_values[0])
+            if(diff_mean_1>0):
+                fc_1 = leaf_mean_values[1]/(leaf_mean_values[0]+diff_mean_1/1000.0)
+            else:
+                fc_1 = 1
+            diff_mean_2 = abs(leaf_mean_values[-1] - leaf_mean_values[-2])
+            if(diff_mean_2>0):
+                fc_2 = leaf_mean_values[-1]/(leaf_mean_values[-2]+diff_mean_1/1000.0)
+            else:
+                fc_2 = 1
+            if(fc_1>fc_2):
+                cand_br = leaf_mean_values.index[0]
+                logfc = -np.log2(max(fc_1,fc_2))
+            else:
+                cand_br = leaf_mean_values.index[-1]
+                logfc = np.log2(max(fc_1,fc_2))
+            if(abs(logfc)>cutoff_logfc):
+                list_br_values = [leaf_br_values[x] for x in leaf_edges]
+                kurskal_statistic,kurskal_pvalue = stats.kruskal(*list_br_values)
+                if(kurskal_pvalue<cutoff_pvalue):  
+                    df_conover_pvalues= sp.posthoc_conover(df_gene_detection[[x in leaf_edges for x in df_gene_detection['bfs_edges']]], 
+                                                       val_col=gene, group_col='bfs_edges', p_adjust = 'fdr_bh')
+                    cand_conover_pvalues = df_conover_pvalues[~df_conover_pvalues.columns.isin([cand_br])][cand_br]
+                    if(all(cand_conover_pvalues < cutoff_pvalue)):
+                        df_leaf_genes.loc[gene,:] = "Null"
+                        df_leaf_genes.loc[gene,['logfc','H_statistic','H_pvalue']] = [logfc,kurskal_statistic,kurskal_pvalue]
+                        df_leaf_genes.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
+    df_leaf_genes.rename(columns={x:dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue' for x in leaf_edges},inplace=True)
+    df_leaf_genes.sort_values(by='H_pvalue',inplace=True)
+    df_leaf_genes.to_csv(file_path+'leaf_genes.tsv',sep = '\t',index = True)
+    dict_leaf_genes = dict()
+    for x in leaf_edges:
+        dict_leaf_genes[x] = df_leaf_genes[df_leaf_genes[dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue']=="Null"]
+        dict_leaf_genes[x].to_csv(file_path+'leaf_genes'+dict_node_state[x[0]]+'_'+dict_node_state[x[1]] + '.tsv',sep = '\t',index = True)
+    adata.uns['leaf_genes_all'] = df_leaf_genes
+    adata.uns['leaf_genes'] = dict_leaf_genes
+
 
 def barycenter_weights_modified(X, Z, reg=1e-3):
     """Compute barycenter weights of X from Y along the first axis
