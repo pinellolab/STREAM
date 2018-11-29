@@ -4665,7 +4665,7 @@ def detect_leaf_genes(adata,cutoff_logfc = 0.25,cutoff_pvalue=1e-3,percentile_ex
                 fc_1 = 1
             diff_mean_2 = abs(leaf_mean_values[-1] - leaf_mean_values[-2])
             if(diff_mean_2>0):
-                fc_2 = leaf_mean_values[-1]/(leaf_mean_values[-2]+diff_mean_1/1000.0)
+                fc_2 = leaf_mean_values[-1]/(leaf_mean_values[-2]+diff_mean_2/1000.0)
             else:
                 fc_2 = 1
             if(fc_1>fc_2):
