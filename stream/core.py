@@ -78,28 +78,13 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
     if(experiment == 'rna-seq'):
         if(file_format in ['tsv','txt','tab','data']):
             adata = ad.read_text(file_path+file_name,delimiter=delimiter,**kwargs).T
-            adata.raw = adata
-            if(workdir==None):
-                workdir = os.getcwd() + '/stream_result/'
-            if(not os.path.exists(workdir)):
-                os.makedirs(workdir)
-            adata.uns['workdir'] = workdir        
+            adata.raw = adata        
         elif(file_format == 'csv'):
             adata = ad.read_csv(file_path+file_name,delimiter=delimiter,**kwargs).T
             adata.raw = adata
-            if(workdir==None):
-                workdir = os.getcwd() + '/stream_result/'
-            if(not os.path.exists(workdir)):
-                os.makedirs(workdir)
-            adata.uns['workdir'] = workdir
         elif(file_format == 'mtx'):
             adata = ad.read_mtx(file_path+file_name,**kwargs).T 
             adata.raw = adata
-            if(workdir==None):
-                workdir = os.getcwd() + '/stream_result/'
-            if(not os.path.exists(workdir)):
-                os.makedirs(workdir)
-            adata.uns['workdir'] = workdir
         elif(file_format == 'h5ad'):
             adata = ad.read_h5ad(file_path+file_name,**kwargs)
         elif(file_format == 'pklz'):
@@ -114,29 +99,41 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
             print('file format ' + file_format + ' is not supported')
             return
     elif(experiment == 'atac-seq'):
-        if(file_name_sample is None):
-            print('sample file must be provided')
-        if(file_name_region is None):
-            print('region file must be provided')
-        df_counts = pd.read_csv(file_name,sep='\t',header=None,names=['i','j','x'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
-        df_regions = pd.read_csv(file_name_region,sep='\t',header=None,compression= 'gzip' if file_name_region.split('.')[-1]=='gz' else None)
-        df_regions = df_regions.iloc[:,:3]
-        df_regions.columns = ['seqnames','start','end']
-        df_samples = pd.read_csv(file_name_sample,sep='\t',header=None,names=['cell_id'],compression= 'gzip' if file_name_sample.split('.')[-1]=='gz' else None)
-        adata = ad.AnnData()
-        adata.uns['atac-seq'] = dict()
-        adata.uns['atac-seq']['count'] = df_counts
-        adata.uns['atac-seq']['region'] = df_regions
-        adata.uns['atac-seq']['sample'] = df_samples
-        if(workdir==None):
-            workdir = os.getcwd() + '/stream_result/'
-        if(not os.path.exists(workdir)):
-            os.makedirs(workdir)
-        adata.uns['workdir'] = workdir
+        if(file_format == 'pklz'):
+            f = gzip.open(file_path+file_name, 'rb')
+            adata = pickle.load(f)
+            f.close()  
+        elif(file_format == 'pkl'):
+            f = open(file_path+file_name, 'rb')
+            adata = pickle.load(f)
+            f.close()
+        else:            
+            if(file_name_sample is None):
+                print('sample file must be provided')
+            if(file_name_region is None):
+                print('region file must be provided')
+            df_counts = pd.read_csv(file_name,sep='\t',header=None,names=['i','j','x'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
+            df_regions = pd.read_csv(file_name_region,sep='\t',header=None,compression= 'gzip' if file_name_region.split('.')[-1]=='gz' else None)
+            df_regions = df_regions.iloc[:,:3]
+            df_regions.columns = ['seqnames','start','end']
+            df_samples = pd.read_csv(file_name_sample,sep='\t',header=None,names=['cell_id'],compression= 'gzip' if file_name_sample.split('.')[-1]=='gz' else None)
+            adata = ad.AnnData()
+            adata.uns['atac-seq'] = dict()
+            adata.uns['atac-seq']['count'] = df_counts
+            adata.uns['atac-seq']['region'] = df_regions
+            adata.uns['atac-seq']['sample'] = df_samples
     else:
         print('The experiment '+experiment +' is not supported')
         return        
     adata.uns['experiment'] = experiment
+    if(workdir==None):
+        if('workdir' in adata.uns_keys()):
+            workdir = adata.uns['workdir']
+        else:
+            workdir = os.getcwd() + '/stream_result/'
+    if(not os.path.exists(workdir)):
+        os.makedirs(workdir)
+    adata.uns['workdir'] = workdir
     return adata
 
 
