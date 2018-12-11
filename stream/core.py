@@ -860,13 +860,9 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
         ax = fig.add_subplot(111, projection='3d')
         for edge_i in flat_tree.edges():
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for epg_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[epg_sub_edge[0]][0],dict_nodes_pos[epg_sub_edge[1]][0])
-                y_pos = (dict_nodes_pos[epg_sub_edge[0]][1],dict_nodes_pos[epg_sub_edge[1]][1])
-                z_pos = (dict_nodes_pos[epg_sub_edge[0]][2],dict_nodes_pos[epg_sub_edge[1]][2])
-                ax.plot(x_pos,y_pos,z_pos,c = branch_i_color,lw=5,zorder=None)
+            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
+            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=None)
         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],nodes_pos[:,2],color='gray',s=12,alpha=1,zorder=5)
         for i in dict_nodes_pos.keys():
             ax.text(dict_nodes_pos[i][0],dict_nodes_pos[i][1],dict_nodes_pos[i][2],i,color='black',fontsize = 10)
@@ -888,12 +884,9 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
         ax = fig.add_subplot(111)
         for edge_i in flat_tree.edges():
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for epg_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[epg_sub_edge[0]][comp1],dict_nodes_pos[epg_sub_edge[1]][comp1])
-                y_pos = (dict_nodes_pos[epg_sub_edge[0]][comp2],dict_nodes_pos[epg_sub_edge[1]][comp2])
-                ax.plot(x_pos,y_pos,c = branch_i_color,lw=5,zorder=None)
+            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
+            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],c = branch_i_color,lw=5,zorder=None)
         ax.scatter(nodes_pos[:,comp1],nodes_pos[:,comp2],color='gray',s=12,alpha=1,zorder=5)
         for i in dict_nodes_pos.keys():
             ax.text(dict_nodes_pos[i][comp1],dict_nodes_pos[i][comp2],i,color='black',fontsize = 10)
@@ -997,14 +990,9 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
                 ax.scatter(coord_new[0], coord_new[1],coord_new[2],c=color_new,s=50,linewidth=0,alpha=0.8)
         for edge_i in flat_tree.edges():
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for epg_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[epg_sub_edge[0]][0],dict_nodes_pos[epg_sub_edge[1]][0])
-                y_pos = (dict_nodes_pos[epg_sub_edge[0]][1],dict_nodes_pos[epg_sub_edge[1]][1])
-                z_pos = (dict_nodes_pos[epg_sub_edge[0]][2],dict_nodes_pos[epg_sub_edge[1]][2])
-                ax.plot(x_pos,y_pos,z_pos,c = branch_i_color,lw=5,zorder=None)
-#         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],nodes_pos[:,2],color='gray',s=12,alpha=1,zorder=5)
+            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
+            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=None)
         for node_i in flat_tree.nodes():
             ax.text(dict_nodes_pos[node_i][0],dict_nodes_pos[node_i][1],dict_nodes_pos[node_i][2],
                     flat_tree.nodes[node_i]['label'],color='black',fontsize = 12,zorder=10)
@@ -1036,12 +1024,9 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
                 ax.scatter(coord_new[comp1], coord_new[comp2],c=color_new,s=50,linewidth=0,alpha=0.8)
         for edge_i in flat_tree.edges():
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            epg_sub = epg.subgraph(branch_i_nodes)
             branch_i_color = flat_tree.edges[edge_i]['color']
-            for epg_sub_edge in epg_sub.edges():
-                x_pos = (dict_nodes_pos[epg_sub_edge[0]][comp1],dict_nodes_pos[epg_sub_edge[1]][comp1])
-                y_pos = (dict_nodes_pos[epg_sub_edge[0]][comp2],dict_nodes_pos[epg_sub_edge[1]][comp2])
-                ax.plot(x_pos,y_pos,c = branch_i_color,lw=5,zorder=None)
+            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
+            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],c = branch_i_color,lw=5,zorder=None)
 #         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],color='gray',s=12,alpha=1,zorder=5)
         for node_i in flat_tree.nodes():
             ax.text(dict_nodes_pos[node_i][comp1],dict_nodes_pos[node_i][comp2],
