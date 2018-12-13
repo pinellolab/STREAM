@@ -4156,7 +4156,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             plt.xlabel('Pseudotime',fontsize=label_fontsize)
             xloc = plt.MaxNLocator(5)
             ax.xaxis.set_major_locator(xloc)     
-            
+
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="3%", pad='2%')
             cbar = plt.colorbar(dict_imshow[cellname],cax=cax,orientation='vertical')
@@ -4169,9 +4169,9 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                 for edge_i in bfs_edges:
                     if(df_edge_cellnum.loc[cellname,[edge_i]].values>0):
                         ax.plot(dict_smooth_new[cellname]['top'][edge_i].loc['x'],dict_smooth_new[cellname]['top'][edge_i].loc['y'],\
-                                c = 'gray',ls = 'solid',lw=1)
+                                c = 'gray',ls = 'solid',lw=0.1)
                         ax.plot(dict_smooth_new[cellname]['base'][edge_i].loc['x'],dict_smooth_new[cellname]['base'][edge_i].loc['y'],\
-                                c = 'gray',ls = 'solid',lw=1)
+                                c = 'gray',ls = 'solid',lw=0.1)
 
             fig_xmin, fig_xmax = ax.get_xlim()
             fig_ymin, fig_ymax = ax.get_ylim()
