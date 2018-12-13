@@ -944,7 +944,10 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
     """
 
     if(fig_path is None):
-        fig_path = adata.uns['workdir']
+        if(adata_new==None):
+            fig_path = adata.uns['workdir']
+        else:
+            fig_path = adata_new.uns['workdir']
     if(key_graph=='epg'):
         epg = adata.uns['epg']
         flat_tree = adata.uns['flat_tree']
@@ -1858,7 +1861,10 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
 
 def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_path=None,fig_name='flat_tree.pdf',fig_size=(8,8),fig_legend_ncol=3):  
     if(fig_path is None):
-        fig_path = adata.uns['workdir']
+        if(adata_new==None):
+            fig_path = adata.uns['workdir']
+        else:
+            fig_path = adata_new.uns['workdir']
 
     flat_tree = adata.uns['flat_tree']
     dict_nodes_pos = nx.spring_layout(flat_tree,random_state=10)
@@ -1974,7 +1980,10 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
 def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',nb_pct=0.1,perplexity=30.0,color_by='label',use_precomputed=True,
                           save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend_ncol=3):  
     if(fig_path is None):
-        fig_path = adata.uns['workdir']
+        if(adata_new==None):
+            fig_path = adata.uns['workdir']
+        else:
+            fig_path = adata_new.uns['workdir']
     input_data = adata.obsm['X_dr']
     if(adata_new != None):
         input_data = np.vstack((input_data,adata_new.obsm['X_dr']))
@@ -2170,7 +2179,10 @@ def bfs_edges_modified(tree, source, preference=None):
 def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',preference=None,
                    save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend_ncol=3):  
     if(fig_path is None):
-        fig_path = adata.uns['workdir']
+        if(adata_new==None):
+            fig_path = adata.uns['workdir']
+        else:
+            fig_path = adata_new.uns['workdir']
 
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -2507,7 +2519,10 @@ def find_outline_edges(bfs_flat_tree,start_node):
 def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,preference=None,
                         save_fig=False,fig_path=None,fig_size=(10,6)):  
     if(fig_path is None):
-        fig_path = adata.uns['workdir']
+        if(adata_new==None):
+            fig_path = adata.uns['workdir']
+        else:
+            fig_path = adata_new.uns['workdir']
     if(genes is None):
         print('Please provide gene names');
     else:
@@ -2721,7 +2736,10 @@ def find_paths(dict_tree,bfs_nodes):
 def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,preference=None,
                 save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
     if(fig_path is None):
-        fig_path = adata.uns['workdir']
+        if(adata_new==None):
+            fig_path = adata.uns['workdir']
+        else:
+            fig_path = adata_new.uns['workdir']
 
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -3313,20 +3331,12 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
             polygon = Polygon(verts_cell,closed=True,color=input_cell_label_uni_color[cellname],alpha=0.8,lw=0)
             ax.add_patch(polygon)
 
-        if(input_cell_label_uni[0] == 'unknown'):
-            for cellname in cell_list_sorted:
-                for edge_i in bfs_edges:
-                    linear_top = dict_smooth_linear[cellname]['top'][edge_i].loc['y']
-                    linear_base = dict_smooth_linear[cellname]['base'][edge_i].loc['y']
-                    if(sum(np.abs(linear_base - linear_top))>1e-10):
-                        ax.plot(dict_smooth_new[cellname]['top'][edge_i].loc['x'],dict_smooth_new[cellname]['top'][edge_i].loc['y'],\
-                                c = 'grey',ls = 'solid',lw=2)
-                        ax.plot(dict_smooth_new[cellname]['base'][edge_i].loc['x'],dict_smooth_new[cellname]['base'][edge_i].loc['y'],\
-                                c = 'grey',ls = 'solid',lw=2)
         plt.xticks(fontsize=tick_fontsize)
         # plt.xticks([])
         plt.yticks([])
         plt.xlabel('Pseudotime',fontsize=label_fontsize)
+        xloc = plt.MaxNLocator(5)
+        ax.xaxis.set_major_locator(xloc)        
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -4144,7 +4154,9 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             plt.xticks(fontsize=tick_fontsize)
             plt.yticks([])
             plt.xlabel('Pseudotime',fontsize=label_fontsize)
-
+            xloc = plt.MaxNLocator(5)
+            ax.xaxis.set_major_locator(xloc)     
+            
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="3%", pad='2%')
             cbar = plt.colorbar(dict_imshow[cellname],cax=cax,orientation='vertical')
@@ -4272,6 +4284,8 @@ def plot_transition_genes(adata,num_genes = 15,
                           save_fig=False,fig_path=None,fig_size=(12,8)):
     if(fig_path is None):
         fig_path = adata.uns['workdir'] + 'transition_genes/'
+    if(not os.path.exists(fig_path)):
+        os.makedirs(fig_path) 
 
     dict_tg_edges = adata.uns['transition_genes']
     flat_tree = adata.uns['flat_tree']
@@ -4487,6 +4501,8 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
                   save_fig=False,fig_path=None,fig_size=(12,8)):
     if(fig_path is None):
         fig_path = adata.uns['workdir'] + 'de_genes/'
+    if(not os.path.exists(fig_path)):
+        os.makedirs(fig_path)  
 
     dict_de_greater = adata.uns['de_genes_greater']
     dict_de_less = adata.uns['de_genes_less']
