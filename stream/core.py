@@ -14,7 +14,7 @@ from sklearn.decomposition import PCA as sklearnPCA
 from sklearn import preprocessing
 from sklearn.manifold import LocallyLinearEmbedding,TSNE
 from sklearn.cluster import SpectralClustering,AffinityPropagation,KMeans
-from sklearn.metrics.pairwise import pairwise_distances,pairwise_distances_argmin_min,euclidean_distances
+from sklearn.metrics.pairwise import pairwise_distances_argmin_min,pairwise_distances,euclidean_distances
 import matplotlib.patches as Patches
 from matplotlib.patches import Polygon
 from mpl_toolkits.mplot3d.axes3d import Axes3D
@@ -30,14 +30,12 @@ import matplotlib.ticker as ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats,interpolate
 from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde,kruskal
-import scikit_posthocs as sp
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline,UnivariateSpline
 from scipy.signal import savgol_filter
 from scipy.linalg import eigh, svd, qr, solve
 from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
-import matplotlib.ticker as ticker
 import pickle
 import gzip
 
@@ -46,6 +44,12 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import r as R
 import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
+
+from extra import *
+#scikit_posthocs is currently not available in conda system. We will update it once it can be installed via conda.
+#import scikit_posthocs as sp
+import scikit_posthocs._posthocs as sp
+
 
 
 def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',file_format='tsv',delimiter='\t',experiment='rna-seq', workdir=None,**kwargs):
@@ -251,6 +255,25 @@ def write(adata,file_name=None,file_path=None,file_format='pkl'):
 
 
 def add_cell_labels(adata,file_path='./',file_name=None):
+    """Add cell lables.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    fig_path: `str`, optional (default: './')
+        The file path of cell label file.
+    fig_name: `str`, optional (default: None)
+        The file name of cell label file. If file_name is not specified, 'unknown' is added as the label for all cells.
+        
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    label: `pandas.core.series.Series` (`adata.obs['label']`,dtype `str`)
+        Array of #observations that stores the label of each cell.
+    """
+
     if(file_name!=None):
         df_labels = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label'],
                                 dtype=str,compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
@@ -264,6 +287,26 @@ def add_cell_labels(adata,file_path='./',file_name=None):
 
 
 def add_cell_colors(adata,file_path='./',file_name=None):
+    """Add cell colors.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    fig_path: `str`, optional (default: './')
+        The file path of cell label color file.
+    fig_name: `str`, optional (default: None)
+        The file name of cell label color file. If file_name is not specified, random color are generated for each cell label.
+        
+    Returns
+    -------
+    updates `adata` with the following fields.
+    label_color: `pandas.core.series.Series` (`adata.obs['label_color']`,dtype `str`)
+        Array of #observations that stores the color of each cell (hex color code).
+    label_color: `dict` (`adata.uns['label_color']`,dtype `str`)
+        Array of #observations that stores the color of each cell (hex color code).        
+    """
+
     labels_unique = adata.obs['label'].unique()
     if(file_name!=None):
         df_colors = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label','color'],
@@ -305,6 +348,25 @@ def add_cell_colors(adata,file_path='./',file_name=None):
 
 
 def filter_genes(adata,min_num_cells = None,min_pct_cells = None,min_count = None, expr_cutoff = 1):
+    """Filter out genes based on different metrics.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    min_num_cells: `int`, optional (default: None)
+        Minimum number of cells expressing one gene
+    min_pct_cells: `float`, optional (default: None)
+        Minimum percentage of cells expressing one gene
+    min_count: `int`, optional (default: None)
+        Minimum number of read count for one gene
+    expr_cutoff: `float`, optional (default: 1)
+        Expression cutoff. If greater than expr_cutoff,the gene is considered 'expressed'
+    Returns
+    -------
+    updates `adata` with a subset of genes that pass the filtering.      
+    """
+
     n_counts = np.sum(adata.X,axis=0)
     adata.var['n_counts'] = n_counts
     n_cells = np.sum(adata.X>expr_cutoff,axis=0)
@@ -329,6 +391,25 @@ def filter_genes(adata,min_num_cells = None,min_pct_cells = None,min_count = Non
 
 
 def filter_cells(adata,min_num_genes = None,min_pct_genes = None,min_count=None,expr_cutoff = 1):
+    """Filter out cells based on different metrics.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    min_num_genes: `int`, optional (default: None)
+        Minimum number of genes expressed
+    min_pct_genes: `float`, optional (default: None)
+        Minimum percentage of genes expressed
+    min_count: `int`, optional (default: None)
+        Minimum number of read count for one cell
+    expr_cutoff: `float`, optional (default: 1)
+        Expression cutoff. If greater than expr_cutoff,the gene is considered 'expressed'
+    Returns
+    -------
+    updates `adata` with a subset of cells that pass the filtering.      
+    """
+
     n_counts = np.sum(adata.X,axis=1)
     adata.obs['n_counts'] = n_counts
     n_genes = np.sum(adata.X>=expr_cutoff,axis=1)
@@ -353,16 +434,56 @@ def filter_cells(adata,min_num_genes = None,min_pct_genes = None,min_count=None,
 
 
 def log_transform(adata,base=2):
+    """Logarithmize gene expression.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    base: `int`, optional (default: 2)
+        The base used to calculate logarithm
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    X: `numpy.ndarray` (`adata.X`)
+        Store #observations × #var_genes logarithmized data matrix.
+    """
+
     adata.X = np.log2(adata.X+1)/np.log2(base)
     return None
 
 
 def normalize_per_cell(adata):
+    """Normalize gene expression based on library size.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    X: `numpy.ndarray` (`adata.X`)
+        Store #observations × #var_genes normalized data matrix.
+    """
     adata.X = (np.divide(adata.X.T,adata.X.sum(axis=1)).T)*1e6
 
 
-### remove mitochondrial genes
 def remove_mt_genes(adata):
+    """remove mitochondrial genes.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+
+    Returns
+    -------
+    updates `adata` with a subset of genes that excluded mitochondrial genes.
+    """        
+
     r = re.compile("^MT-",flags=re.IGNORECASE)
     mt_genes = list(filter(r.match, adata.var_names))
     if(len(mt_genes)>0):
@@ -370,14 +491,6 @@ def remove_mt_genes(adata):
         print(mt_genes)
         gene_subset = ~adata.var_names.isin(mt_genes)
         adata._inplace_subset_var(gene_subset)
-
-
-def project_point_to_curve_distance(XP,p):
-    curve = geom.LineString(XP)
-    point = geom.Point(p)
-    #distance from point to curve
-    dist_p_to_c = point.distance(curve)
-    return dist_p_to_c    
 
 
 def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jobs = multiprocessing.cpu_count(),
@@ -544,7 +657,7 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
     adata: AnnData
         Annotated data matrix.
     nb_pct: `float`, optional (default: 0.1)
-        The percentage neighbor cells used for lle.
+        The percentage neighbor cells (only valid when 'mlle' or 'umap' is specified).
     n_components: `int`, optional (default: 3)
         Number of components to keep.
     n_jobs: `int`, optional (default: all available cpus)
@@ -691,120 +804,6 @@ def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
             plt.close(fig)
 
 
-def dfs_from_leaf(epg_copy,node,degrees_of_nodes,nodes_to_visit,nodes_to_merge):
-    nodes_to_visit.remove(node)
-    for n2 in epg_copy.neighbors(node):
-        if n2 in nodes_to_visit:
-            if degrees_of_nodes[n2]==2:  #grow the branch
-                if n2 not in nodes_to_merge:
-                    nodes_to_merge.append(n2)
-                dfs_from_leaf(epg_copy,n2,degrees_of_nodes,nodes_to_visit,nodes_to_merge)
-            else:
-                nodes_to_merge.append(n2)
-                return
-
-
-def add_branch_info(epg,dict_branches):
-    dict_nodes_pos = nx.get_node_attributes(epg,'pos')
-    sns_palette = sns.color_palette("hls", len(dict_branches)).as_hex()
-    if(dict_nodes_pos != {}):
-        for i,(br_key,br_value) in enumerate(dict_branches.items()):
-            nodes = br_value['nodes']
-            dict_branches[br_key]['id'] = (nodes[0],nodes[-1]) #the direction of nodes for each branch
-            br_nodes_pos = np.array([dict_nodes_pos[i] for i in nodes]) 
-            dict_branches[br_key]['len'] = sum(np.sqrt(((br_nodes_pos[0:-1,:] - br_nodes_pos[1:,:])**2).sum(1)))
-            dict_branches[br_key]['color'] = sns_palette[i]
-    return dict_branches
-
-
-def extract_branches(epg):
-    #record the original degree(before removing nodes) for each node
-    degrees_of_nodes = epg.degree()
-    epg_copy = epg.copy()
-    dict_branches = dict()
-    clusters_to_merge=[]
-    while epg_copy.order()>1: #the number of vertices
-        leaves=[n for n,d in epg_copy.degree() if d==1]
-        nodes_included=list(epg_copy.nodes())
-        while leaves:
-            leave=leaves.pop()
-            nodes_included.remove(leave)
-            nodes_to_merge=[leave]
-            nodes_to_visit=list(epg_copy.nodes())
-            dfs_from_leaf(epg_copy,leave,degrees_of_nodes,nodes_to_visit,nodes_to_merge)
-            clusters_to_merge.append(nodes_to_merge)
-            dict_branches[(nodes_to_merge[0],nodes_to_merge[-1])] = {}
-            dict_branches[(nodes_to_merge[0],nodes_to_merge[-1])]['nodes'] = nodes_to_merge
-            nodes_to_delete = nodes_to_merge[0:len(nodes_to_merge)-1]
-            if epg_copy.degree()[nodes_to_merge[-1]] == 1: #avoid the single point
-                nodes_to_delete = nodes_to_merge
-                leaves = []
-            epg_copy.remove_nodes_from(nodes_to_delete)
-    dict_branches = add_branch_info(epg,dict_branches)
-    # print('Number of branches: ' + str(len(clusters_to_merge)))
-    return dict_branches
-
-
-# def plot_mst(adata,n_components = 3,**kwargs):
-#     options = {
-#             'save_fig' : False,
-#             'fig_size':(8,8),
-#             'fig_path' :  adata.uns['workdir'],
-#             'fig_name' : 'dimension_reduction.pdf',}
-#     options.update(kwargs)
-#     save_fig = options['save_fig']
-#     fig_size = options['fig_size']
-#     fig_path = options['fig_path']
-#     fig_name = options['fig_name']
-
-#     mst = adata.uns['mst']
-#     XC = nx.get_node_attributes(mst,'pos')
-#     df_coord = pd.DataFrame(adata.obsm['X_dr'],index=adata.obs_names)
-#     coord = df_coord.sample(frac=1,random_state=100)
-    
-#     if(n_components>=3): 
-#         fig = plt.figure(figsize=fig_size)
-#         ax = fig.add_subplot(111, projection='3d')
-#         for n in mst.nodes():
-#             ax.scatter(XC[n][0],XC[n][1],XC[n][2],color='#EC4E4E',s=80,marker='o',alpha=0.9,zorder=100)
-#         for edge in mst.edges():
-#             x_pos = (XC[edge[0]][0],XC[edge[1]][0])
-#             y_pos = (XC[edge[0]][1],XC[edge[1]][1])
-#             z_pos = (XC[edge[0]][2],XC[edge[1]][2])
-#             ax.plot(x_pos,y_pos,z_pos,'#3182bd',lw=2,zorder=10)
-#         max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min(), coord[2].max()-coord[2].min()]).max() / 1.9
-#         mid_x = (coord[0].max()+coord[0].min()) * 0.5
-#         mid_y = (coord[1].max()+coord[1].min()) * 0.5
-#         mid_z = (coord[2].max()+coord[2].min()) * 0.5
-#         ax.set_xlim(mid_x - max_range, mid_x + max_range)
-#         ax.set_ylim(mid_y - max_range, mid_y + max_range)
-#         ax.set_zlim(mid_z - max_range, mid_z + max_range)
-#         ax.set_xlabel('Component1',labelpad=20)
-#         ax.set_ylabel('Component2',labelpad=20)
-#         ax.set_zlabel('Component3',labelpad=20)
-#         if(save_fig):
-#             plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
-#             plt.close(fig)
-#     if(n_components==2): 
-#         fig = plt.figure(figsize=fig_size)
-#         ax = fig.add_subplot(111)
-#         for n in mst.nodes():
-#             ax.scatter(XC[n][0],XC[n][1],color='#EC4E4E',s=80,marker='o',alpha=0.9,zorder=100)
-#         for edge in mst.edges():
-#             x_pos = (XC[edge[0]][0],XC[edge[1]][0])
-#             y_pos = (XC[edge[0]][1],XC[edge[1]][1])
-#             ax.plot(x_pos,y_pos,'#3182bd',lw=2,zorder=10)    
-#         max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min()]).max() / 1.9
-#         mid_x = (coord[0].max()+coord[0].min()) * 0.5
-#         mid_y = (coord[1].max()+coord[1].min()) * 0.5
-#         ax.set_xlim(mid_x - max_range, mid_x + max_range)
-#         ax.set_ylim(mid_y - max_range, mid_y + max_range)
-#         ax.set_xlabel('Component1',labelpad=20)
-#         ax.set_ylabel('Component2',labelpad=20)
-#         if(save_fig):
-#             plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
-#             plt.close(fig)      
-
 def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=(8,8)):  
     """Plot branches skeleton with all nodes.
 
@@ -911,7 +910,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
     adata: AnnData
         Annotated data matrix.
     adata_new: AnnData
-        Annotated data matrix for mapped data.
+        Annotated data matrix for new data (to be mapped).
     n_components: `int`, optional (default: 3)
         Number of components to be plotted.
     comp1: `int`, optional (default: 0)
@@ -1046,133 +1045,6 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
         if(save_fig):
             plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
             plt.close(fig)
-
-
-def project_point_to_line_segment_matrix(XP,p):
-    XP = np.array(XP,dtype=float)
-    p = np.array(p,dtype=float)
-    AA=XP[:-1,:]
-    BB=XP[1:,:]
-    AB = (BB-AA)
-    AB_squared = (AB*AB).sum(1)
-    Ap = (p-AA)
-    t = (Ap*AB).sum(1)/AB_squared
-    t[AB_squared == 0]=0
-    Q = AA + AB*np.tile(t,(XP.shape[1],1)).T
-    Q[t<=0,:]=AA[t<=0,:]
-    Q[t>=1,:]=BB[t>=1,:]
-    kdtree=cKDTree(Q)
-    d,idx_q=kdtree.query(p)
-    dist_p_to_q = np.sqrt(np.inner(p-Q[idx_q,:],p-Q[idx_q,:]))
-    XP_p = np.row_stack((XP[:idx_q+1],Q[idx_q,:]))
-    lam = np.sum(np.sqrt(np.square((XP_p[1:,:] - XP_p[:-1,:])).sum(1)))
-    return list([Q[idx_q,:],idx_q,dist_p_to_q,lam])
-
-
-
-def project_cells_to_epg(adata):
-    input_data = adata.obsm['X_dr']
-    epg = adata.uns['epg']
-    dict_nodes_pos = nx.get_node_attributes(epg,'pos')
-    nodes_pos = np.empty((0,input_data.shape[1]))
-    nodes = np.empty((0,1),dtype=int)
-    for key in dict_nodes_pos.keys():
-        nodes_pos = np.vstack((nodes_pos,dict_nodes_pos[key]))
-        nodes = np.append(nodes,key)    
-    indices = pairwise_distances_argmin_min(input_data,nodes_pos,axis=1,metric='euclidean')[0]
-    x_node = nodes[indices]
-    adata.obs['node'] = x_node
-    #update the projection info for each cell
-    flat_tree = adata.uns['flat_tree']
-    dict_branches_nodes = nx.get_edge_attributes(flat_tree,'nodes')
-    dict_branches_id = nx.get_edge_attributes(flat_tree,'id')
-    dict_node_state = nx.get_node_attributes(flat_tree,'label')
-    list_x_br_id = list()
-    list_x_br_id_alias = list()
-    list_x_lam = list()
-    list_x_dist = list()
-    for ix,xp in enumerate(input_data): 
-        list_br_id = [flat_tree.edges[br_key]['id'] for br_key,br_value in dict_branches_nodes.items() if x_node[ix] in br_value]
-        dict_br_matrix = dict()
-        for br_id in list_br_id:
-            dict_br_matrix[br_id] = np.array([dict_nodes_pos[i] for i in flat_tree.edges[br_id]['nodes']])            
-        dict_results = dict()
-        list_dist_xp = list()
-        for br_id in list_br_id:
-            dict_results[br_id] = project_point_to_line_segment_matrix(dict_br_matrix[br_id],xp)
-            list_dist_xp.append(dict_results[br_id][2])
-        x_br_id = list_br_id[np.argmin(list_dist_xp)]
-        x_br_id_alias = dict_node_state[x_br_id[0]],dict_node_state[x_br_id[1]]
-        br_len = flat_tree.edges[x_br_id]['len']
-        results = dict_results[x_br_id]
-        x_dist = results[2]
-        x_lam = results[3]
-        if(x_lam>br_len):
-            x_lam = br_len 
-        list_x_br_id.append(x_br_id)
-        list_x_br_id_alias.append(x_br_id_alias)
-        list_x_lam.append(x_lam)
-        list_x_dist.append(x_dist)
-    adata.obs['branch_id'] = list_x_br_id
-    adata.obs['branch_id_alias'] = list_x_br_id_alias
-#     adata.uns['branch_id'] = list(set(adata.obs['branch_id'].tolist()))
-    adata.obs['branch_lam'] = list_x_lam
-    adata.obs['branch_dist'] = list_x_dist
-    return None
-
-def calculate_pseudotime(adata):
-    flat_tree = adata.uns['flat_tree']
-    dict_edge_len = nx.get_edge_attributes(flat_tree,'len')
-    adata.obs = adata.obs[adata.obs.columns.drop(list(adata.obs.filter(regex='_pseudotime')))].copy()
-    # dict_nodes_pseudotime = dict()
-    for root_node in flat_tree.nodes():
-        df_pseudotime = pd.Series(index=adata.obs.index)
-        list_bfs_edges = list(nx.bfs_edges(flat_tree,source=root_node))
-        dict_bfs_predecessors = dict(nx.bfs_predecessors(flat_tree,source=root_node))
-        for edge in list_bfs_edges:
-            list_pre_edges = list()
-            pre_node = edge[0]
-            while(pre_node in dict_bfs_predecessors.keys()):
-                pre_edge = (dict_bfs_predecessors[pre_node],pre_node)
-                list_pre_edges.append(pre_edge)
-                pre_node = dict_bfs_predecessors[pre_node]
-            len_pre_edges = sum([flat_tree.edges[x]['len'] for x in list_pre_edges]) 
-            indices = adata.obs[(adata.obs['branch_id'] == edge) | (adata.obs['branch_id'] == (edge[1],edge[0]))].index
-            if(edge==flat_tree.edges[edge]['id']):
-                df_pseudotime[indices] = len_pre_edges + adata.obs.loc[indices,'branch_lam']
-            else:
-                df_pseudotime[indices] = len_pre_edges + (flat_tree.edges[edge]['len']-adata.obs.loc[indices,'branch_lam'])
-        adata.obs[flat_tree.node[root_node]['label']+'_pseudotime'] = df_pseudotime
-        # dict_nodes_pseudotime[root_node] = df_pseudotime
-    # nx.set_node_attributes(flat_tree,values=dict_nodes_pseudotime,name='pseudotime')
-    # adata.uns['flat_tree'] = flat_tree
-    return None
-
-def construct_flat_tree(dict_branches):
-    flat_tree = nx.Graph()
-    flat_tree.add_nodes_from(list(set(itertools.chain.from_iterable(dict_branches.keys()))))
-    flat_tree.add_edges_from(dict_branches.keys())
-    root = list(flat_tree.nodes())[0]
-    edges = nx.bfs_edges(flat_tree, root)
-    nodes = [root] + [v for u, v in edges]  
-    dict_nodes_label = dict()
-    for i,node in enumerate(nodes):
-        dict_nodes_label[node] = 'S'+str(i) 
-    nx.set_node_attributes(flat_tree,values=dict_nodes_label,name='label')
-    dict_branches_color = dict()
-    dict_branches_len = dict()
-    dict_branches_nodes = dict()
-    dict_branches_id = dict() #the direction of nodes for each edge
-    for x in dict_branches.keys():
-        dict_branches_color[x]=dict_branches[x]['color']
-        dict_branches_len[x]=dict_branches[x]['len']
-        dict_branches_nodes[x]=dict_branches[x]['nodes']
-        dict_branches_id[x]=dict_branches[x]['id'] 
-    nx.set_edge_attributes(flat_tree,values=dict_branches_nodes,name='nodes')
-    nx.set_edge_attributes(flat_tree,values=dict_branches_id,name='id')
-    nx.set_edge_attributes(flat_tree,values=dict_branches_color,name='color')
-    nx.set_edge_attributes(flat_tree,values=dict_branches_len,name='len')    
-    return flat_tree
 
 
 def switch_to_low_dimension(adata,n_components=2):
@@ -1860,6 +1732,37 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
 
 
 def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_path=None,fig_name='flat_tree.pdf',fig_size=(8,8),fig_legend_ncol=3):  
+    """Plot flat tree based on a modified version of the force-directed layout Fruchterman-Reingold algorithm.
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    show_all_cells: `bool`, optional (default: False)
+        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'flat_tree.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend_ncol: `int`, optional (default: 3)
+        The number of columns that the legend has.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    X_spring: `numpy.ndarray` (`adata.obsm['X_spring']`)
+        Store #observations × 2 coordinates of cells in flat tree.
+
+    updates `adata_new` with the following fields.
+    X_spring: `numpy.ndarray` (`adata_new.obsm['X_spring']`)
+        Store #observations × 2 coordinates of new cells in flat tree.
+    """
+
     if(fig_path is None):
         if(adata_new==None):
             fig_path = adata.uns['workdir']
@@ -1939,7 +1842,7 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
             cells_pos[np.where(adata_new.obs['branch_id'] == br_id)[0],:] =[p_pos[i,:].tolist() for i in range(p_pos.shape[0])]
         adata_new.obsm['X_spring'] = cells_pos             
 
-    ##plot flat tree
+    ##plotting
     fig = plt.figure(figsize=fig_size)
     ax = fig.add_subplot(1,1,1, adjustable='box', aspect=1)
     edges = flat_tree.edges()
@@ -1979,6 +1882,61 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
 
 def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',nb_pct=0.1,perplexity=30.0,color_by='label',use_precomputed=True,
                           save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend_ncol=3):  
+
+    """ Visualize the results in 2D plane
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    show_all_colors: `bool`, optional (default: False)
+        if show_all_colors is True and adata_new is speicified, original cells will be colored based on its color file. Otherwise, the original cells won't be distinguished and will be colored with 'grey' 
+    method: `str`, optional (default: 'umap')
+        Choose from {{'umap','tsne'}}
+        Method used for visualization.
+        'umap': Uniform Manifold Approximation and Projection      
+        'tsne': t-Distributed Stochastic Neighbor Embedding
+    nb_pct: `float`, optional (default: 0.1)
+        The percentage neighbor cells (only valid when 'umap' is specified). 
+    perplexity: `float`, optional (default: 30.0)
+        The perplexity used for tSNE.       
+    color_by: `str`, optional (default: 'label')
+        Choose from {{'label','branch'}}
+        Specify how to color cells.
+        'label': the cell labels (stored in adata.obs['label'])
+        'branch': the bracnh id identifed by STREAM
+    use_precomputed: `bool`, optional (default: True)
+        If True, the visualization coordinates from previous computing will be used
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (10,10))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'visualization_2D.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend_ncol: `int`, optional (default: 3)
+        The number of columns that the legend has.
+
+    Returns
+    -------
+    updates `adata` with the following fields. (Depending on `method`)
+    X_vis_umap: `numpy.ndarray` (`adata.obsm['X_vis_umap']`)
+        Store #observations × 2 umap data matrix. 
+    X_vis_tsne: `numpy.ndarray` (`adata.obsm['X_vis_tsne']`)
+        Store #observations × 2 tsne data matrix.     
+    
+    updates `adata_new` with the following fields. (Depending on `method`)
+    merged_X_vis_umap: `numpy.ndarray` (`adata_new.uns['merged_X_vis_umap']`)
+        Store the umap data matrix after merging original cells and new cells to be mapped.
+    merged_X_vis_tsne: `numpy.ndarray` (`adata_new.uns['merged_X_vis_tsne']`)
+        Store the tsne data matrix after merging original cells and new cells to be mapped.
+
+    """
+
+
     if(fig_path is None):
         if(adata_new==None):
             fig_path = adata.uns['workdir']
@@ -2105,79 +2063,50 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
-def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0, preference=None):
-    flat_tree = adata.uns['flat_tree']
-    dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}  
-    root_node = dict_label_node[root]
-    ##shift distance for each branch
-    dict_edge_shift_dist = dict()
-    max_dist = np.percentile(adata.obs['branch_dist'],percentile) ## maximum distance from cells to branch
-    leaves = [k for k,v in flat_tree.degree() if v==1]
-    n_nonroot_leaves = len(list(set(leaves) - set([root_node])))
-    dict_bfs_pre = dict(nx.bfs_predecessors(flat_tree,root_node))
-    dict_bfs_suc = dict(nx.bfs_successors(flat_tree,root_node))
-    #depth first search
-    if(preference != None):
-        preference_nodes = [dict_label_node[x] for x in preference]
-    else:
-        preference_nodes = None
-    dfs_nodes = dfs_nodes_modified(flat_tree,root_node,preference=preference_nodes)
-    dfs_nodes_copy = deepcopy(dfs_nodes)
-    id_leaf = 0
-    while(len(dfs_nodes_copy)>1):
-        node = dfs_nodes_copy.pop()
-        pre_node = dict_bfs_pre[node]
-        if(node in leaves):
-            dict_edge_shift_dist[(pre_node,node)] = factor*max_dist*(id_leaf-(n_nonroot_leaves/2.0))
-            id_leaf = id_leaf+1
-        else:
-            suc_nodes = dict_bfs_suc[node]
-            dict_edge_shift_dist[(pre_node,node)] = (sum([dict_edge_shift_dist[(node,sn)] for sn in suc_nodes]))/float(len(suc_nodes))            
-    return dict_edge_shift_dist
-
-## modified depth first search
-def dfs_nodes_modified(tree, source, preference=None):
-    visited, stack = [], [source]
-    bfs_tree = nx.bfs_tree(tree,source=source)
-    while stack:
-        vertex = stack.pop()
-        if vertex not in visited:
-            visited.append(vertex)
-            unvisited = set(tree[vertex]) - set(visited)
-            if(preference != None):
-                weights = list()
-                for x in unvisited:
-                    successors = dict(nx.bfs_successors(bfs_tree,source=x))
-                    successors_nodes = list(itertools.chain.from_iterable(successors.values()))
-                    weights.append(min([preference.index(s) if s in preference else len(preference) for s in successors_nodes+[x]]))
-                unvisited = [x for _,x in sorted(zip(weights,unvisited),reverse=True,key=lambda x: x[0])]
-            stack.extend(unvisited)
-    return visited
-
-def bfs_edges_modified(tree, source, preference=None):
-    visited, queue = [], [source]
-    bfs_tree = nx.bfs_tree(tree,source=source)
-    predecessors = dict(nx.bfs_predecessors(bfs_tree,source))
-    edges = []
-    while queue:
-        vertex = queue.pop()
-        if vertex not in visited:
-            visited.append(vertex)
-            if(vertex in predecessors.keys()):
-                edges.append((predecessors[vertex],vertex))
-            unvisited = set(tree[vertex]) - set(visited)
-            if(preference != None):
-                weights = list()
-                for x in unvisited:
-                    successors = dict(nx.bfs_successors(bfs_tree,source=x))
-                    successors_nodes = list(itertools.chain.from_iterable(successors.values()))
-                    weights.append(min([preference.index(s) if s in preference else len(preference) for s in successors_nodes+[x]]))
-                unvisited = [x for _,x in sorted(zip(weights,unvisited),reverse=True,key=lambda x: x[0])]
-            queue.extend(unvisited)
-    return edges
 
 def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',preference=None,
                    save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend_ncol=3):  
+    """Generate subway map plots
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    show_all_cells: `bool`, optional (default: False)
+        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    percentile_dist: `int`, optional (default: 98)
+        Percentile of cells' distances from branches (between 0 and 100) used for calculating the distances between branches of subway map.
+    factor: `float`, optional (default: 2.0)
+        The factor used to adjust the distances between branches of subway map.
+    color_by: `str`, optional (default: 'label')
+        Choose from {{'label','branch'}}
+        Specify how to color cells.
+        'label': the cell labels (stored in adata.obs['label'])
+        'branch': the bracnh id identifed by STREAM
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'subway_map.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend_ncol: `int`, optional (default: 3)
+        The number of columns that the legend has.
+
+    Returns
+    -------
+    None
+
+    """
+
+
     if(fig_path is None):
         if(adata_new==None):
             fig_path = adata.uns['workdir']
@@ -2322,202 +2251,41 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
             plt.close(fig) 
 
 
-def count_cell_for_each_window(adata,s_win=None):
-    flat_tree = adata.uns['flat_tree']
-    if(s_win is None):
-        s_win = min(nx.get_edge_attributes(flat_tree,'len').values())/3.0
-    min_edge_len = min(nx.get_edge_attributes(flat_tree,'len').values())
-    joint_len = min(s_win/2.0,min_edge_len/3.0) #length for joint area for each edge
-    dict_win_ncells = dict()
-    list_cell_labels = np.unique(adata.obs['label']).tolist()
-    ##backbone points including endpoints, joint points, midpoint in each edge
-    for edge_i in flat_tree.edges():
-        br_id = flat_tree.edges[edge_i]['id']
-        #all neighbor edges connectd with start node
-        list_edges_st = [(br_id[0],x) for x in set(flat_tree.neighbors(br_id[0]))-set([br_id[1]])] 
-        #all neighbor edges connectd with end node
-        list_edges_ed = [(br_id[1],x) for x in set(flat_tree.neighbors(br_id[1]))-set([br_id[0]])]   
-        len_edge_i = flat_tree.edges[edge_i]['len'] 
-        pt_core = np.array([0,joint_len,0.5*len_edge_i,len_edge_i-joint_len,len_edge_i]) 
-        #optional points
-        if(s_win<len_edge_i):
-            pt_opt = np.arange(start=0,stop=len_edge_i, step=s_win)
-            if(abs(int(flat_tree.edges[edge_i]['len']/s_win) - flat_tree.edges[edge_i]['len']/s_win)>1e-3):
-                pt_opt = np.concatenate((pt_opt,np.arange(start=len_edge_i,stop=0, step=-s_win)))
-            pt_opt = np.unique(pt_opt[(pt_opt>pt_core[1])&(pt_opt<pt_core[3])])
-        pt = np.unique(np.concatenate((pt_core,pt_opt)))
-        df_win_ncells_edge_i = pd.DataFrame(pt,index=range(len(pt)),columns=['pt_lam'])
-        df_cells_edge_i = adata.obs[adata.obs['branch_id'] == br_id].copy()
-        for cl in list_cell_labels:
-            df_cells_edge_i_cl = df_cells_edge_i[df_cells_edge_i['label']==cl].copy()
-            lam_edge_i_cl = df_cells_edge_i_cl['branch_lam']
-            list_n_cells_pt = list()
-            for pt_i in pt:
-                if(((pt_i-s_win/2.0)>=0) & ((pt_i+s_win/2.0)<=len_edge_i)):
-                    n_cells_pt_i = len(lam_edge_i_cl[(lam_edge_i_cl>=(pt_i-s_win/2.0))&
-                                                     (lam_edge_i_cl<=(pt_i+s_win/2.0))])
-                    list_n_cells_pt.append(n_cells_pt_i)
-                elif(((pt_i-s_win/2.0)<0) & ((pt_i+s_win/2.0)<=len_edge_i)):
-                    n_cells_pt_i = len(lam_edge_i_cl[(lam_edge_i_cl>=0)&(lam_edge_i_cl<=(pt_i+s_win/2.0))])
-                    n_cells_on_es = 0
-                    for es in list_edges_st:
-                        br_id_es = flat_tree.edges[es]['id']
-                        len_es = flat_tree.edges[es]['len'] 
-                        df_cells_es = adata.obs[(adata.obs['branch_id'] == br_id_es) &
-                                                (adata.obs['label'] == cl)].copy()
-                        lam_es = df_cells_es['branch_lam']
-                        if(es == br_id_es):
-                            n_cells_on_es = n_cells_on_es + len(lam_es[(lam_es>0)&(lam_es<=abs(pt_i-s_win/2.0))])
-                        else:
-                            n_cells_on_es = n_cells_on_es + len(lam_es[(lam_es>=(len_es-abs(pt_i-s_win/2.0)))&(lam_es<len_es)])
-                    list_n_cells_pt.append(n_cells_pt_i+n_cells_on_es)                                             
-                elif(((pt_i-s_win/2.0)>=0) & ((pt_i+s_win/2.0)>len_edge_i)):
-                    n_cells_pt_i = len(lam_edge_i_cl[(lam_edge_i_cl>=(pt_i-s_win/2.0))&(lam_edge_i_cl<=len_edge_i)])     
-                    n_cells_on_ed = 0
-                    for ed in list_edges_ed:
-                        br_id_ed = flat_tree.edges[ed]['id']
-                        len_ed = flat_tree.edges[ed]['len'] 
-                        df_cells_ed = adata.obs[(adata.obs['branch_id'] == br_id_ed) &
-                                                (adata.obs['label'] == cl)].copy()
-                        lam_ed = df_cells_ed['branch_lam']
-                        if(ed == br_id_ed):
-                            n_cells_on_ed = n_cells_on_ed + len(lam_ed[(lam_ed>0)&(lam_ed<=(pt_i+s_win/2.0-len_edge_i))])
-                        else:
-                            n_cells_on_ed = n_cells_on_ed + len(lam_ed[(lam_ed>=(len_ed-(pt_i+s_win/2.0-len_edge_i)))&(lam_ed<len_ed)])
-                    list_n_cells_pt.append(n_cells_pt_i+n_cells_on_ed)       
-                elif(((pt_i-s_win/2.0)<0) & ((pt_i+s_win/2.0)>len_edge_i)):
-                    n_cells_pt_i = len(lam_edge_i_cl[(lam_edge_i_cl>=0)&
-                                                     (lam_edge_i_cl<=len_edge_i)])
-                    n_cells_on_es = 0
-                    for es in list_edges_st:
-                        br_id_es = flat_tree.edges[es]['id']
-                        len_es = flat_tree.edges[es]['len'] 
-                        df_cells_es = adata.obs[(adata.obs['branch_id'] == br_id_es) &
-                                                (adata.obs['label'] == cl)].copy()
-                        lam_es = df_cells_es['branch_lam']
-                        if(es == br_id_es):
-                            n_cells_on_es = n_cells_on_es + len(lam_es[(lam_es>0)&(lam_es<=abs(pt_i-s_win/2.0))])
-                        else:
-                            n_cells_on_es = n_cells_on_es + len(lam_es[(lam_es>=(len_es-abs(pt_i-s_win/2.0)))&(lam_es<len_es)])
-                    n_cells_on_ed = 0
-                    for ed in list_edges_ed:
-                        br_id_ed = flat_tree.edges[ed]['id']
-                        len_ed = flat_tree.edges[ed]['len'] 
-                        df_cells_ed = adata.obs[(adata.obs['branch_id'] == br_id_ed) &
-                                                (adata.obs['label'] == cl)].copy()
-                        lam_ed = df_cells_ed['branch_lam']
-                        if(ed == br_id_ed):
-                            n_cells_on_ed = n_cells_on_ed + len(lam_ed[(lam_ed>0)&(lam_ed<=(pt_i+s_win/2.0-len_edge_i))])
-                        else:
-                            n_cells_on_ed = n_cells_on_ed + len(lam_ed[(lam_ed>=(len_ed-(pt_i+s_win/2.0-len_edge_i)))&(lam_ed<len_ed)])
-
-                    list_n_cells_pt.append(n_cells_pt_i+n_cells_on_es+n_cells_on_ed) 
-            df_win_ncells_edge_i[cl] = pd.Series(list_n_cells_pt)
-        dict_win_ncells[br_id] = df_win_ncells_edge_i    
-    return dict_win_ncells
-
-
-def order_cell_label(adata,dict_win_ncells,root_node=None):
-    flat_tree = adata.uns['flat_tree']
-    if(root_node is None):
-        root_node = list(flat_tree.nodes())[0]
-    list_bfs_edges = list(nx.bfs_edges(flat_tree,root_node))
-    br_id = flat_tree.edges[list_bfs_edges[0]]['id']
-    if(br_id == list_bfs_edges[0]):
-        df_ncells_edge_root = dict_win_ncells[br_id] 
-    else:
-        df_ncells_edge_root = dict_win_ncells[br_id].copy()
-        df_ncells_edge_root = df_ncells_edge_root.iloc[::-1]
-    #order cell names by the index of first non-zero
-    cell_labels = df_ncells_edge_root.columns[1:]
-    index_nonzero = []
-    for i_cl,cl in enumerate(cell_labels):
-        indices_nonzero_cl = np.flatnonzero(df_ncells_edge_root[cl])
-        if(indices_nonzero_cl.size==0):
-            index_nonzero.append(df_ncells_edge_root.shape[0])
-        else:
-            index_nonzero.append(indices_nonzero_cl[0])
-    cell_labels_orderd = cell_labels[np.argsort(index_nonzero)[::-1]].tolist()    
-    return cell_labels_orderd 
-
-
-def construct_bfs_flat_tree(adata,dict_win_ncells,dict_edge_shift_dist,max_width,cell_labels_ordered,root_node=None):
-    flat_tree = adata.uns['flat_tree']
-    if(root_node is None):
-        root_node = list(flat_tree.nodes())[0]
-    dict_path_len = nx.shortest_path_length(flat_tree,source=root_node,weight='len')    
-    list_bfs_edges = list(nx.bfs_edges(flat_tree,root_node))  
-    bfs_flat_tree = nx.bfs_tree(flat_tree,root_node)
-    
-    dict_edges_ncells = dict()
-    dict_edges_ncells_cumsum = dict()
-    max_ncells_cumsum = 0
-    for edge_i in list_bfs_edges:
-        br_id = flat_tree.edges[edge_i]['id']
-        if(br_id == edge_i):
-            df_ncells_edge_i = dict_win_ncells[br_id] 
-        else:
-            df_ncells_edge_i = dict_win_ncells[br_id].copy()
-            df_ncells_edge_i = df_ncells_edge_i.iloc[::-1]
-            df_ncells_edge_i['pt_lam'] = df_ncells_edge_i['pt_lam'].max() - df_ncells_edge_i['pt_lam']
-            df_ncells_edge_i.index = range(df_ncells_edge_i.shape[0])
-        df_ncells_edge_i = df_ncells_edge_i[['pt_lam'] + cell_labels_ordered]
-        dict_edges_ncells[edge_i] = df_ncells_edge_i
-        #sum up cell count
-        df_ncells_edge_i_cumsum = df_ncells_edge_i.copy()
-        df_ncells_edge_i_cumsum.iloc[:,1:] = df_ncells_edge_i.iloc[:,1:].cumsum(axis=1) 
-        dict_edges_ncells_cumsum[edge_i] = df_ncells_edge_i_cumsum
-        max_ncells_cumsum = max(max_ncells_cumsum,df_ncells_edge_i_cumsum.iloc[:,1:].values.max()) 
-    nx.set_edge_attributes(bfs_flat_tree,values=dict_edges_ncells,name='ncells')
-    nx.set_edge_attributes(bfs_flat_tree,values=dict_edges_ncells_cumsum,name='ncells_cumsum')
-    
-    dict_edges_ncells_cumsum_norm = dict()
-    dict_edges_x = dict()
-    dict_edges_y_up = dict()
-    dict_edges_y_down = dict()
-    for edge_i in list_bfs_edges:
-        df_ncells_edge_i_cumsum = bfs_flat_tree.edges[edge_i]['ncells_cumsum']
-        #normalize cell count  
-        df_ncells_edge_i_cumsum_norm = df_ncells_edge_i_cumsum.copy()
-        df_ncells_edge_i_cumsum_norm.iloc[:,1:] = max_width*df_ncells_edge_i_cumsum.iloc[:,1:]/np.float(max_ncells_cumsum)
-        dict_edges_ncells_cumsum_norm[edge_i] = df_ncells_edge_i_cumsum_norm
-        node_pos_st = np.array([dict_path_len[edge_i[0]],dict_edge_shift_dist[edge_i]]) 
-        dict_edges_x[edge_i] = dict_path_len[edge_i[0]] + df_ncells_edge_i_cumsum_norm['pt_lam']
-        df_coord_y_up = df_ncells_edge_i_cumsum_norm.iloc[:,1:].subtract(df_ncells_edge_i_cumsum_norm.iloc[:,-1]/2.0,axis=0)
-        dict_edges_y_up[edge_i] = dict_edge_shift_dist[edge_i] + df_coord_y_up
-        df_coord_y_down = df_coord_y_up.copy()
-        df_coord_y_down.iloc[:,1:] =  df_coord_y_up.iloc[:,:-1].values
-        df_coord_y_down.iloc[:,0] = 0 - df_ncells_edge_i_cumsum_norm.iloc[:,-1]/2.0
-        dict_edges_y_down[edge_i] = dict_edge_shift_dist[edge_i] + df_coord_y_down
-    nx.set_edge_attributes(bfs_flat_tree,values=dict_edges_ncells_cumsum_norm,name='ncells_cumsum_norm')
-    nx.set_edge_attributes(bfs_flat_tree,values=dict_edges_x,name='x')
-    nx.set_edge_attributes(bfs_flat_tree,values=dict_edges_y_up,name='y_up')
-    nx.set_edge_attributes(bfs_flat_tree,values=dict_edges_y_down,name='y_down')    
-    return bfs_flat_tree
-
-#find both top and bottom outline edges starting from a specified node
-def find_outline_edges(bfs_flat_tree,start_node):
-    list_up_edges = list()
-    list_down_edges = list()
-    suc_nodes = list(bfs_flat_tree.successors(start_node))
-    num_suc_nodes = len(suc_nodes)
-    while(num_suc_nodes>1):
-        suc_node_up = suc_nodes[0]
-        list_up_edges.append((start_node,suc_node_up))
-        suc_nodes = list(bfs_flat_tree.successors(suc_node_up))
-        num_suc_nodes = len(suc_nodes)
-    suc_nodes = list(bfs_flat_tree.successors(start_node))
-    num_suc_nodes = len(suc_nodes)    
-    while(num_suc_nodes>1):
-        suc_node_down = suc_nodes[-1]
-        list_down_edges.append((start_node,suc_node_down))
-        suc_nodes = list(bfs_flat_tree.successors(suc_node_down))
-        num_suc_nodes = len(suc_nodes)
-    return list_up_edges,list_down_edges
-
-
 def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,preference=None,
                         save_fig=False,fig_path=None,fig_size=(10,6)):  
+    """Generate subway map plots of genes
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    show_all_cells: `bool`, optional (default: False)
+        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
+    genes: `list`, optional (default: None): 
+        A list of genes to be displayed
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    percentile_dist: `int`, optional (default: 98)
+        Percentile of cells' distances from branches (between 0 and 100) used for calculating the distances between branches of subway map.
+    factor: `float`, optional (default: 2.0)
+        The factor used to adjust the distances between branches of subway map.
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+
+    Returns
+    -------
+    None
+
+    """
+
     if(fig_path is None):
         if(adata_new==None):
             fig_path = adata.uns['workdir']
@@ -2528,9 +2296,13 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
     else:
         experiment = adata.uns['experiment']
         genes = np.unique(genes).tolist()
+        for x in genes:
+            if x not in adata.var_names:
+                print(x + ' is not in the gene expression matrix')
+                return    
         df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
                                     data = adata.raw[:,genes].X,
-                                    columns=genes)  
+                                    columns=genes)
         if(adata_new!=None):
             df_gene_expr_new = pd.DataFrame(index= adata_new.obs_names.tolist(),
                                         data = adata_new.raw[:,genes].X,
@@ -2680,61 +2452,51 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 plt.close(fig) 
 
 
-def find_root_to_leaf_paths(flat_tree, root): 
-    list_paths = list()
-    for x in flat_tree.nodes():
-        if((x!=root)&(flat_tree.degree(x)==1)):
-            path = list(nx.all_simple_paths(flat_tree,root,x))[0]
-            list_edges = list()
-            for ft,sd in zip(path,path[1:]):
-                list_edges.append((ft,sd))
-            list_paths.append(list_edges)
-    return list_paths
-
-def find_longest_path(list_paths,len_ori):
-    list_lengths = list()
-    for x in list_paths:
-        list_lengths.append(sum([len_ori[x_i] for x_i in x]))
-    return max(list_lengths)
-
-#find all paths
-def find_paths(dict_tree,bfs_nodes):
-    dict_paths_top = dict()
-    dict_paths_base = dict()
-    for node_i in bfs_nodes:
-        prev_node = dict_tree[node_i]['prev']
-        next_nodes = dict_tree[node_i]['next']
-        if(prev_node == '') or (len(next_nodes)>1):
-            if(prev_node == ''):
-                cur_node_top = node_i
-                cur_node_base = node_i
-                stack_top = [cur_node_top]
-                stack_base = [cur_node_base]
-                while(len(dict_tree[cur_node_top]['next'])>0):
-                    cur_node_top = dict_tree[cur_node_top]['next'][0]
-                    stack_top.append(cur_node_top)
-                dict_paths_top[(node_i,next_nodes[0])] = stack_top
-                while(len(dict_tree[cur_node_base]['next'])>0):
-                    cur_node_base = dict_tree[cur_node_base]['next'][-1]
-                    stack_base.append(cur_node_base)
-                dict_paths_base[(node_i,next_nodes[-1])] = stack_base
-            for i_mid in range(len(next_nodes)-1):
-                cur_node_base = next_nodes[i_mid]
-                cur_node_top = next_nodes[i_mid+1]
-                stack_base = [node_i,cur_node_base]
-                stack_top = [node_i,cur_node_top]
-                while(len(dict_tree[cur_node_base]['next'])>0):
-                    cur_node_base = dict_tree[cur_node_base]['next'][-1]
-                    stack_base.append(cur_node_base)
-                dict_paths_base[(node_i,next_nodes[i_mid])] = stack_base
-                while(len(dict_tree[cur_node_top]['next'])>0):
-                    cur_node_top = dict_tree[cur_node_top]['next'][0]
-                    stack_top.append(cur_node_top)
-                dict_paths_top[(node_i,next_nodes[i_mid+1])] = stack_top
-    return dict_paths_top,dict_paths_base
-
 def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,preference=None,
                 save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
+    """Generate stream plots
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    factor_num_win: `int`, optional (default: 10)
+        Number of sliding windows. 
+    factor_min_win: `float`, optional (default: 2.0)
+        The factor used to calculate the sliding window size based on shortest branch. 
+    factor_width: `float`, optional (default: 2.5)
+        The ratio between length and width of stream plot. 
+    flag_log_view: `bool`, optional (default: False)
+        If True,the number of cells (the width) is logarithmized when outputing stream plot.
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
+    show_all_colors: `bool`, optional (default: False)
+        if show_all_colors is True and adata_new is speicified, original cells will be colored based on its color file. Otherwise, the original cells won't be distinguished and will be colored with 'grey' 
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'stream_plot.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend_ncol: `int`, optional (default: 3)
+        The number of columns that the legend has.
+    tick_fontsize: `int`, optional (default: 20)
+        Tick label fontsize
+    label_fontsize: `int`, optional (default: 25)
+        The label fontsize of the x-axis
+
+    Returns
+    -------
+    None
+
+    """
+
     if(fig_path is None):
         if(adata_new==None):
             fig_path = adata.uns['workdir']
@@ -3416,6 +3178,49 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
 
 def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,preference=None,
                     save_fig=False,fig_path=None,fig_size=(12,8),tick_fontsize=20,label_fontsize=25):  
+    """Generate stream plots of genes
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    genes: `list`, optional (default: None): 
+        A list of genes to be displayed
+    percentile_expr: `int`, optional (default: 95)
+        Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions.      
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    factor_num_win: `int`, optional (default: 10)
+        Number of sliding windows. 
+    factor_min_win: `float`, optional (default: 2.0)
+        The factor used to calculate the sliding window size based on shortest branch. 
+    factor_width: `float`, optional (default: 2.5)
+        The ratio between length and width of stream plot. 
+    flag_log_view: `bool`, optional (default: False)
+        If True,the number of cells (the width) is logarithmized when outputing stream plot.
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'stream_plot.pdf')
+        if save_fig is True, specify figure name.
+    tick_fontsize: `int`, optional (default: 20)
+        Tick label fontsize
+    label_fontsize: `int`, optional (default: 25)
+        The label fontsize of the x-axis
+
+    Returns
+    -------
+    None
+
+    """
+
     if(fig_path is None):
         fig_path = adata.uns['workdir']
     experiment = adata.uns['experiment']
@@ -3430,6 +3235,11 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
     elif(genes is None):
         print('Please provide gene names');
     else:
+        genes = np.unique(genes).tolist()
+        for x in genes:
+            if x not in adata.var_names:
+                print(x + ' is not in the gene expression matrix')
+                return       
         file_path_S = fig_path +root+'/'
         dict_branches = {x: flat_tree.edges[x] for x in flat_tree.edges()}
         dict_node_state = nx.get_node_attributes(flat_tree,'label')
@@ -3460,7 +3270,6 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                 id_cells = np.where(df_rooted_tree['branch_id']==(x[1],x[0]))[0]
                 df_rooted_tree.loc[df_rooted_tree.index[id_cells],'edge'] = [x]
                 df_rooted_tree.loc[df_rooted_tree.index[id_cells],'lam_ordered'] = flat_tree.edges[x]['len'] - df_rooted_tree.loc[df_rooted_tree.index[id_cells],'branch_lam']        
-        genes = np.unique(genes).tolist()
         df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
                                     data = adata.raw[:,genes].X,
                                     columns=genes)
@@ -4185,27 +3994,39 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                 plt.savefig(file_path_S+'stream_plot_' + slugify(gene_name) + '.pdf',dpi=120)
                 plt.close(fig) 
 
-
-def scale_gene_expr(params):
-    df_gene_detection = params[0]
-    gene = params[1]
-    percentile_expr = params[2]
-    gene_values = df_gene_detection[gene].copy()
-    if(min(gene_values)<0):
-        min_gene_values = np.percentile(gene_values[gene_values<0],100-percentile_expr)
-        gene_values[gene_values<min_gene_values] = min_gene_values
-        max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
-        gene_values[gene_values>max_gene_values] = max_gene_values
-        gene_values = gene_values - min(gene_values)
-    else:
-        max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
-        gene_values[gene_values>max_gene_values] = max_gene_values
-    gene_values = gene_values/max_gene_values
-    return gene_values
-
-
 def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = multiprocessing.cpu_count(),
                              use_precomputed=True, root='S0',preference=None):
+
+    """Detect transition genes along one branch.
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    cutoff_spearman: `float`, optional (default: 0.4)
+        Between 0 and 1. The cutoff used for Spearman's rank correlation coefficient.
+    cutoff_logfc: `float`, optional (default: 0.25)
+        The log-transformed fold change cutoff between cells around start and end node.
+    percentile_expr: `int`, optional (default: 95)
+        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+    n_jobs: `int`, optional (default: all available cpus)
+        The number of parallel jobs to run when scaling the gene expressions .
+    use_precomputed: `bool`, optional (default: True)
+        If True, the previously computed scaled gene expression will be used
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and will be dealt with first. The higher ranks the node have, The earlier the branch with that node will be analyzed. 
+        This will help generate the consistent results as shown in subway map and stream plot.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
+        Scaled gene expression for marker gene detection.    
+    transition_genes: `dict` (`adata.uns['transition_genes']`)
+        Transition genes for each branch deteced by STREAM.
+    """
+
 
     file_path = adata.uns['workdir'] + 'transition_genes/'
     if(not os.path.exists(file_path)):
@@ -4336,31 +4157,43 @@ def plot_transition_genes(adata,num_genes = 15,
             plt.close(fig)    
 
 
-def adjust_spines(ax, spines):
-    for loc, spine in ax.spines.items():
-        if loc in spines:
-            spine.set_position(('outward', 10))  # outward by 10 points
-            spine.set_smart_bounds(True)
-        else:
-            spine.set_color('none')  # don't draw spine
-
-    # turn off ticks where there is no spine
-    if 'left' in spines:
-        ax.yaxis.set_ticks_position('left')
-    else:
-        # no yaxis ticks
-        ax.yaxis.set_ticks([])
-
-    if 'bottom' in spines:
-        ax.xaxis.set_ticks_position('bottom')
-    else:
-        # no xaxis ticks
-        ax.xaxis.set_ticks([])
-
-
-### Find differentially expressed genes between different sub-branches
 def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
                     use_precomputed=True, root='S0',preference=None):
+
+    """Detect differentially expressed genes between different sub-branches.
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    cutoff_zscore: `float`, optional (default: 2)
+        The z-score cutoff used for Mann–Whitney U test.
+    cutoff_logfc: `float`, optional (default: 0.25)
+        The log-transformed fold change cutoff between a pair of branches.
+    percentile_expr: `int`, optional (default: 95)
+        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+    n_jobs: `int`, optional (default: all available cpus)
+        The number of parallel jobs to run when scaling the gene expressions .
+    use_precomputed: `bool`, optional (default: True)
+        If True, the previously computed scaled gene expression will be used
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and will be dealt with first. The higher ranks the node have, The earlier the branch with that node will be analyzed. 
+        This will help generate the consistent results as shown in subway map and stream plot.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
+        Scaled gene expression for marker gene detection.    
+    de_genes_greater: `dict` (`adata.uns['de_genes_greater']`)
+        DE(differentially expressed) genes for each pair of branches deteced by STREAM. 
+        Store the genes that have higher expression on the former part of one branch pair.
+    de_genes_less: `dict` (`adata.uns['de_genes_less']`)
+        DE(differentially expressed) genes for each pair of branches deteced by STREAM. 
+        Store the genes that have higher expression on the latter part of one branch pair.
+    """
+
 
     file_path = adata.uns['workdir'] + 'de_genes/'
     if(not os.path.exists(file_path)):
@@ -4599,6 +4432,38 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
 
 def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
                       use_precomputed=True, root='S0',preference=None):
+    """Detect leaf genes for each branch.
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    cutoff_zscore: `float`, optional (default: 1.5)
+        The z-score cutoff used for mean values of all leaf branches.
+    cutoff_pvalue: `float`, optional (default: 1e-2)
+        The p value cutoff used for Kruskal-Wallis H-test and post-hoc pairwise Conover’s test.
+    percentile_expr: `int`, optional (default: 95)
+        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+    n_jobs: `int`, optional (default: all available cpus)
+        The number of parallel jobs to run when scaling the gene expressions .
+    use_precomputed: `bool`, optional (default: True)
+        If True, the previously computed scaled gene expression will be used
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and will be dealt with first. The higher ranks the node have, The earlier the branch with that node will be analyzed. 
+        This will help generate the consistent results as shown in subway map and stream plot.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
+        Scaled gene expression for marker gene detection.    
+    leaf_genes_all: `pandas.core.frame.DataFrame` (`adata.uns['leaf_genes_all']`)
+        All the leaf genes from all leaf branches.
+    leaf_genes: `dict` (`adata.uns['leaf_genes']`)
+        Leaf genes for each branch.
+    """
+
 
     file_path = adata.uns['workdir'] + 'leaf_genes/'
     if(not os.path.exists(file_path)):
@@ -4687,47 +4552,47 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     adata.uns['leaf_genes'] = dict_leaf_genes
 
 
-def barycenter_weights_modified(X, Z, reg=1e-3):
-    """Compute barycenter weights of X from Y along the first axis
-    We estimate the weights to assign to each point in Y[i] to recover
-    the point X[i]. The barycenter weights sum to 1.
+def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=True):
+    """ Map new data to the inferred trajectories
+    
     Parameters
     ----------
-    X : array-like, shape (1, n_dim)
-    Z : array-like, shape (n_neighbors, n_dim)
-    reg : float, optional
-        amount of regularization to add for the problem to be
-        well-posed in the case of n_neighbors > n_dim
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    feature: `str`, optional (default: 'var_genes')
+        Choose from {{'var_genes','all'}}
+        Feature used for mapping. This should be consistent with the feature used for inferring trajectories
+        'var_genes': most variable genes
+        'all': all genes
+    method: `str`, optional (default: 'mlle')
+        Choose from {{'mlle','umap','pca'}}
+        Method used for mapping. This should be consistent with the dimension reduction method used for inferring trajectories
+        'mlle': Modified locally linear embedding algorithm
+        'umap': Uniform Manifold Approximation and Projection
+        'pca': Principal component analysis
+    use_radius: `bool`, optional (default: True)
+        If True, when searching for the neighbors for each cell in MLLE space, STREAM uses a fixed radius instead of a fixed number of cells.
+
     Returns
-    -------
-    B : array-like, shape (1, n_neighbors)
-    Notes
-    -----
-    See developers note for more information.
+    -------  
+    
+    updates `adata_new` with the following fields.(depending on the `feature` or `method`)
+    var_genes: `numpy.ndarray` (`adata_new.obsm['var_genes']`)
+        Store #observations × #var_genes data matrix used mapping.
+    var_genes: `pandas.core.indexes.base.Index` (`adata_new.uns['var_genes']`)
+        The selected variable gene names.
+    X_dr : `numpy.ndarray` (`adata_new.obsm['X_dr']`)
+        A #observations × n_components data matrix after dimension reduction.
+    X_mlle : `numpy.ndarray` (`adata_new.obsm['X_mlle']`)
+        Store #observations × n_components data matrix after mlle.
+    X_umap : `numpy.ndarray` (`adata_new.obsm['X_umap']`)
+        Store #observations × n_components data matrix after umap.
+    X_pca : `numpy.ndarray` (`adata_new.obsm['X_pca']`)
+        Store #observations × n_components data matrix after pca.
     """
-#     X = check_array(X, dtype=FLOAT_DTYPES)
-#     Z = check_array(Z, dtype=FLOAT_DTYPES, allow_nd=True)
 
-    n_samples, n_neighbors = 1, Z.shape[0]
-    B = np.empty((n_samples, n_neighbors), dtype=X.dtype)
-    v = np.ones(n_neighbors, dtype=X.dtype)
-
-    # this might raise a LinalgError if G is singular and has trace
-    # zero
-    C = Z - X  # broadcasting
-    G = np.dot(C, C.T)
-    trace = np.trace(G)
-    if trace > 0:
-        R = reg * trace
-    else:
-        R = reg
-    G.flat[::Z.shape[0] + 1] += R
-    w = solve(G, v, sym_pos=True)
-    B = w / np.sum(w)
-    return B
-
-
-def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=True):
     if(feature == 'var_genes'):
         adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
         adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
