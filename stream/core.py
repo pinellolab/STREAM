@@ -48,7 +48,7 @@ from rpy2.robjects import pandas2ri
 from .extra import *
 #scikit_posthocs is currently not available in conda system. We will update it once it can be installed via conda.
 #import scikit_posthocs as sp
-from .scikit_posthocs import _posthocs as sp
+from .scikit_posthocs import posthoc_conover
 
 
 
@@ -4534,7 +4534,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
                 list_br_values = [leaf_br_values[x] for x in leaf_edges]
                 kurskal_statistic,kurskal_pvalue = stats.kruskal(*list_br_values)
                 if(kurskal_pvalue<cutoff_pvalue):  
-                    df_conover_pvalues= sp.posthoc_conover(df_gene_detection[[x in leaf_edges for x in df_gene_detection['bfs_edges']]], 
+                    df_conover_pvalues= posthoc_conover(df_gene_detection[[x in leaf_edges for x in df_gene_detection['bfs_edges']]], 
                                                        val_col=gene, group_col='bfs_edges', p_adjust = 'fdr_bh')
                     cand_conover_pvalues = df_conover_pvalues[~df_conover_pvalues.columns.isin([cand_br])][cand_br]
                     if(all(cand_conover_pvalues < cutoff_pvalue)):
