@@ -45,7 +45,7 @@ from rpy2.robjects import r as R
 import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 
-from extra import *
+from .extra import *
 #scikit_posthocs is currently not available in conda system. We will update it once it can be installed via conda.
 #import scikit_posthocs as sp
 import scikit_posthocs._posthocs as sp
