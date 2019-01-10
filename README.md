@@ -59,7 +59,6 @@ $ docker pull pinellolab/stream
 
 
 Basic usage of *docker run* 
----------------------------
 
 ```sh
 $ docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
