@@ -35,13 +35,13 @@ $ conda install stream
 Tutorial
 --------
 
-Example for scRNA-seq: 1.STREAM_scRNA-seq.ipynb
+* Example for scRNA-seq: [1.STREAM_scRNA-seq.ipynb](https://github.com/pinellolab/STREAM/blob/stream_python3/tutorial/1.STREAM_scRNA-seq.ipynb)
 
-Example for *mapping* feature 2.STREAM_mapping.ipynb
+* Example for *mapping* feature: [2.STREAM_mapping.ipynb](https://github.com/pinellolab/STREAM/blob/stream_python3/tutorial/2.STREAM_mapping.ipynb)
 
-Example for complex trajecotries 3.STREAM_complex_trajecotries.ipynb
+* Example for complex trajecotries: [3.STREAM_complex_trajecotries.ipynb](https://github.com/pinellolab/STREAM/blob/stream_python3/tutorial/3.STREAM_complex_trajecotries.ipynb)
 
-Example for scATAC-seq 4.STREAM_scATAC-seq.ipynb
+* Example for scATAC-seq: [4.STREAM_scATAC-seq.ipynb](https://github.com/pinellolab/STREAM/blob/stream_python3/tutorial/4.STREAM_scATAC-seq.ipynb)
 
 
 Installation with Docker
