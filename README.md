@@ -6,8 +6,8 @@ STREAM (**S**ingle-cell **T**rajectories **R**econstruction, **E**xploration **A
 
 STREAM is available as user-friendly open source software and can be used interactively as a web-application at [stream.pinellolab.org](http://stream.pinellolab.org/), as a bioconda package [https://bioconda.github.io/recipes/stream/README.html](https://bioconda.github.io/recipes/stream/README.html) and as a standalone command-line tool with Docker [https://github.com/pinellolab/STREAM](https://github.com/pinellolab/STREAM)
 
-Installation with biconda package 'stream'
-------------------------------------------
+Installation with Bioconda
+--------------------------
 
 1)	If Anaconda (or miniconda) is already installed with Python 3 skip to 2) otherwise please download and install Python3 Anaconda from here: https://www.anaconda.com/download/
 
