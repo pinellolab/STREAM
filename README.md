@@ -4,7 +4,45 @@ STREAM (**S**ingle-cell **T**rajectories **R**econstruction, **E**xploration **A
 
 <img src="https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/Figure1.png">
 
-STREAM is available as user-friendly open source software and can be used interactively as a web-application at [stream.pinellolab.org](http://stream.pinellolab.org/) or as a standalone command-line tool with Docker [https://github.com/pinellolab/STREAM](https://github.com/pinellolab/STREAM)
+STREAM is available as user-friendly open source software and can be used interactively as a web-application at [stream.pinellolab.org](http://stream.pinellolab.org/), as a bioconda package [https://bioconda.github.io/recipes/stream/README.html](https://bioconda.github.io/recipes/stream/README.html) and as a standalone command-line tool with Docker [https://github.com/pinellolab/STREAM](https://github.com/pinellolab/STREAM)
+
+Installation with biconda package 'stream'
+------------------------------------------
+
+1)	If Anaconda (or miniconda) is already installed with Python 3 skip to 2) otherwise please download and install Python3 Anaconda from here: https://www.anaconda.com/download/
+
+2)	Open a terminal and add the Bioconda channel with the following commands:
+
+```sh
+$ conda config --add channels defaults
+$ conda config --add channels bioconda
+$ conda config --add channels conda-forge
+```
+
+3)	Recommended: Create an environment named ‘myenv’ and activate it with the following commands:
+
+```sh
+$ conda create -n myenv python=3.6
+$ conda activate myenv
+```
+
+4)	Install the bioconda STREAM package within the environment ‘myenv’ with the following command:
+
+```sh
+$ conda install stream
+```
+
+Tutorial
+--------
+
+Example for scRNA-seq: 1.STREAM_scRNA-seq.ipynb
+
+Example for *mapping* feature 2.STREAM_mapping.ipynb
+
+Example for complex trajecotries 3.STREAM_complex_trajecotries.ipynb
+
+Example for scATAC-seq 4.STREAM_scATAC-seq.ipynb
+
 
 Installation with Docker
 ------------------------
