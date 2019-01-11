@@ -344,7 +344,7 @@ Or they can also be downloaded using the following Dropbox link:
 
 Please note that for large dataset analysis it'll be necessary to increase the default allocated memory of container. Especially, for scACTA-seq analysis based on **counts_file**,
 
-<img src="https://github.com/pinellolab/STREAM/blob/master/STREAM/static/images/docker.png" width="50%">
+<img src="https://github.com/pinellolab/STREAM/blob/stream_python2/STREAM/static/images/docker.png" width="50%">
 
 ### **Transcriptomic data**
 
