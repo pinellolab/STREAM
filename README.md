@@ -9,7 +9,7 @@ STREAM is available as user-friendly open source software and can be used intera
 Installation with Bioconda
 --------------------------
 
-1)	If Anaconda (or miniconda) is already installed with Python 3 skip to 2) otherwise please download and install Python3 Anaconda from here: https://www.anaconda.com/download/
+1)	If Anaconda (or miniconda) is already installed with **Python 3**, skip to 2) otherwise please download and install Python3 Anaconda from here: https://www.anaconda.com/download/
 
 2)	Open a terminal and add the Bioconda channel with the following commands:
 
