@@ -560,7 +560,7 @@ def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jo
     plt.xlabel('mean value')
     plt.ylabel('standard deviation')
     if(save_fig):
-        plt.savefig(fig_path  + fig_name)
+        plt.savefig(fig_path  + fig_name,pad_inches=1,bbox_inches='tight')
         plt.close(fig)
     return None
 
@@ -643,7 +643,7 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
     plt.xlabel('Principal Component')
     plt.ylabel('Variance Ratio')
     if(save_fig):
-        plt.savefig(fig_path + fig_name)
+        plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
         plt.close(fig)
     return None
 
@@ -2102,8 +2102,15 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
 
     Returns
     -------
-    None
+    updates `adata` with the following fields.
+    X_subwaymap_root: `numpy.ndarray` (`adata.obsm['X_subwaymap_root']`)
+        Store #observations × 2 coordinates of cells in subwaymap plot.
+    subwaymap_root: `dict` (`adata.uns['subwaymap_root']`)
+        Store the coordinates of nodes ('nodes') and edges ('edges') in subwaymap plot.
 
+    updates `adata_new` with the following fields.
+    X_subwaymap_root: `numpy.ndarray` (`adata_new.obsm['X_subwaymap_root']`)
+        Store #observations × 2 coordinates of new cells in subwaymap plot.
     """
 
 
@@ -2143,7 +2150,9 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
             dict_edges_pos[edge] = np.array([node_pos_st,node_pos_ed])    
             if(edge[0] not in dict_bfs_pre.keys()):
                 dict_nodes_pos[edge[0]] = node_pos_st
-            dict_nodes_pos[edge[1]] = node_pos_ed 
+            dict_nodes_pos[edge[1]] = node_pos_ed
+        adata.obsm['X_subwaymap_'+root] = np.array(df_cells_pos['cells_pos'].tolist())
+        
         if(adata_new!=None):
             df_cells_pos_new = pd.DataFrame(index=adata_new.obs.index,columns=['cells_pos'])
             for edge in dict_edge_shift_dist.keys():       
@@ -2159,7 +2168,9 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
                     np.random.seed(100)
                     cells_pos_y = node_pos_st[1] + adata_new.obs.iloc[id_cells,]['branch_dist']*np.random.choice([1,-1],size=id_cells.shape[0])
                     cells_pos = np.array((cells_pos_x,cells_pos_y)).T
-                    df_cells_pos_new.iloc[id_cells,0] = [cells_pos[i,:].tolist() for i in range(cells_pos.shape[0])]        
+                    df_cells_pos_new.iloc[id_cells,0] = [cells_pos[i,:].tolist() for i in range(cells_pos.shape[0])]  
+            adata_new.obsm['X_subwaymap_'+root] = np.array(df_cells_pos_new['cells_pos'].tolist())
+            
         if(flat_tree.degree(root_node)>1):
             suc_nodes = dict_bfs_suc[root_node]
             edges = [(root_node,sn) for sn in suc_nodes]
@@ -2168,6 +2179,10 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
             median_y_pos = np.median([dict_edges_pos[x][0,1] for x in edges])
             x_pos = dict_edges_pos[edges[0]][0,0]
             dict_nodes_pos[root_node] = np.array([x_pos,median_y_pos])
+            
+        adata.uns['subwaymap_'+root] = dict()
+        adata.uns['subwaymap_'+root]['nodes'] = dict_nodes_pos
+        adata.uns['subwaymap_'+root]['edges'] = dict()
 
         fig = plt.figure(figsize=fig_size)
         ax = fig.add_subplot(1,1,1)
@@ -2180,6 +2195,8 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
                 pre_node = dict_bfs_pre[edge[0]]
                 link_edge_pos = np.array([dict_edges_pos[(pre_node,edge[0])][1,],dict_edges_pos[edge][0,]])
                 ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=None)
+                edge_pos = np.vstack((link_edge_pos,edge_pos))
+            adata.uns['subwaymap_'+root]['edges'][edge]=edge_pos
         if(flat_tree.degree(root_node)>1):
             suc_nodes = dict_bfs_suc[root_node]
             edges = [(root_node,sn) for sn in suc_nodes]
@@ -2188,7 +2205,7 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
             x_pos = dict_nodes_pos[root_node][0]
             link_edge_pos = np.array([[x_pos,min_y_pos],[x_pos,max_y_pos]])
             ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=None)
-
+            adata.uns['subwaymap_'+root]['edges'][(root_node,root_node)]=link_edge_pos
         for node_i in flat_tree.nodes():
             ax.text(dict_nodes_pos[node_i][0],dict_nodes_pos[node_i][1],
                     flat_tree.nodes[node_i]['label'],color='black',
@@ -2248,11 +2265,11 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
         ax.set_xlabel('pseudotime')
         if(save_fig):
             plt.savefig(file_path_S + fig_name, pad_inches=1,bbox_inches='tight')
-            plt.close(fig) 
+            plt.close(fig)
 
 
 def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,preference=None,
-                        save_fig=False,fig_path=None,fig_size=(10,6)):  
+                        save_fig=False,fig_path=None,fig_format='pdf',fig_size=(10,6)):  
     """Generate subway map plots of genes
     
     Parameters
@@ -2279,6 +2296,9 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
         figure size.
     fig_path: `str`, optional (default: None)
         if None, adata.uns['workdir'] will be used.
+    fig_format: `str`, optional (default: 'pdf')
+        if save_fig is True, specify figure format.
+
 
     Returns
     -------
@@ -2448,7 +2468,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
             ax.set_title(g,size=15)    
             ax.set_xlabel('pseudotime')       
             if(save_fig):
-                plt.savefig(file_path_S + 'subway_map_' + slugify(g) + '.pdf',pad_inches=1,bbox_inches='tight')
+                plt.savefig(file_path_S + 'subway_map_' + slugify(g) + '.' + fig_format,pad_inches=1,bbox_inches='tight')
                 plt.close(fig) 
 
 
@@ -3177,7 +3197,7 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
 
 
 def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,preference=None,
-                    save_fig=False,fig_path=None,fig_size=(12,8),tick_fontsize=20,label_fontsize=25):  
+                    save_fig=False,fig_path=None,fig_size=(12,8),fig_format='pdf',tick_fontsize=20,label_fontsize=25):  
     """Generate stream plots of genes
     
     Parameters
@@ -3208,8 +3228,8 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
         figure size.
     fig_path: `str`, optional (default: None)
         if None, adata.uns['workdir'] will be used.
-    fig_name: `str`, optional (default: 'stream_plot.pdf')
-        if save_fig is True, specify figure name.
+    fig_format: `str`, optional (default: 'pdf')
+        if save_fig is True, specify figure format.
     tick_fontsize: `int`, optional (default: 20)
         Tick label fontsize
     label_fontsize: `int`, optional (default: 25)
@@ -3991,7 +4011,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                      head_width=fig_hw, head_length=fig_hl, overhang = 0.3,
                      length_includes_head= True, clip_on = False)
             if(save_fig):
-                plt.savefig(file_path_S+'stream_plot_' + slugify(gene_name) + '.pdf',dpi=120)
+                plt.savefig(file_path_S+'stream_plot_' + slugify(gene_name) + '.' + fig_format,dpi=120)
                 plt.close(fig) 
 
 def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = multiprocessing.cpu_count(),
