@@ -52,7 +52,7 @@ from .scikit_posthocs import posthoc_conover
 
 
 
-def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',file_format='tsv',delimiter='\t',experiment='rna-seq', workdir=None,**kwargs):
+def read(file_name,file_name_sample=None,file_name_region=None,file_path='',file_format='tsv',delimiter='\t',experiment='rna-seq', workdir=None,**kwargs):
     """Read gene expression matrix into anndata object.
     
     Parameters
@@ -63,8 +63,8 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
         Sample file name. Only valid when atac_seq = True.
     file_name_region: `str`
         Region file name. Only valid when atac_seq = True.
-    file_path: `str`, optional (default: './')
-        File path. By default it's the current directory
+    file_path: `str`, optional (default: '')
+        File path. By default it's empty
     file_format: `str`, optional (default: 'tsv')
         File format. currently supported file formats: 'tsv','txt','tab','data','csv','mtx','h5ad','pklz','pkl'
     delimiter: `str`, optional (default: '\t')
@@ -79,24 +79,26 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
     -------
     AnnData object
     """
+
+    _fp = lambda f:  os.path.join(file_path,f)
     if(experiment == 'rna-seq'):
         if(file_format in ['tsv','txt','tab','data']):
-            adata = ad.read_text(file_path+file_name,delimiter=delimiter,**kwargs).T
+            adata = ad.read_text(_fp(file_name),delimiter=delimiter,**kwargs).T
             adata.raw = adata        
         elif(file_format == 'csv'):
-            adata = ad.read_csv(file_path+file_name,delimiter=delimiter,**kwargs).T
+            adata = ad.read_csv(_fp(file_name),delimiter=delimiter,**kwargs).T
             adata.raw = adata
         elif(file_format == 'mtx'):
-            adata = ad.read_mtx(file_path+file_name,**kwargs).T 
+            adata = ad.read_mtx(_fp(file_name),**kwargs).T 
             adata.raw = adata
         elif(file_format == 'h5ad'):
-            adata = ad.read_h5ad(file_path+file_name,**kwargs)
+            adata = ad.read_h5ad(_fp(file_name),**kwargs)
         elif(file_format == 'pklz'):
-            f = gzip.open(file_path+file_name, 'rb')
+            f = gzip.open(_fp(file_name), 'rb')
             adata = pickle.load(f)
             f.close()  
         elif(file_format == 'pkl'):
-            f = open(file_path+file_name, 'rb')
+            f = open(_fp(file_name), 'rb')
             adata = pickle.load(f)
             f.close()            
         else:
@@ -104,11 +106,11 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
             return
     elif(experiment == 'atac-seq'):
         if(file_format == 'pklz'):
-            f = gzip.open(file_path+file_name, 'rb')
+            f = gzip.open(_fp(file_name), 'rb')
             adata = pickle.load(f)
             f.close()  
         elif(file_format == 'pkl'):
-            f = open(file_path+file_name, 'rb')
+            f = open(_fp(file_name), 'rb')
             adata = pickle.load(f)
             f.close()
         else:            
@@ -133,11 +135,14 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='./',fi
     if(workdir==None):
         if('workdir' in adata.uns_keys()):
             workdir = adata.uns['workdir']
+            print('Working directory specified.')
         else:
-            workdir = os.getcwd() + '/stream_result/'
+            workdir = os.path.join(os.getcwd(), 'stream_result')
+            print('Working directory not set.')
     if(not os.path.exists(workdir)):
         os.makedirs(workdir)
     adata.uns['workdir'] = workdir
+    print('Saving results in: %s' % workdir)
     return adata
 
 
@@ -219,7 +224,7 @@ def counts_to_kmers(adata,k=7,n_jobs = multiprocessing.cpu_count()):
     return adata_new
 
 
-def write(adata,file_name=None,file_path=None,file_format='pkl'):
+def write(adata,file_name=None,file_path='',file_format='pkl'):
     """Write Anndate object to file
     
     Parameters
@@ -229,7 +234,7 @@ def write(adata,file_name=None,file_path=None,file_format='pkl'):
     file_name: `str`, optional (default: None)
         File name. If it's not specified, a file named 'stream_result' with the specified file format will be created 
         under the working directory
-    file_path: `str`, optional (default: None)
+    file_path: `str`, optional (default: '')
         File path. If it's not specified, it's set to working directory
     file_format: `str`, optional (default: 'pkl')
         File format. By default it's compressed pickle file. Currently two file formats are supported:
@@ -239,14 +244,16 @@ def write(adata,file_name=None,file_path=None,file_format='pkl'):
 
     if(file_name is None):
         file_name = 'stream_result.'+file_format
-    if(file_path is None):
+    
+    if(file_path is ''):
         file_path = adata.uns['workdir']
+    
     if(file_format == 'pklz'):
-        f = gzip.open(file_path+file_name, 'wb')
+        f = gzip.open(os.path.join(file_path,file_name), 'wb')
         pickle.dump(adata, f, protocol=pickle.HIGHEST_PROTOCOL)
         f.close()  
     elif(file_format == 'pkl'):
-        f = open(file_path+file_name, 'wb')
+        f = open(os.path.join(file_path,file_name), 'wb')
         pickle.dump(adata, f, protocol=pickle.HIGHEST_PROTOCOL)
         f.close()            
     else:
@@ -254,14 +261,14 @@ def write(adata,file_name=None,file_path=None,file_format='pkl'):
         return
 
 
-def add_cell_labels(adata,file_path='./',file_name=None):
+def add_cell_labels(adata,file_path='',file_name=None):
     """Add cell lables.
 
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    fig_path: `str`, optional (default: './')
+    fig_path: `str`, optional (default: '')
         The file path of cell label file.
     fig_name: `str`, optional (default: None)
         The file name of cell label file. If file_name is not specified, 'unknown' is added as the label for all cells.
@@ -273,9 +280,9 @@ def add_cell_labels(adata,file_path='./',file_name=None):
     label: `pandas.core.series.Series` (`adata.obs['label']`,dtype `str`)
         Array of #observations that stores the label of each cell.
     """
-
+    _fp = lambda f:  os.path.join(file_path,f)
     if(file_name!=None):
-        df_labels = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label'],
+        df_labels = pd.read_csv(_fp(file_name),sep='\t',header=None,index_col=None,names=['label'],
                                 dtype=str,compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
         df_labels['label'] = df_labels['label'].str.replace('/','-')        
         df_labels.index = adata.obs_names
@@ -286,14 +293,14 @@ def add_cell_labels(adata,file_path='./',file_name=None):
     return None
 
 
-def add_cell_colors(adata,file_path='./',file_name=None):
+def add_cell_colors(adata,file_path='',file_name=None):
     """Add cell colors.
 
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    fig_path: `str`, optional (default: './')
+    fig_path: `str`, optional (default: '')
         The file path of cell label color file.
     fig_name: `str`, optional (default: None)
         The file name of cell label color file. If file_name is not specified, random color are generated for each cell label.
@@ -307,9 +314,10 @@ def add_cell_colors(adata,file_path='./',file_name=None):
         Array of #observations that stores the color of each cell (hex color code).        
     """
 
+    _fp = lambda f:  os.path.join(file_path,f)
     labels_unique = adata.obs['label'].unique()
     if(file_name!=None):
-        df_colors = pd.read_csv(file_path+file_name,sep='\t',header=None,index_col=None,names=['label','color'],
+        df_colors = pd.read_csv(_fp(file_name),sep='\t',header=None,index_col=None,names=['label','color'],
                                 dtype=str,compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
         df_colors['label'] = df_colors['label'].str.replace('/','-')   
         adata.uns['label_color'] = {df_colors.iloc[x,0]:df_colors.iloc[x,1] for x in range(df_colors.shape[0])}
@@ -376,16 +384,16 @@ def filter_genes(adata,min_num_cells = None,min_pct_cells = None,min_count = Non
     else:
         gene_subset = np.ones(len(adata.var_names),dtype=bool)
         if(min_num_cells!=None):
-            print('filter genes based on min_num_cells')
+            print('Filter genes based on min_num_cells')
             gene_subset = (n_cells>min_num_cells) & gene_subset
         if(min_pct_cells!=None):
-            print('filter genes based on min_pct_cells')
+            print('Filter genes based on min_pct_cells')
             gene_subset = (n_cells>adata.shape[0]*min_pct_cells) & gene_subset
         if(min_count!=None):
-            print('filter genes based on min_count')
+            print('Filter genes based on min_count')
             gene_subset = (n_counts>min_count) & gene_subset 
         adata._inplace_subset_var(gene_subset)
-        print('after filtering out low-expressed genes: ')
+        print('After filtering out low-expressed genes: ')
         print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' genes')
     return None
 
@@ -514,8 +522,8 @@ def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jo
         if True,save the figure.
     fig_size: `tuple`, optional (default: (5,5))
         figure size.
-    fig_path: `str`, optional (default: None)
-        if None, adata.uns['workdir'] will be used.
+    fig_path: `str`, optional (default: '')
+        if empty, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'std_vs_means.pdf')
         if save_fig is True, specify figure name.
 
@@ -560,7 +568,7 @@ def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jo
     plt.xlabel('mean value')
     plt.ylabel('standard deviation')
     if(save_fig):
-        plt.savefig(fig_path  + fig_name,pad_inches=1,bbox_inches='tight')
+        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig)
     return None
 
@@ -643,7 +651,7 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
     plt.xlabel('Principal Component')
     plt.ylabel('Variance Ratio')
     if(save_fig):
-        plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig)
     return None
 
@@ -784,7 +792,7 @@ def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
         ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
                   ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
     if(n_components==2): 
         fig = plt.figure(figsize=fig_size)
@@ -800,7 +808,7 @@ def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
         ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
                   ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
 
@@ -876,7 +884,7 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
         ax.set_ylabel('Component2',labelpad=20)
         ax.set_zlabel('Component3',labelpad=20)
         if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
     if(n_components==2): 
         fig = plt.figure(figsize=fig_size)
@@ -897,7 +905,7 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
         ax.set_xlabel('Component'+str(comp1+1),labelpad=20)
         ax.set_ylabel('Component'+str(comp2+1),labelpad=20)
         if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)        
 
 
@@ -1011,7 +1019,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
         ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
                   ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
     if(n_components==2): 
         fig = plt.figure(figsize=fig_size)
@@ -1043,7 +1051,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
         ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
                   ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
-            plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
 
@@ -1101,7 +1109,7 @@ def infer_initial_structure(adata_low,nb_min=5):
         ids = np.where(adata_low.obs['node'] == node_i)[0]
         if(ids.shape[0]<=nb_min):
             ids = kdtree.query(nx.get_node_attributes(epg_low,'pos')[node_i],k=nb_min)[1]
-            print('node '+ str(node_i) +' is calculated using ' + str(nb_min) + 'nearest neighbor cells')
+            print('Node '+ str(node_i) +' is calculated using ' + str(nb_min) + 'nearest neighbor cells')
             epg_low.nodes[node_i]['inferred_by_knn'] = True
         dict_nodes_pos[node_i] = np.concatenate((nx.get_node_attributes(epg_low,'pos')[node_i],
                                                  np.mean(adata_low.obsm['X_dr_ori'][ids,n_components:],axis=0)))
@@ -1307,7 +1315,7 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
     print('Learning elastic principal graph...')
-    R.pdf(fig_path +fig_name)
+    R.pdf(os.path.join(fig_path,fig_name))
     epg_obj = ElPiGraph.computeElasticPrincipalTree(X=input_data,
                                                     NumNodes = epg_n_nodes, 
                                                     InitNodePositions = init_nodes_pos,
@@ -1877,7 +1885,7 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
     ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.15),
               ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
     if(save_fig):
-        plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
 def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',nb_pct=0.1,perplexity=30.0,color_by='label',use_precomputed=True,
@@ -2060,7 +2068,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
     ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
               ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
     if(save_fig):
-        plt.savefig(fig_path + fig_name,pad_inches=1,bbox_inches='tight')
+        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
 
@@ -2123,9 +2131,9 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
     if(root not in dict_label_node.keys()):
-        print('there is no root '+root)
+        print('There is no root '+root)
     else:
-        file_path_S = fig_path +root +'/'
+        file_path_S = os.path.join(fig_path,root)
         if(not os.path.exists(file_path_S)):
             os.makedirs(file_path_S)   
         root_node = dict_label_node[root]
@@ -2264,7 +2272,7 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
                   ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         ax.set_xlabel('pseudotime')
         if(save_fig):
-            plt.savefig(file_path_S + fig_name, pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(file_path_S,fig_name), pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
 
@@ -2332,7 +2340,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
         if(root not in dict_label_node.keys()):
             print('there is no root '+root)
         else:
-            file_path_S = fig_path +root+'/'
+            file_path_S = os.path.join(fig_path,root)
             if(not os.path.exists(file_path_S)):
                 os.makedirs(file_path_S)   
             root_node = dict_label_node[root]
@@ -2468,7 +2476,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
             ax.set_title(g,size=15)    
             ax.set_xlabel('pseudotime')       
             if(save_fig):
-                plt.savefig(file_path_S + 'subway_map_' + slugify(g) + '.' + fig_format,pad_inches=1,bbox_inches='tight')
+                plt.savefig(os.path.join(file_path_S,'subway_map_' + slugify(g) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
                 plt.close(fig) 
 
 
@@ -2530,9 +2538,9 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
     else:
         preference_nodes = None
     if(root not in dict_label_node.keys()):
-        print('there is no root '+root)
+        print('There is no root '+root)
     else:
-        file_path_S = fig_path +root +'/'
+        file_path_S = os.path.join(fig_path,root)
         dict_branches = {x: flat_tree.edges[x] for x in flat_tree.edges()}
         dict_node_state = nx.get_node_attributes(flat_tree,'label')
         input_cell_label_uni = list(adata.uns['label_color'].keys())
@@ -3138,7 +3146,7 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
                    fancybox=True, shadow=True)
 
         if(save_fig):
-            plt.savefig(file_path_S +fig_name,pad_inches=1,bbox_inches='tight',dpi=120)
+            plt.savefig(os.path.join(file_path_S,fig_name),pad_inches=1,bbox_inches='tight',dpi=120)
             plt.close(fig)  
 
 
@@ -3251,7 +3259,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
     else:
         preference_nodes = None
     if(root not in dict_label_node.keys()):
-        print('there is no root '+root)
+        print('There is no root '+root)
     elif(genes is None):
         print('Please provide gene names');
     else:
@@ -3260,7 +3268,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             if x not in adata.var_names:
                 print(x + ' is not in the gene expression matrix')
                 return       
-        file_path_S = fig_path +root+'/'
+        file_path_S = os.path.join(fig_path,root)
         dict_branches = {x: flat_tree.edges[x] for x in flat_tree.edges()}
         dict_node_state = nx.get_node_attributes(flat_tree,'label')
         input_cell_label_uni = ['unknown']
@@ -4011,7 +4019,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                      head_width=fig_hw, head_length=fig_hl, overhang = 0.3,
                      length_includes_head= True, clip_on = False)
             if(save_fig):
-                plt.savefig(file_path_S+'stream_plot_' + slugify(gene_name) + '.' + fig_format,dpi=120)
+                plt.savefig(os.path.join(file_path_S,'stream_plot_' + slugify(gene_name) + '.' + fig_format),dpi=120)
                 plt.close(fig) 
 
 def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = multiprocessing.cpu_count(),
@@ -4048,7 +4056,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
     """
 
 
-    file_path = adata.uns['workdir'] + 'transition_genes/'
+    file_path = os.path.join(adata.uns['workdir'],'transition_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
     
@@ -4117,14 +4125,14 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
             q_values = multipletests(p_values, method='fdr_bh')[1]
             df_stat_pval_qval['qval'] = q_values
             dict_tg_edges[edge_i] = df_stat_pval_qval[(abs(df_stat_pval_qval.stat)>=cutoff_spearman)].sort_values(['qval'])
-            dict_tg_edges[edge_i].to_csv(file_path+'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]] + '.tsv',sep = '\t',index = True)
+            dict_tg_edges[edge_i].to_csv(os.path.join(file_path,'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]] + '.tsv'),sep = '\t',index = True)
     adata.uns['transition_genes'] = dict_tg_edges   
 
 
 def plot_transition_genes(adata,num_genes = 15,
                           save_fig=False,fig_path=None,fig_size=(12,8)):
     if(fig_path is None):
-        fig_path = adata.uns['workdir'] + 'transition_genes/'
+        fig_path = os.path.join(adata.uns['workdir'],'transition_genes')
     if(not os.path.exists(fig_path)):
         os.makedirs(fig_path) 
 
@@ -4172,7 +4180,7 @@ def plot_transition_genes(adata,num_genes = 15,
                 ax.text(rect.get_x()-0.02, rect.get_y()+rect.get_height()/2.0, \
                         "{:.2E}".format(Decimal(str(qvals[i]))),color='w',fontsize=9,**alignment)
         if(save_fig):        
-            plt.savefig(fig_path+'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]]+'.pdf',\
+            plt.savefig(os.path.join(fig_path,'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]]+'.pdf'),\
                         pad_inches=1,bbox_inches='tight')
             plt.close(fig)    
 
@@ -4215,7 +4223,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
     """
 
 
-    file_path = adata.uns['workdir'] + 'de_genes/'
+    file_path = os.path.join(adata.uns['workdir'],'de_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
 
@@ -4308,12 +4316,12 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
                 df_de_pval_qval['qval'] = q_values
                 dict_de_greater[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
                                                           (df_de_pval_qval['z_score']>0)].sort_values(['z_score'],ascending=False)
-                dict_de_greater[pair_i].to_csv(file_path+'de_genes_greater_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                        + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv',sep = '\t',index = True)
+                dict_de_greater[pair_i].to_csv(os.path.join(file_path,'de_genes_greater_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
+                                        + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)
                 dict_de_less[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
                                                        (df_de_pval_qval['z_score']<0)].sort_values(['z_score'])
-                dict_de_less[pair_i].to_csv(file_path+'de_genes_less_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                     + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv',sep = '\t',index = True)   
+                dict_de_less[pair_i].to_csv(os.path.join(file_path,'de_genes_less_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
+                                     + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)   
         else:
             print('There are not sufficient cells (should be greater than 20) between branches '+\
                   dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] +' and '+\
@@ -4340,12 +4348,12 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
             else:
                 dict_de_greater[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
                                                           (df_de_pval_qval['logfc']>0)].sort_values(['logfc'],ascending=False)
-                dict_de_greater[pair_i].to_csv(file_path+'de_genes_greater_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                        + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv',sep = '\t',index = True)                
+                dict_de_greater[pair_i].to_csv(os.path.join(file_path,'de_genes_greater_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
+                                        + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)                
                 dict_de_less[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
                                                        (df_de_pval_qval['logfc']<0)].sort_values(['logfc'])
-                dict_de_less[pair_i].to_csv(file_path+'de_genes_less_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                     + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv',sep = '\t',index = True)   
+                dict_de_less[pair_i].to_csv(os.path.join(file_path,'de_genes_less_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
+                                     + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)   
     adata.uns['de_genes_greater'] = dict_de_greater
     adata.uns['de_genes_less'] = dict_de_less
 
@@ -4353,7 +4361,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
 def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
                   save_fig=False,fig_path=None,fig_size=(12,8)):
     if(fig_path is None):
-        fig_path = adata.uns['workdir'] + 'de_genes/'
+        fig_path = os.path.join(adata.uns['workdir'],'de_genes')
     if(not os.path.exists(fig_path)):
         os.makedirs(fig_path)  
 
@@ -4409,8 +4417,8 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             ax1.xaxis.tick_top()
             plt.tight_layout()
             if(save_fig):
-                plt.savefig(fig_path+'de_genes_'+dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and '\
-                            + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf',pad_inches=1,bbox_inches='tight')
+                plt.savefig(os.path.join(fig_path,'de_genes_'+dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and '\
+                            + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf'),pad_inches=1,bbox_inches='tight')
                 plt.close(fig)
         else:
             if(not dict_de_greater[sub_edges_i].empty):
@@ -4445,8 +4453,8 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             ax1.xaxis.tick_top()
             plt.tight_layout()
             if(save_fig):
-                plt.savefig(fig_path+'de_genes_'+dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and '\
-                            + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf',pad_inches=1,bbox_inches='tight')
+                plt.savefig(os.path.join(fig_path,'de_genes_'+dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and '\
+                            + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf'),pad_inches=1,bbox_inches='tight')
                 plt.close(fig) 
 
 
@@ -4485,7 +4493,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     """
 
 
-    file_path = adata.uns['workdir'] + 'leaf_genes/'
+    file_path = os.path.join(adata.uns['workdir'],'leaf_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
 
@@ -4563,11 +4571,11 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
                         df_leaf_genes.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
     df_leaf_genes.rename(columns={x:dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue' for x in leaf_edges},inplace=True)
     df_leaf_genes.sort_values(by='H_pvalue',inplace=True)
-    df_leaf_genes.to_csv(file_path+'leaf_genes.tsv',sep = '\t',index = True)
+    df_leaf_genes.to_csv(os.path.join(file_path,'leaf_genes.tsv'),sep = '\t',index = True)
     dict_leaf_genes = dict()
     for x in leaf_edges:
         dict_leaf_genes[x] = df_leaf_genes[df_leaf_genes[dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue']=="Null"]
-        dict_leaf_genes[x].to_csv(file_path+'leaf_genes'+dict_node_state[x[0]]+'_'+dict_node_state[x[1]] + '.tsv',sep = '\t',index = True)
+        dict_leaf_genes[x].to_csv(os.path.join(file_path,'leaf_genes'+dict_node_state[x[0]]+'_'+dict_node_state[x[1]] + '.tsv'),sep = '\t',index = True)
     adata.uns['leaf_genes_all'] = df_leaf_genes
     adata.uns['leaf_genes'] = dict_leaf_genes
 
