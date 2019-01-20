@@ -39,23 +39,30 @@ def stream_test_Nestorowa_2016():
 
 	print(ref_temp_folder)
 	print(comp_temp_folder)
+
 	pathlist = Path(ref_temp_folder)
-	succeed = True
 	for path in pathlist.glob('**/*'):
 	    if path.is_file() and (not path.name.startswith('.')):
 	        file = os.path.relpath(str(path),ref_temp_folder)
 	        if(file.endswith('pdf')):
-	            if(os.path.getsize(os.path.join(ref_temp_folder,file))!=os.path.getsize(os.path.join(comp_temp_folder,file))):
+	            if(abs(os.path.getsize(os.path.join(ref_temp_folder,file)))-
+	                   os.path.getsize(os.path.join(comp_temp_folder,file))>100):
 	                print('Error! The file %s is not matched' %file)
 	                sys.exit(1)
 	        else:
-	            if(not filecmp.cmp(os.path.join(ref_temp_folder,file),os.path.join(comp_temp_folder,file), shallow=False)):
+	            checklist = list()
+	            df_ref = pd.read_csv(os.path.join(ref_temp_folder,file),sep='\t')
+	            df_comp = pd.read_csv(os.path.join(comp_temp_folder,file),sep='\t')
+	            for c in df_ref.columns:
+	                if(is_numeric_dtype(df_ref[c])):
+	                    checklist.append(all(np.isclose(df_ref[c],df_comp[c])))
+	                else:
+	                    checklist.append(all(df_ref[c]==df_comp[c]))
+	            if(not all(checklist)):
 	                print('Error! The file %s is not matched' %file)
-	                succeed = False
 	                sys.exit(1)
-
-	if(succeed):
-		print('Successful!')
+	
+	print('Successful!')
 
 	rmtree(comp_temp_folder,ignore_errors=True)
 	rmtree(ref_temp_folder,ignore_errors=True)

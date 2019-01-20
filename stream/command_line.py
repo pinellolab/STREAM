@@ -13,6 +13,9 @@ print('''
                                                
 ''')
 
+import warnings
+warnings.filterwarnings(“ignore”)
+
 import stream as st
 import argparse
 import multiprocessing
