@@ -6,6 +6,9 @@ import tarfile
 import tempfile
 from shutil import rmtree
 import sys
+import pandas as pd
+from pandas.api.types import is_numeric_dtype
+import numpy as np
 
 _root = os.path.abspath(os.path.dirname(__file__))
 
