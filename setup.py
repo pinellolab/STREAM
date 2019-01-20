@@ -26,5 +26,5 @@ setup(name='stream',
       include_package_data = True,
       install_requires=[''],
       entry_points = {'console_scripts': ['stream=stream.command_line:main',
-      'run_test=stream.tests.run_test:main']})
+      'stream_run_test=stream.tests.run_test:main']})
 
