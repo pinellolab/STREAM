@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import warnings
+warnings.filterwarnings('ignore')
+
 __tool_name__='STREAM'
 
 print('''
@@ -12,9 +15,6 @@ print('''
  |_____/   |_|  |_|  \_\______/_/    \_\_|  |_|
                                                
 ''')
-
-import warnings
-warnings.filterwarnings(“ignore”)
 
 import stream as st
 import argparse
