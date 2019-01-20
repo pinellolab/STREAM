@@ -107,6 +107,12 @@ def output_for_website(adata):
 
 def output_for_website_subwaymap_gene(adata,gene_list):
     workdir = adata.uns['workdir']
+    experiment = adata.uns['experiment']
+    epg = adata.uns['epg']
+    flat_tree = adata.uns['flat_tree']
+    dict_nodes_pos = nx.get_node_attributes(epg,'pos')
+    dict_nodes_label = nx.get_node_attributes(flat_tree,'label')
+    dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
     df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
                                 data = adata.raw[:,gene_list].X,
                                 columns=gene_list)
