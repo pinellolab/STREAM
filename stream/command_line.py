@@ -33,7 +33,7 @@ print('- STREAM Single-cell Trajectory Reconstruction And Mapping -')
 print('Version %s\n' % st.__version__)
     
 
-def output_for_website(adata,gene_list):
+def output_for_website(adata):
     workdir = adata.uns['workdir']
     experiment = adata.uns['experiment']
     epg = adata.uns['epg']
@@ -89,11 +89,8 @@ def output_for_website(adata,gene_list):
         df_edges_flat_tree.loc[i] = [dict_nodes_label[edge_i[0]],dict_nodes_label[edge_i[1]]]
         df_edges_flat_tree.to_csv(os.path.join(workdir,'edges.tsv'),sep = '\t',index = False,header=False)
 
-    #coordinates of cells and gene expressions in subwaymap plot
+    #coordinates of cells in subwaymap plot
     workdir = adata.uns['workdir']
-    df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
-                                data = adata.raw[:,gene_list].X,
-                                columns=gene_list)
     list_node_start = dict_label_node.keys()
     for root in list_node_start:
         df_sample = adata.obs[['label','label_color']].copy()
@@ -108,7 +105,13 @@ def output_for_website(adata,gene_list):
             df_edge_pos =  pd.DataFrame(adata.uns['subwaymap_'+root]['edges'][edge_i])
             df_edge_pos.to_csv(os.path.join(workdir,root, 'subway_coord_line_'+dict_nodes_label[edge_i[0]] + '_' + dict_nodes_label[edge_i[1]]+'.csv'),sep='\t',index=False)
 
-        
+def output_for_website_subwaymap_gene(adata,gene_list):
+    workdir = adata.uns['workdir']
+    df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
+                                data = adata.raw[:,gene_list].X,
+                                columns=gene_list)
+    list_node_start = dict_label_node.keys()
+    for root in list_node_start:        
         for g in gene_list:
             if(experiment=='rna-seq'):
                 gene_expr = df_gene_expr[g].copy()
@@ -444,6 +447,11 @@ def main():
             if(flag_gene_LG_detection):
                 print('Identifying leaf genes...')
                 st.detect_leaf_genes(adata,cutoff_zscore=LG_zscore_cutoff,cutoff_pvalue=LG_pvalue_cutoff,n_jobs = n_processes)
+            output_cell_info(adata)
+            if(flag_web):
+                output_for_website(adata)
+            st.write(adata)
+
         if((genes!=None) and (len(gene_list)>0)):
             print('Visualizing genes...')
             flat_tree = adata.uns['flat_tree']
@@ -451,21 +459,18 @@ def main():
             if(root is None):
                 for ns in list_node_start:
                     if(flag_web):
-                        st.subwaymap_plot_gene(adata,percentile_dist=100,root=ns,genes=gene_list,save_fig=flag_savefig)
+                        output_for_website_subwaymap_gene(adata,gene_list)
                         st.stream_plot_gene(adata,root=ns,fig_size=(8,8),genes=gene_list,save_fig=True,flag_log_view=flag_stream_log_view,fig_format='png')
                     else:
                         st.subwaymap_plot_gene(adata,percentile_dist=100,root=ns,genes=gene_list,save_fig=flag_savefig)
                         st.stream_plot_gene(adata,root=ns,fig_size=(8,8),genes=gene_list,save_fig=flag_savefig,flag_log_view=flag_stream_log_view)
             else:
                 if(flag_web):
+                    output_for_website_subwaymap_gene(adata,gene_list)
                     st.stream_plot_gene(adata,root=root,fig_size=(8,8),genes=gene_list,save_fig=True,flag_log_view=flag_stream_log_view,fig_format='png')
                 else:
                     st.subwaymap_plot_gene(adata,percentile_dist=100,root=root,genes=gene_list,save_fig=flag_savefig)
-                    st.stream_plot_gene(adata,root=root,fig_size=(8,8),genes=gene_list,save_fig=flag_savefig,flag_log_view=flag_stream_log_view)           
-        output_cell_info(adata)
-        if(flag_web):
-            output_for_website(adata,gene_list)
-        st.write(adata)
+                    st.stream_plot_gene(adata,root=root,fig_size=(8,8),genes=gene_list,save_fig=flag_savefig,flag_log_view=flag_stream_log_view)
             
     else:
         print('Starting mapping procedure...')
