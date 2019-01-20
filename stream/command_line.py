@@ -117,7 +117,13 @@ def output_for_website_subwaymap_gene(adata,gene_list):
                                 data = adata.raw[:,gene_list].X,
                                 columns=gene_list)
     list_node_start = dict_label_node.keys()
-    for root in list_node_start:        
+    for root in list_node_start:
+        df_sample = adata.obs[['label','label_color']].copy()
+        df_coord = pd.DataFrame(adata.obsm['X_subwaymap_'+root],index=adata.obs_names)
+        color = df_sample.sample(frac=1,random_state=100)['label_color'] 
+        coord = df_coord.sample(frac=1,random_state=100)
+        df_subwaymap_coord_cells = pd.concat([color, coord], axis=1)
+        df_subwaymap_coord_cells.columns = ['color','D0','D1']        
         for g in gene_list:
             if(experiment=='rna-seq'):
                 gene_expr = df_gene_expr[g].copy()
