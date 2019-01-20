@@ -1,0 +1,12 @@
+language: python
+python:
+  - "3.6"
+cache: pip
+install:
+  - conda install stream
+env:
+  - MPLBACKEND=Agg
+script:
+  - python setup.py install
+  - stream -h
+  - run_test
