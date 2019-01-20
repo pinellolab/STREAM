@@ -9,4 +9,4 @@ env:
 script:
   - python setup.py install
   - stream -h
-  - run_test
+  - stream_run_test
