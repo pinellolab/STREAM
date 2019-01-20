@@ -50,7 +50,7 @@ from .extra import *
 #import scikit_posthocs as sp
 from .scikit_posthocs import posthoc_conover
 
-
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def read(file_name,file_name_sample=None,file_name_region=None,file_path='',file_format='tsv',delimiter='\t',experiment='rna-seq', workdir=None,**kwargs):
     """Read gene expression matrix into anndata object.

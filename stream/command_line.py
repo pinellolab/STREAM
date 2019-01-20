@@ -26,6 +26,9 @@ import matplotlib as mpl
 mpl.use('Agg')
 mpl.rc('pdf', fonttype=42)
 
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+
 print('- STREAM Single-cell Trajectory Reconstruction And Mapping -')
 print('Version %s\n' % st.__version__)
     
