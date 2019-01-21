@@ -21,7 +21,7 @@ install:
   - cd ..
   - packagepath=$(python -c "import stream; print(stream.__path__[0])")
   - echo $packagepath
-  - rm -rf "${packagepath}*"
+  - rm -rf ${packagepath}*
   - cd $installationpath
   - echo $installationpath
   - python setup.py install
