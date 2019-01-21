@@ -16,6 +16,8 @@ install:
   - conda config --add channels bioconda 
   - conda config --add channels conda-forge
   - conda install stream -y
+  - packagepath=$(python -c 'import stream; print(stream.__path__)')
+  - rm -rf $packagepath
   - python setup.py install
 env:
   - MPLBACKEND=Agg
