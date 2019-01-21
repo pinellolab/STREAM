@@ -18,8 +18,8 @@ install:
   - conda install stream -y
   - installationpath=$PWD
   - cd ..
-  - packagepath=$(python -c 'import stream; print(stream.__path__)')
-  - rm -rf $packagepath
+  - packagepath=$(python -c "import stream; print(stream.__path__[0])")
+  - rm -rf "${packagepath}*"
   - cd $installationpath
   - python setup.py install
 env:
