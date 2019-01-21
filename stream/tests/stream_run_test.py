@@ -48,8 +48,7 @@ def stream_test_Nestorowa_2016():
 	    if path.is_file() and (not path.name.startswith('.')):
 	        file = os.path.relpath(str(path),ref_temp_folder)
 	        if(file.endswith('pdf')):
-	            if(abs(os.path.getsize(os.path.join(ref_temp_folder,file)))-
-	                   os.path.getsize(os.path.join(comp_temp_folder,file))>100):
+	            if(os.path.getsize(os.path.join(comp_temp_folder,file))==0):
 	                print('Error! The file %s is not matched' %file)
 	                sys.exit(1)
 	        else:
@@ -64,7 +63,7 @@ def stream_test_Nestorowa_2016():
 	            if(not all(checklist)):
 	                print('Error! The file %s is not matched' %file)
 	                sys.exit(1)
-	
+
 	print('Successful!')
 
 	rmtree(comp_temp_folder,ignore_errors=True)
