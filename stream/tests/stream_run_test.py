@@ -48,7 +48,9 @@ def stream_test_Nestorowa_2016():
 	    if path.is_file() and (not path.name.startswith('.')):
 	        file = os.path.relpath(str(path),ref_temp_folder)
 	        if(file.endswith('pdf')):
-	            if(os.path.getsize(os.path.join(comp_temp_folder,file))==0):
+	            if(os.path.getsize(os.path.join(comp_temp_folder,file))>0):
+	                print('The file %s passed' %file)
+	            else:
 	                print('Error! The file %s is not matched' %file)
 	                sys.exit(1)
 	        else:
@@ -60,7 +62,9 @@ def stream_test_Nestorowa_2016():
 	                    checklist.append(all(np.isclose(df_ref[c],df_comp[c])))
 	                else:
 	                    checklist.append(all(df_ref[c]==df_comp[c]))
-	            if(not all(checklist)):
+	            if(all(checklist)):
+	                print('The file %s passed' %file)
+	            else:
 	                print('Error! The file %s is not matched' %file)
 	                sys.exit(1)
 

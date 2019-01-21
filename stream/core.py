@@ -4569,7 +4569,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
                                                        val_col=gene, group_col='bfs_edges', p_adjust = 'fdr_bh')
                     cand_conover_pvalues = df_conover_pvalues[~df_conover_pvalues.columns.isin([cand_br])][cand_br]
                     if(all(cand_conover_pvalues < cutoff_pvalue)):
-                        df_leaf_genes.loc[gene,:] = "Null"
+                        df_leaf_genes.loc[gene,:] = 1.0
                         df_leaf_genes.loc[gene,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
                         df_leaf_genes.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
     df_leaf_genes.rename(columns={x:dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue' for x in leaf_edges},inplace=True)
@@ -4577,7 +4577,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     df_leaf_genes.to_csv(os.path.join(file_path,'leaf_genes.tsv'),sep = '\t',index = True)
     dict_leaf_genes = dict()
     for x in leaf_edges:
-        dict_leaf_genes[x] = df_leaf_genes[df_leaf_genes[dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue']=="Null"]
+        dict_leaf_genes[x] = df_leaf_genes[df_leaf_genes[dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue']==1.0]
         dict_leaf_genes[x].to_csv(os.path.join(file_path,'leaf_genes'+dict_node_state[x[0]]+'_'+dict_node_state[x[1]] + '.tsv'),sep = '\t',index = True)
     adata.uns['leaf_genes_all'] = df_leaf_genes
     adata.uns['leaf_genes'] = dict_leaf_genes
