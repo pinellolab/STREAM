@@ -17,10 +17,13 @@ install:
   - conda config --add channels conda-forge
   - conda install stream -y
   - installationpath=$PWD
+  - echo $installationpath
   - cd ..
   - packagepath=$(python -c "import stream; print(stream.__path__[0])")
+  - echo $packagepath
   - rm -rf "${packagepath}*"
   - cd $installationpath
+  - echo $installationpath
   - python setup.py install
 env:
   - MPLBACKEND=Agg
