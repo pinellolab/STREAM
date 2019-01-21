@@ -20,5 +20,4 @@ install:
 env:
   - MPLBACKEND=Agg
 script:
-  - stream -h
   - stream_run_test
