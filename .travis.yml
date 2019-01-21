@@ -20,6 +20,5 @@ install:
 env:
   - MPLBACKEND=Agg
 script:
-  - python setup.py install
   - stream -h
   - stream_run_test
