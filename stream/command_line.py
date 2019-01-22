@@ -451,21 +451,22 @@ def main():
             else:
                 st.subwaymap_plot(adata,percentile_dist=100,root=root,save_fig=flag_savefig)
                 st.stream_plot(adata,root=root,fig_size=(8,8),save_fig=flag_savefig,flag_log_view=flag_stream_log_view)
-            if(flag_gene_TG_detection):
-                print('Identifying transition genes...')
-                st.detect_transistion_genes(adata,cutoff_spearman=TG_spearman_cutoff,cutoff_logfc = TG_logfc_cutoff,n_jobs = n_processes)
-                st.plot_transition_genes(adata,save_fig=flag_savefig)
-            if(flag_gene_DE_detection):
-                print('Identifying differentially expressed genes...')
-                st.detect_de_genes(adata,cutoff_zscore=DE_logfc_cutoff,cutoff_logfc = DE_logfc_cutoff,n_jobs = n_processes)
-                st.plot_de_genes(adata,save_fig=flag_savefig)
-            if(flag_gene_LG_detection):
-                print('Identifying leaf genes...')
-                st.detect_leaf_genes(adata,cutoff_zscore=LG_zscore_cutoff,cutoff_pvalue=LG_pvalue_cutoff,n_jobs = n_processes)
             output_cell_info(adata)
             if(flag_web):
                 output_for_website(adata)
             st.write(adata)
+
+        if(flag_gene_TG_detection):
+            print('Identifying transition genes...')
+            st.detect_transistion_genes(adata,cutoff_spearman=TG_spearman_cutoff,cutoff_logfc = TG_logfc_cutoff,n_jobs = n_processes)
+            st.plot_transition_genes(adata,save_fig=flag_savefig)
+        if(flag_gene_DE_detection):
+            print('Identifying differentially expressed genes...')
+            st.detect_de_genes(adata,cutoff_zscore=DE_logfc_cutoff,cutoff_logfc = DE_logfc_cutoff,n_jobs = n_processes)
+            st.plot_de_genes(adata,save_fig=flag_savefig)
+        if(flag_gene_LG_detection):
+            print('Identifying leaf genes...')
+            st.detect_leaf_genes(adata,cutoff_zscore=LG_zscore_cutoff,cutoff_pvalue=LG_pvalue_cutoff,n_jobs = n_processes)
 
         if((genes!=None) and (len(gene_list)>0)):
             print('Visualizing genes...')
