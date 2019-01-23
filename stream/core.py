@@ -84,64 +84,66 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='',file
     """
 
     _fp = lambda f:  os.path.join(file_path,f)
-    if(experiment == 'rna-seq'):
-        if(file_format in ['tsv','txt','tab','data']):
-            adata = ad.read_text(_fp(file_name),delimiter=delimiter,**kwargs).T
-            adata.raw = adata        
-        elif(file_format == 'csv'):
-            adata = ad.read_csv(_fp(file_name),delimiter=delimiter,**kwargs).T
-            adata.raw = adata
-        elif(file_format == 'mtx'):
-            adata = ad.read_mtx(_fp(file_name),**kwargs).T 
-            adata.raw = adata
-        elif(file_format == 'h5ad'):
-            adata = ad.read_h5ad(_fp(file_name),**kwargs)
-        elif(file_format == 'pklz'):
+    if(file_format == 'pkl'):
+        if file_name.split('.')[-1]=='gz':
             f = gzip.open(_fp(file_name), 'rb')
             adata = pickle.load(f)
-            f.close()  
-        elif(file_format == 'pkl'):
-            f = open(_fp(file_name), 'rb')
-            adata = pickle.load(f)
-            f.close()            
+            f.close() 
         else:
-            print('file format ' + file_format + ' is not supported')
-            return
-    elif(experiment == 'atac-seq'):
-        if(file_format == 'pklz'):
-            f = gzip.open(_fp(file_name), 'rb')
-            adata = pickle.load(f)
-            f.close()  
-        elif(file_format == 'pkl'):
             f = open(_fp(file_name), 'rb')
             adata = pickle.load(f)
-            f.close()
-        else:            
-            if(file_name_sample is None):
-                print('sample file must be provided')
-            if(file_name_region is None):
-                print('region file must be provided')
-            df_counts = pd.read_csv(file_name,sep='\t',header=None,names=['i','j','x'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
-            df_regions = pd.read_csv(file_name_region,sep='\t',header=None,compression= 'gzip' if file_name_region.split('.')[-1]=='gz' else None)
-            df_regions = df_regions.iloc[:,:3]
-            df_regions.columns = ['seqnames','start','end']
-            df_samples = pd.read_csv(file_name_sample,sep='\t',header=None,names=['cell_id'],compression= 'gzip' if file_name_sample.split('.')[-1]=='gz' else None)
-            adata = ad.AnnData()
-            adata.uns['atac-seq'] = dict()
-            adata.uns['atac-seq']['count'] = df_counts
-            adata.uns['atac-seq']['region'] = df_regions
-            adata.uns['atac-seq']['sample'] = df_samples
+            f.close()    
+    elif(file_format == 'pklz'):
+        f = gzip.open(_fp(file_name), 'rb')
+        adata = pickle.load(f)
+        f.close()
     else:
-        print('The experiment '+experiment +' is not supported')
-        return        
-    adata.uns['experiment'] = experiment
-    if(workdir==None):
-        if('workdir' in adata.uns_keys()):
-            workdir = adata.uns['workdir']
-            print('Working directory specified.')
+        if(experiment == 'rna-seq'):
+            if(file_format in ['tsv','txt','tab','data']):
+                adata = ad.read_text(_fp(file_name),delimiter=delimiter,**kwargs).T
+                adata.raw = adata        
+            elif(file_format == 'csv'):
+                adata = ad.read_csv(_fp(file_name),delimiter=delimiter,**kwargs).T
+                adata.raw = adata
+            elif(file_format == 'mtx'):
+                adata = ad.read_mtx(_fp(file_name),**kwargs).T 
+                adata.raw = adata
+            elif(file_format == 'h5ad'):
+                adata = ad.read_h5ad(_fp(file_name),**kwargs)           
+            else:
+                print('file format ' + file_format + ' is not supported')
+                return
+        elif(experiment == 'atac-seq'):
+            if(file_format == 'pklz'):
+                f = gzip.open(_fp(file_name), 'rb')
+                adata = pickle.load(f)
+                f.close()  
+            elif(file_format == 'pkl'):
+                f = open(_fp(file_name), 'rb')
+                adata = pickle.load(f)
+                f.close()
+            else:            
+                if(file_name_sample is None):
+                    print('sample file must be provided')
+                if(file_name_region is None):
+                    print('region file must be provided')
+                df_counts = pd.read_csv(file_name,sep='\t',header=None,names=['i','j','x'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
+                df_regions = pd.read_csv(file_name_region,sep='\t',header=None,compression= 'gzip' if file_name_region.split('.')[-1]=='gz' else None)
+                df_regions = df_regions.iloc[:,:3]
+                df_regions.columns = ['seqnames','start','end']
+                df_samples = pd.read_csv(file_name_sample,sep='\t',header=None,names=['cell_id'],compression= 'gzip' if file_name_sample.split('.')[-1]=='gz' else None)
+                adata = ad.AnnData()
+                adata.uns['atac-seq'] = dict()
+                adata.uns['atac-seq']['count'] = df_counts
+                adata.uns['atac-seq']['region'] = df_regions
+                adata.uns['atac-seq']['sample'] = df_samples
         else:
-            workdir = os.path.join(os.getcwd(), 'stream_result')
-            print('Working directory not set.')
+            print('The experiment '+experiment +' is not supported')
+            return        
+        adata.uns['experiment'] = experiment
+    if(workdir==None):
+        workdir = os.path.join(os.getcwd(), 'stream_result')
+        print("Using default working directory.")
     if(not os.path.exists(workdir)):
         os.makedirs(workdir)
     adata.uns['workdir'] = workdir
