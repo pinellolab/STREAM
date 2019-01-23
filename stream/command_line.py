@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib as mpl
+import sys
 mpl.use('Agg')
 mpl.rc('pdf', fonttype=42)
 
@@ -190,8 +191,8 @@ def main():
                         help="scATAC-seq samples file name", metavar="FILE")    
     parser.add_argument("--atac_k",dest="atac_k",type=int,default=7,
                         help="specify k-mers in scATAC-seq")
-    parser.add_argument("--atac_zscore",dest="atac_zscore",default=None,
-                        help="precomputed atac zscore pkl file")    
+    parser.add_argument("--atac_zscore",dest="flag_atac_zscore",action="store_true",
+                        help="indicate precomputed atac zscore matrix file")    
     parser.add_argument("--n_processes",dest = "n_processes",type=int, default=multiprocessing.cpu_count(),
                         help="Specify the number of processes to use. (default, all the available cores)")
     parser.add_argument("--loess_frac",dest = "loess_frac",type=float, default=0.1,
@@ -209,23 +210,15 @@ def main():
     parser.add_argument("--AP_damping_factor",dest="AP_damping_factor", type=float, default=0.75,
                         help="Affinity Propagation: damping factor")    
     parser.add_argument("--EPG_n_nodes",dest="EPG_n_nodes", type=int, default=50,
-                        help=" Number of nodes for elastic principal graph")
-    parser.add_argument("--EPG_n_rep",dest="EPG_n_rep", type=int, default=1,
-                        help="Number of replica for constructing elastic principal graph")            
+                        help=" Number of nodes for elastic principal graph")      
     parser.add_argument("--EPG_lambda",dest="EPG_lambda", type=float, default=0.02,
                         help="lambda parameter used to compute the elastic energy")                                                                     
     parser.add_argument("--EPG_mu",dest="EPG_mu", type=float, default=0.1,
                         help="mu parameter used to compute the elastic energy") 
     parser.add_argument("--EPG_trimmingradius",dest="EPG_trimmingradius", type=float, default=np.inf,
                         help="maximal distance of point from a node to affect its embedment") 
-    parser.add_argument("--EPG_prob",dest="EPG_prob", type=float, default=1.0,
-                        help="probability of including a single point for each computation") 
-    parser.add_argument("--EPG_finalenergy",dest="EPG_finalenergy", default='Penalized',
-                        help="Indicating the final elastic emergy associated with the configuration. It can be Base or Penalized ")
     parser.add_argument("--EPG_alpha",dest="EPG_alpha", type=float, default=0.02,
                         help="positive numeric, the value of the alpha parameter of the penalized elastic energy") 
-    parser.add_argument("--EPG_beta",dest="EPG_beta", type=float, default=0.0,
-                        help="positive numeric, the value of the beta parameter of the penalized elastic energy") 
     parser.add_argument("--EPG_collapse",dest="flag_EPG_collapse", action="store_true",
                         help="collapsing small branches")
     parser.add_argument("--EPG_collapse_mode",dest="EPG_collapse_mode", default ="PointNumber",
@@ -273,8 +266,8 @@ def main():
 
 
     args = parser.parse_args()
-    if args.input_filename is None and args.new_filename is None and args.atac_counts is None and args.atac_zscore is None:
-       parser.error("at least one of -m,--atac_counts,--atac_zscore,or --new required") 
+    if (args.input_filename is None) and (args.new_filename is None) and (args.atac_counts is None):
+       parser.error("at least one of -m,--atac_counts, or --new required") 
 
     new_filename = args.new_filename
     new_label_filename = args.new_label_filename
@@ -311,19 +304,15 @@ def main():
     atac_counts = args.atac_counts
     atac_samples = args.atac_samples
     atac_k = args.atac_k
-    atac_zscore = args.atac_zscore
+    flag_atac_zscore = args.flag_atac_zscore
     lle_n_nb_percent = args.lle_n_nb_percent #LLE neighbour percent
     lle_n_component = args.lle_n_component #LLE dimension reduction
     AP_damping_factor = args.AP_damping_factor
     EPG_n_nodes = args.EPG_n_nodes 
-    EPG_n_rep = args.EPG_n_rep
     EPG_lambda = args.EPG_lambda
     EPG_mu = args.EPG_mu
     EPG_trimmingradius = args.EPG_trimmingradius
-    EPG_prob = args.EPG_prob
-    EPG_finalenergy = args.EPG_finalenergy
     EPG_alpha = args.EPG_alpha
-    EPG_beta = args.EPG_beta
     flag_EPG_collapse = args.flag_EPG_collapse
     EPG_collapse_mode = args.EPG_collapse_mode
     EPG_collapse_par = args.EPG_collapse_par
@@ -360,13 +349,20 @@ def main():
             adata = st.read(file_name='stream_result.pkl',file_format='pkl',file_path=workdir)
         else:
             if(flag_atac):
-                if(atac_zscore is None):
+                if(input_filename is None):
                     print('Reading in atac seq data...')
                     adata = st.read(atac_counts,file_name_sample=atac_samples,file_name_region=atac_regions,experiment='atac-seq',workdir=workdir)
                     adata = st.counts_to_kmers(adata,k=atac_k,n_jobs = n_processes)
+                    if(flag_atac_zscore):
+                        print('Generating atac zscore matrix...')
+                        df_zscore = pd.DataFrame(adata.X.T,columns=adata.obs_names,index=adata.var_names)
+                        df_zscore.to_csv(os.path.join(workdir,'zscore.tsv'),sep = '\t')
+                        sys.exit(0)
+                        print('Finished')
                 else:
-                    print('Reading in atac zscore file...')
-                    adata = st.read(file_name=atac_zscore,file_format='pkl',workdir=workdir)
+                    print('Reading in atac zscore matrix...')
+                    adata = st.read(file_name=input_filename,workdir=workdir)
+                    adata.uns['experiment'] = 'atac-seq'
             else:
                 adata=st.read(file_name=input_filename,workdir=workdir)
                 print('Input: '+ str(adata.obs.shape[0]) + ' cells, ' + str(adata.var.shape[0]) + ' genes')
@@ -415,19 +411,19 @@ def main():
             st.plot_branches(adata,save_fig=flag_savefig,fig_name='elastic_principal_graph_skeleton.pdf')
             st.plot_branches_with_cells(adata,save_fig=flag_savefig,fig_name='elastic_principal_graph.pdf')            
             if(not flag_disable_EPG_optimize):
-                st.optimize_branching(adata)
+                st.optimize_branching(adata,epg_trimmingradius=EPG_trimmingradius)
                 st.plot_branches(adata,save_fig=flag_savefig,fig_name='optimizing_elastic_principal_graph_skeleton.pdf')
                 st.plot_branches_with_cells(adata,save_fig=flag_savefig,fig_name='optimizing_elastic_principal_graph.pdf')   
             if(flag_EPG_shift):
-                st.shift_branching(adata,epg_shift_mode = EPG_shift_mode,epg_shift_radius = EPG_shift_DR,epg_shift_max=EPG_shift_maxshift)
+                st.shift_branching(adata,epg_shift_mode = EPG_shift_mode,epg_shift_radius = EPG_shift_DR,epg_shift_max=EPG_shift_maxshift,epg_trimmingradius=EPG_trimmingradius)
                 st.plot_branches(adata,save_fig=flag_savefig,fig_name='shifting_elastic_principal_graph_skeleton.pdf')
                 st.plot_branches_with_cells(adata,save_fig=flag_savefig,fig_name='shifting_elastic_principal_graph.pdf')
             if(flag_EPG_collapse):
-                st.prune_elastic_principal_graph(adata,epg_collapse_mode=EPG_collapse_mode, epg_collapse_par = EPG_collapse_par)
+                st.prune_elastic_principal_graph(adata,epg_collapse_mode=EPG_collapse_mode, epg_collapse_par = EPG_collapse_par,epg_trimmingradius=EPG_trimmingradius)
                 st.plot_branches(adata,save_fig=flag_savefig,fig_name='pruning_elastic_principal_graph_skeleton.pdf')
                 st.plot_branches_with_cells(adata,save_fig=flag_savefig,fig_name='pruning_elastic_principal_graph.pdf')
             if(not flag_disable_EPG_ext):
-                st.extend_elastic_principal_graph(adata,epg_ext_mode = EPG_ext_mode, epg_ext_par = EPG_ext_par)
+                st.extend_elastic_principal_graph(adata,epg_ext_mode = EPG_ext_mode, epg_ext_par = EPG_ext_par,epg_trimmingradius=EPG_trimmingradius)
                 st.plot_branches(adata,save_fig=flag_savefig,fig_name='extending_elastic_principal_graph_skeleton.pdf')
                 st.plot_branches_with_cells(adata,save_fig=flag_savefig,fig_name='extending_elastic_principal_graph.pdf')
             st.plot_branches(adata,save_fig=flag_savefig,fig_name='finalized_elastic_principal_graph_skeleton.pdf')
