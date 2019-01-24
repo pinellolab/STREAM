@@ -61,7 +61,6 @@ To get an image of STREAM, simply execute the following command:
 $ docker pull pinellolab/stream
 ```
 
-
 Basic usage of *docker run* 
 
 ```sh
@@ -78,17 +77,9 @@ OPTIONS:
 STREAM interactive website
 --------------------------
 
-In order to make STREAM user friendly and accessible to non-bioinformatician, we have created an interactive website: [http://stream.pinellolab.org](http://stream.pinellolab.org) The website implements all the features of the command line version and in addition provides interactive and exploratory panels to zoom and visualize single-cells on any given branch.
+In order to make STREAM user friendly and accessible to non-bioinformatician, we have created an interactive website: [http://stream.pinellolab.org](http://stream.pinellolab.org)
 
-The website offers two functions: 1) To run STREAM on single-cell transcriptomic or epigenomic data provided by the users. 2) The first interactive database of precomputed trajectories with results for seven published datasets. The users can visualize and explore cells’ developmental trajectories, subpopulations and their gene expression patterns at single-cell level. 
-
-The website can also run on a local machine using the provided Docker image we have created. To run the website in a local machine after the Docker installation, from the command line execute the following command:
-```sh
-$ docker run -p 10001:10001 pinellolab/stream STREAM_webapp
-```
-
-After the execution of the command the user will have a local instance of the website accessible at the URL: 
-[http://localhost:10001](http://localhost:10001)
+The website can also run on a local machine. More details can be found [https://github.com/pinellolab/STREAM_web](https://github.com/pinellolab/STREAM_web)
 
 
 STREAM command line interface
@@ -99,10 +90,10 @@ To run STREAM at the command-line interface:
 * start a terminal session;
 
 For **Mac OS**:
-* enter ```docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM --help [options]```
+* enter ```docker run  -v $PWD:/data -w /data  pinellolab/stream --help [options]```
 
 For **Windows**:
-* enter ```docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM --help [options]```
+* enter ```docker run  -v ${pwd}:/data -w /data  pinellolab/stream --help [options]```
 
 Users can specify the following options:
 ```
@@ -114,12 +105,12 @@ file name of cell labels (default: None)
 file name of cell label colors (default: None)
 -s, --select_features  
 LOESS, PCA, all: Select variable genes using LOESS or top principal components using PCA or keep all the gene (default: LOESS)
--f, --feature_genes  
-specified feature genes (default: None)
--t, --detect_TG_genes  
+--TG  
 detect transition genes automatically
--d, --detect_DE_genes  
+--DE  
 detect DE genes automatically
+--LG  
+etect leaf genes automatically
 -g, --gene_list  
 genes to visualize, it can either be filename which contains all the genes in one column or a set of gene names separated by comma (default: None)
 -p, --use_precomputed  
@@ -138,12 +129,12 @@ scATAC-seq regions file name in .tsv or .tsv.gz format. Regions file contains th
 scATAC-seq samples file name in .tsv or tsv.gz. Samples file contains one column of cell names  (default: None)
 --atac_k
 specify k-mers length for scATAC-seq analysis (default: 7)
+--atac_zscore  
+Indicate precomputed atac zscore matrix file
 --n_processes  
 Specify the number of processes to use. (default, all the available cores).
 --loess_frac  
 The fraction of the data used in LOESS regression (default: 0.1)
---pca_max_PC  
-Maximal principal components in PCA (default: 100)
 --pca_first_PC  
 keep first PC
 --pca_n_PC  
@@ -164,38 +155,44 @@ lambda parameter used to compute the elastic energy (default: 0.02)
 mu parameter used to compute the elastic energy (default: 0.1)
 --EPG_trimmingradius
 maximal distance of point from a node to affect its embedment (default: Inf)
---EPG_finalenergy
-indicating the final elastic energy associated with the configuration. It can be 'Base' or 'Penalized' (default: 'Penalized')
---EPG_alpha
+--EPG_alpha  
 positive numeric, alpha parameter of the penalized elastic energy (default: 0.02)
---disable_EPG_collapse
-disable collapsing small branches
---EPG_collapse_mode
+--disable_EPG_optimize  
+disable optimizing branching  
+--EPG_collapse  
+Collapsing small branches
+--EPG_collapse_mode  
 the mode used to collapse branches. It can be 'PointNumber','PointNumber_Extrema', 'PointNumber_Leaves','EdgesNumber' or 'EdgesLength' (default:'PointNumber')
---EPG_collapse_par
+--EPG_collapse_par  
 the control parameter used for collapsing small branches
 --EPG_shift
 shift branching point 
---EPG_shift_mode
+--EPG_shift_mode  
 the mode to use to shift the branching points 'NodePoints' or 'NodeDensity' (default: NodeDensity)
---EPG_shift_DR
+--EPG_shift_DR  
 positive numeric, the radius used when computing point density if EPG_shift_mode is 'NodeDensity' (default:0.05)
---EPG_shift_maxshift
+--EPG_shift_maxshift  
 positive integer, the maximum distance (number of edges) to consider when exploring the branching point neighborhood (default:5)
---disable_EPG_ext
+--disable_EPG_ext  
 disable extending leaves with additional nodes
---EPG_ext_mode
+--EPG_ext_mode  
 the mode used to extend the graph. It can be 'QuantDists', 'QuantCentroid' or 'WeigthedCentroid'. (default: QuantDists)
---EPG_ext_par
+--EPG_ext_par  
 the control parameter used for contribution of the different data points when extending leaves with nodes (default: 0.5)
---DE_z_score_cutoff  
-Differentially Expressed Genes Z-score cutoff (default: 2)
---DE_diff_cutoff  
-Differentially Expressed Genes difference cutoff (default: 0.2)
+--DE_zscore_cutoff  
+Differentially Expressed Genes z-score cutoff (default: 2)
+--DE_logfc_cutoff  
+Differentially Expressed Genes log fold change cutoff (default: 0.25)  
 --TG_spearman_cutoff  
 Transition Genes Spearman correlation cutoff (default: 0.4)
---TG_diff_cutoff  
-Transition Genes difference cutoff (default: 0.2)
+--TG_logfc_cutoff  
+Transition Genes log fold change cutoff (default: 0.25)
+--LG_zscore_cutoff  
+Leaf Genes z-score cutoff (default: 1.5)
+--LG_pvalue_cutoff  
+Leaf Genes p value cutoff (default: 1e-2)
+----umap  
+Whether to use UMAP for visualization (default: No)
 --stream_log_view
 use log2 scale for y axis of stream_plot 
 --for_web
@@ -209,7 +206,6 @@ filename of new cell labels (default: None)
 --new_c  
 filename of new cell label colors (default: None)
 ```
-
 
 
 Input file format
@@ -226,13 +222,13 @@ For example, in python
 >input_data.iloc[0:5,0:5]
 ```
 
-|        | HSC1      | HSC1.1    | HSC1.2    | HSC1.3    | HSC1.4   |
+|        | HSPC_025      | HSC1.1    | HSPC_037    | LT-HSC_001    | HSPC_001   |
 |--------|-----------|-----------|-----------|-----------|----------|
-| CD52   | 6.479620  | 0.000000  | 0.000000  | 5.550051  | 0.000000 |
-| Ifitm1 | 11.688533 | 11.390682 | 10.561844 | 11.874295 | 8.976571 |
-| Cdkn3  | 0.000000  | 0.000000  | 0.000000  | 0.000000  | 8.293616 |
-| Ly6a   | 10.417026 | 11.452145 | 0.000000  | 8.158840  | 8.945882 |
-| Bax    | 6.911608  | 10.201157 | 0.000000  | 9.396073  | 0.000000 |
+| Clec1b   | 0.000000  | 0.000000  | 0.000000  | 0.000000  | 0.000000 |
+| Kdm3a | 4.891604 | 6.877725 | 0.000000 | 0.000000 | 0.000000 |
+| Coro2b  | 1.426148  | 0.000000  | 6.913384  | 8.178374  | 9.475577 |
+| 8430408G22Rik   | 0.000000 | 0.000000 | 0.000000  | 0.000000  | 0.000000 |
+| Clec9a    | 0.000000  | 0.000000 | 0.000000  | 0.000000  | 0.000000 |
 
 In addition, it is possible to provide these optional files in .tsv or .tsv.gz format: 
 
@@ -240,45 +236,32 @@ In addition, it is possible to provide these optional files in .tsv or .tsv.gz f
 
 |        |
 |--------|
-| HSC    | 
-| HSC    | 
-| GMP    |
-| MEP    |
-| MEP    |
-| GMP    |
+| MPP    | 
+| MPP    | 
+| MPP    |
+| HSC    |
+| MPP    |
 
 **cell_label_color** file: .tsv or .tsv.gz format. Customized colors to use for the different cell labels. The first column specifies cell labels and the second column specifies the color in the format of hex. No header is necessary:
 
 |       |         | 
 |-------|---------|
-| HSC   | #7DD2D9 | 
-| MPP   | #FFA500 |
-| CMP   | #e55b54 |
-| GMP   | #5dab5a |
-| MEP   | #166FD5 |
-| CLP   | #989797 |
+| HSC   | #40bdbd | 
+| MPP   | #eea113 |
+| CMP   | #d84f40 |
+| GMP   | #10b460 |
+| MEP   | #286ee1 |
+| LMPP   | #7c5246 |
 
 **gene_list** file: .tsv or .tsv.gz format. It contains genes that users may be interested in visualizing in subway map and stream plot. Genes are listed in one column. No header is necessary: 
 
 |        |
 |--------|
-| Ifitm1 | 
-| Cdkn3  | 
-| Ly6a   |
-| CD52   |
-| Foxo1  |
-| GMP    |
-
-**feature_genes** file: .tsv or .tsv.gz format. It contains genes that the user can specify and that are used as features to infer trajectories. instead of using the automatic feature selection of STREAM. No header is necessary:
-
-|        |
-|--------|
-| Gata1  | 
-| Pax5   | 
-| CD63   |
-| Klf1   |
-| Lmo2   |
-| GMP    |
+| Gata1 | 
+| Mpo  | 
+| Car2   |
+| Prtn3   |
+| Tmsb4x  |
 
 
 #### **Epigenomic data**
@@ -333,18 +316,8 @@ To perform scATAC-seq trajectory inference analysis, the main input can be:
 Example
 --------
 
-All the datasets used in the following examples can be found under the directory **./Datasets**
-
-To download the datasets, 
-
-```
-$ git clone https://github.com/pinellolab/STREAM.git
-$ cd STREAM/Datasets/
-```
-
-Or they can also be downloaded using the following Dropbox link: 
-[https://www.dropbox.com/sh/xnw9ro22bgrz2pa/AADQWmyCjUekg3hudvhsrAWka?dl=0](https://www.dropbox.com/sh/xnw9ro22bgrz2pa/AADQWmyCjUekg3hudvhsrAWka?dl=0)
-
+All the datasets used in the following examples can also be downloaded using the following Dropbox link: 
+[https://www.dropbox.com/sh/n8qq4m7w17i6b07/AAAro_qY_-q5VBDC1sZg-LE5a?dl=0](https://www.dropbox.com/sh/n8qq4m7w17i6b07/AAAro_qY_-q5VBDC1sZg-LE5a?dl=0)
 
 Please note that for large dataset analysis it'll be necessary to increase the default allocated memory of container. Especially, for scACTA-seq analysis based on **counts_file**,
 
@@ -352,76 +325,87 @@ Please note that for large dataset analysis it'll be necessary to increase the d
 
 ### **Transcriptomic data**
 
-Using the example data provided: data_Guo.tsv.gz, ell_label.tsv.gz and cell_label_color.tsv.gz, and assuming that **they are in the current folder**, to perform trajectories analysis, users can simply run a single command (By default, LOESS is used to select most variable gene. For qPCR data, the number of genes is relatively small and often preselected, it this case it may be necessary to keep all the genes as features by setting the flag -s all):
+Using the example data provided: data_Nestorowa.tsv.gz, cell_label.tsv.gz and cell_label_color.tsv.gz, and assuming that **they are in the current folder**, to perform trajectory inference analysis, users can simply run a single command:
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
 ```
 
-To visualize genes of interest, user can provide a gene list file, for example: gene_list.tsv and add the flag  -p to use the precomputed file obtained from the first running (in this way, the analysis can will not restart from the beginning and other existing figures will not be re-generated):
+If cell labels are not available or no customized cell label color file is available, users can also omit '-l' or '-c'
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -g gene_list.tsv.gz -p
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -g gene_list.tsv.gz -p
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz
+```
+
+To visualize genes of interest, user can provide a gene list file, for example: gene_list.tsv and add the flag  **-p** to use the precomputed file obtained from the first running (in this way, the analysis can will not restart from the beginning and other existing figures will not be re-generated):
+
+For **Mac OS**:
+```sh
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
+```
+For **Windows**:
+```sh
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
 ```
 
 Users can also provide a set of gene names separated by comma:
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -g Gata1,Pax5 -p
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -p
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -g Gata1,Pax5 -p
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -p
 ```
 
-To explore potential marker genes, it is possible to add the flags -d or -t to detect DE (differentially expressed) genes and transition gens respectively. The top 10 DE (any pair of branches) and transition genes (any branch) are automatically plotted:
+To explore potential marker genes, it is possible to add the flags --DE, --TG, or --LG  to detect DE (differentially expressed) genes, transition gens, and leaf genes respectively:
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -d -t
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --DE --TG --LG -p
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m data_Guo.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -s all -d -t
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --DE --TG --LG -p
 ```
 
 ### **Mapping**
 
-To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Moore_qPCR_WT.tsv.gz, data_mapping.tsv (Moore, F.E. et al.2016) as an example. We assume that **all the datasets are in the current folder**.
+To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Olsson.tsv.gz, data_perturbation.tsv (Olsson, A. et al.2016) as an example. We assume that **all the datasets are in the current folder**.
 
-Users first need to run the following command to get initial inferred trajetories:
-
-For **Mac OS**:
-```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Moore_qPCR_WT.tsv.gz -s all --EPG_shift --EPG_trimmingradius 0.1 -o STREAM_result
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m data_Moore_qPCR_WT.tsv.gz -s all --EPG_shift --EPG_trimmingradius 0.1 -o STREAM_result
-```
-
-To map the labelled cells to the inferred trajectories, users need to specify the same output direcotry by executing the following command:
+Users first need to run the following command to get initial inferred trajetories from wild-type cells:
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -o STREAM_result --new data_mapping.tsv.gz --new_l cell_labels_mapping.tsv.gz --new_c cell_labels_mapping_color.tsv.gz 
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Olsson.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4 --EPG_shift 
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -o STREAM_result --new data_mapping.tsv.gz --new_l cell_labels_mapping.tsv.gz --new_c cell_labels_mapping_color.tsv.gz 
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Olsson.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4 --EPG_shift
 ```
-After running this command,  a folder named **'Mapping_Result'** will be created under **'/users_path/STREAM_result'** along with all the mapping analysis results.
+
+To map the genetically perturbed cells to the inferred trajectories, users can execute the following command:
+
+For **Mac OS**:
+```sh
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream --new data_perturbation.tsv.gz --new_l cell_perturbation_label.tsv.gz --new_c cell_perturbation_label_color.tsv.gz 
+```
+For **Windows**:
+```sh
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --new data_perturbation.tsv.gz --new_l cell_perturbation_label.tsv.gz --new_c cell_perturbation_label_color.tsv.gz
+```
+After running this command,  a folder named **'mapping_result'** will be created under the current directory along with all the mapping analysis results.
 
 
 ### **scATAC-seq data**
@@ -432,35 +416,38 @@ Using these three files, users can run STREAM with the following command (note t
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM --atac -s PCA --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM --atac -s PCA --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
 
-This command will generate a file named **df_zscores_scaled.tsv**. It’s a tab-delimited z-score matrix with k-mers in row and cells in column. Each entry is a scaled z-score of the accessibility of each k-mer across cells. This operation is time consuming and it may take a couple of hours with a modest machine. STREAM also provides the option to take as input a precomputed z-score file from the previous step, for example to recover trajectories when increasing the dimensionality of the manifold. Using a precomputed z-score file, users can run STREAM with the following command:
+This command may take a couple of hours with a modest machine because the conversion from counts to k-mer z-score is time-consuming. Therefore STREAM also provides the option to take as input a precomputed z-score file. 
+
+First, the z-score file can be obtained with the following command (add **--atac_zscore**):
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m df_zscores_scaled.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac -s PCA
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac_zscore
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m df_zscores_scaled.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac -s PCA
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac_zscore
 ```
-or 
+
+The above command will generate a file named **'zscore.tsv'**. It’s a tab-delimited z-score matrix with k-mers in row and cells in column. Each entry is a scaled z-score of the accessibility of each k-mer across cells. 
+
+Second, take z-score file as input to infer trajectories:
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream STREAM -m data_Buenrostro_7mer_scaled.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac -s PCA
+$ docker run  -v $PWD:/data -w /data pinellolab/stream --atac -m zscore.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream STREAM -m data_Buenrostro_7mer_scaled.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac -s PCA
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --atac -m zscore.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
-
-Here the file **'data_Buenrostro_7mer_scaled.tsv.gz'** is the same as **'df_zscores_scaled.tsv'**.
 
 
 Output description
@@ -468,23 +455,34 @@ Output description
 
 STREAM write all the results by default in the folder STREAM_results, unless a different directory is specified by the user with the flag -o. This folder contains the following files and directories:
 
-*   **LLE.pdf**: projected cells in the MLLE 3D space.
-*   **EPG.pdf**: elastic principal graph fitted by ElPiGraph in 3D space
-*   **flat_tree.pdf**: 2D single-cell level flat tree plot 
-*   **nodes.tsv**: positions of nodes (or states) in the flat_tree plot
-*   **edges.tsv**: edges information in the flat_tree plot
-*   **cell_info.tsv**: Cell information file. Column 'CELL_ID', the cell names in the input file. Column 'Branch', the branch id a cell is assigned to. The branch id is encoded by the two cell states. Column 'lam',  the location on a branch, which is the arc length from the first cell state of branch id to the projection of the cell on that branch. Column 'dist', the euclidian distance between the cell and its projection on the branch.
-*   sub-folder **'Transition_Genes'** contains several files, one for each branch id, for example for (S1,S2):
-    - **Transition_Genes_S1_S2.png**: Detected transition genes plot for branch S1_S2. Orange bars are genes whose expression values increase from state S1 to S2 and green bars are genes whose expression values decrease from S1 to S2
-    - **Transition_Genes_S1_S2.tsv**: Table that stores information of detected transition genes for branch S1_S2.
-*   sub-folder **'DE_Genes'** contains several files, one for each pair of branches, for example for (S1,S2) and (S3,S2):
-    - **DE_genes_S1_S2 and S3_S2.png**: Detected differentially expressed top 15 genes plot. Red bars are genes that have higher gene expression in branch S1_S2, blue bars are genes that have higher gene expression in branch S3_S2
-    - **DE_up_genes_S1_S2 and S3_S2.tsv**: Table that stores information of DE genes that have higher expression in branch S1_S2.
-    - **DE_down_genes_S1_S2 and S3_S2.tsv**: Table that stores information of DE genes that have higher expression in branch S3_S2.
-    sub-folder **'S0'**: Set of linearized plots (subway and stream plots) for each of the cell states, for example, choosing S0 state as root state:   
+*   **std_vs_means.pdf**: selected most variable genes.
+*   **dimension_reduction.pdf**: projected cells in the MLLE 3D space.
+*   **seed_elastic_principal_graph_skeleton.pdf**: the initial structure skeleton with all the nodes and edges.
+*   **seed_elastic_principal_graph.pdf**: the initial structure with cells.
+*   **ElPiGraph_analysis.pdf**: the log of ElPiGraph strucuture learning.
+*   **elastic_principal_graph_skeleton.pdf**: the elastic principal graph skeleton.
+*   **elastic_principal_graph.pdf**: the elastic principal graph with cells.
+*   **optimizing_elastic_principal_graph_skeleton.pdf**: the elastic principal graph skeleton after optimizing branching.
+*   **optimizing_elastic_principal_graph.pdf**: the elastic principal graph with cells after optimizing branching.
+*   **extending_elastic_principal_graph_skeleton.pdf**: the elastic principal graph with cells after extending leaf nodes.
+*   **extending_elastic_principal_graph.pdf**: the elastic principal graph skeleton after extending leaf nodes.
+*   **finalized_elastic_principal_graph_skeleton.pdf**: the finalized elastic principal graph skeleton.
+*   **finalized_elastic_principal_graph.pdf**: the finalized elastic principal graph with cells.
+*   **flat_tree.pdf**: flat tree plot.
+*   **cell_info.tsv**: cell information file containing branch assignment id and pseudotime.
+*	**stream_result.pkl**: stores anndata object from the analysis. It can be imported later to reproduce the whole analysis.
+*   sub-folder **'transition_genes'** contains several files, one for each branch id, for example for (S0,S1):
+    - **transition_genes_S0_S1.pdf**: Detected transition genes plot for branch S0_S1. Orange bars are genes whose expression values increase from state S0 to S1 and green bars are genes whose expression values decrease from S0 to S1
+    - **transition_genes_S0_S1.tsv**: Table that stores information of detected transition genes for branch S1_S2.
+*   sub-folder **'de_genes'** contains several files, one for each pair of branches, for example for (S0,S1) and (S0,S2):
+    - **de_genes_S0_S1 and S0_S2.pdf**: Detected differentially expressed top 15 genes plot. Red bars are genes that have higher gene expression in branch S0_S1, blue bars are genes that have higher gene expression in branch S0_S2
+    - **de_genes_greater_S0_S1 and S0_S2.tsv**: Table that stores information of DE genes that have higher expression in branch S0_S1.
+    - **de_genes_less_S0_S1 and S0_S2.tsv**: Table that stores information of DE genes that have higher expression in branch S0_S2.
+*   sub-folder **'leaf_genes'** contains several files:
+    - **leaf_genes.tsv**: Table that stores information of leaf genes from all branches.
+    - **leaf_genesS0_S1.tsv**: Table that stores information of leaf genes from branch S0_S1.
+*	sub-folder **'S0'**: contains subway and stream plots for each of the cell states, for example, choosing S0 state as root state:   
     - **subway_map.pdf**: single-cell level cellular branches plot
     - **stream_plot.pdf**: density level cellular branches plot
     - **subway_map_gene.pdf**: gene expression pattern on subway map plot
     - **stream_plot_gene.pdf**: gene expression pattern on stream plot
-*   sub-folder **'Precomputed'**:
-    - It contains files that store computed variables used when the flag -p is enabled.
