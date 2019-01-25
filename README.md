@@ -193,8 +193,10 @@ Transition Genes log fold change cutoff (default: 0.25)
 Leaf Genes z-score cutoff (default: 1.5)
 --LG_pvalue_cutoff  
 Leaf Genes p value cutoff (default: 1e-2)
-----umap  
-Whether to use UMAP for visualization (default: No)
+--umap  
+Whether to use UMAP for visualization (default: No)  
+-r
+root node for subwaymap_plot and stream_plot (default:None)  
 --stream_log_view
 use log2 scale for y axis of stream_plot 
 --for_web
@@ -360,15 +362,15 @@ For **Windows**:
 $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
 ```
 
-Users can also provide a set of gene names separated by comma:
+Users can also provide a set of gene names separated by comma or specify the root by adding **-r**:
 
 For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -p
+$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -r S1 -p
 ```
 For **Windows**:
 ```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -p
+$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -r S1 -p
 ```
 
 To explore potential marker genes, it is possible to add the flags **--DE**, **--TG**, or **--LG** to detect DE (differentially expressed) genes, transition gens, and leaf genes respectively:

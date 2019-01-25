@@ -14,6 +14,8 @@ RUN conda config --add channels defaults
 RUN conda config --add channels conda-forge
 RUN conda config --add channels bioconda
 
+RUN apt-get update && apt-get install gsl-bin libgsl0-dev -y
+
 #Install stream package
 RUN conda install stream
 
