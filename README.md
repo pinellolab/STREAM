@@ -6,6 +6,8 @@
 
 STREAM (**S**ingle-cell **T**rajectories **R**econstruction, **E**xploration **A**nd **M**apping) is an interactive pipeline capable of disentangling and visualizing complex branching trajectories from both single-cell transcriptomic and epigenomic data.
 
+Please cite our preprint [H Chen, L Albergante, JY Hsu, CA Lareau, GL Bosco, J Guan, S Zhou, AN Gorban, DE Bauer, MJ Aryee, DM Langenau, A Zinovyev, JD Buenrostro, GC Yuan, L Pinello. STREAM: Single-cell Trajectories Reconstruction, Exploration And Mapping of omics data. bioRxiv (2018).](https://www.biorxiv.org/content/10.1101/302554v2) if you find STREAM helpful for your research.
+
 <img src="https://github.com/pinellolab/STREAM/blob/stream_python2/STREAM/static/images/Figure1.png">
 
 STREAM is available as user-friendly open source software and can be used interactively as a web-application at [stream.pinellolab.org](http://stream.pinellolab.org/), as a bioconda package [https://bioconda.github.io/recipes/stream/README.html](https://bioconda.github.io/recipes/stream/README.html) and as a standalone command-line tool with Docker [https://github.com/pinellolab/STREAM](https://github.com/pinellolab/STREAM)
@@ -85,7 +87,7 @@ The website can also run on a local machine. More details can be found [https://
 STREAM command line interface
 -----------------------------
 
-Please note that STREAM command line is a streamlined script of 'stream' bioconda package. Some parameters and functions are not supported in STREAM command line. To get a more flexible and advanced analysis, please check out our bioconda tutorial notebooks.
+Please note that **STREAM command line is a streamlined script of 'stream' bioconda package. Some parameters and functions are not supported in STREAM command line.** To get a more flexible and advanced analysis, please check out our bioconda tutorial notebooks.
 
 To run STREAM at the command-line interface:
 
@@ -490,3 +492,6 @@ STREAM write all the results by default in the folder **stream_result**, unless 
     - **stream_plot.pdf**: density level cellular branches plot
     - **subway_map_gene.pdf**: gene expression pattern on subway map plot
     - **stream_plot_gene.pdf**: gene expression pattern on stream plot
+
+
+Credits: H Chen, L Albergante, JY Hsu, CA Lareau, GL Bosco, J Guan, S Zhou, AN Gorban, DE Bauer, MJ Aryee, DM Langenau, A Zinovyev, JD Buenrostro, GC Yuan, L Pinello
