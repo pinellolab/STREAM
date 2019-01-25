@@ -85,6 +85,8 @@ The website can also run on a local machine. More details can be found [https://
 STREAM command line interface
 -----------------------------
 
+Please note that STREAM command line is a streamlined script of 'stream' bioconda package. Some parameters and functions are not supported in STREAM command line. To get a more flexible and advanced analysis, please check out our bioconda tutorial notebooks.
+
 To run STREAM at the command-line interface:
 
 * start a terminal session;
@@ -319,13 +321,13 @@ Example
 All the datasets used in the following examples can also be downloaded using the following Dropbox link: 
 [https://www.dropbox.com/sh/n8qq4m7w17i6b07/AAAro_qY_-q5VBDC1sZg-LE5a?dl=0](https://www.dropbox.com/sh/n8qq4m7w17i6b07/AAAro_qY_-q5VBDC1sZg-LE5a?dl=0)
 
-Please note that for large dataset analysis it'll be necessary to increase the default allocated memory of container. Especially, for scACTA-seq analysis based on **counts_file**,
+Please note that for large dataset analysis it'll be necessary to increase the default allocated memory of container.
 
-<img src="https://github.com/pinellolab/STREAM/blob/stream_python2/STREAM/static/images/docker.png" width="50%">
+<img src="https://github.com/pinellolab/STREAM/blob/stream_python2/STREAM/static/images/docker.png" width="30%">
 
 ### **Transcriptomic data**
 
-Using the example data provided: data_Nestorowa.tsv.gz, cell_label.tsv.gz and cell_label_color.tsv.gz, and assuming that **they are in the current folder**, to perform trajectory inference analysis, users can simply run a single command:
+Here we we take a single cell RNA-seq dataset as an example,including data_Nestorowa.tsv.gz, cell_label.tsv.gz and cell_label_color.tsv.gz (Nestorowa, S. et al.,2016), and assuming that **they are in the current folder**, to perform trajectory inference analysis, users can simply run a single command:
 
 For **Mac OS**:
 ```sh
@@ -336,7 +338,7 @@ For **Windows**:
 $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
 ```
 
-If cell labels are not available or no customized cell label color file is available, users can also omit '-l' or '-c'
+If cell labels are not available or no customized cell label color file is available, **-l** or **-c** can also be omitted
 
 For **Mac OS**:
 ```sh
@@ -347,7 +349,7 @@ For **Windows**:
 $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz
 ```
 
-To visualize genes of interest, user can provide a gene list file, for example: gene_list.tsv and add the flag  **-p** to use the precomputed file obtained from the first running (in this way, the analysis can will not restart from the beginning and other existing figures will not be re-generated):
+To visualize genes of interest, user can provide a gene list file by adding **-g**, for example: gene_list.tsv.gz. Meanwhile, by adding the flag  **-p**, STREAM will use the precomputed file obtained from the first running (In this way, STREAM will import precomupted pkl file so the analysis will skip structure learning part and only execute the step of visualizing genes):
 
 For **Mac OS**:
 ```sh
@@ -369,7 +371,7 @@ For **Windows**:
 $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -p
 ```
 
-To explore potential marker genes, it is possible to add the flags --DE, --TG, or --LG  to detect DE (differentially expressed) genes, transition gens, and leaf genes respectively:
+To explore potential marker genes, it is possible to add the flags **--DE**, **--TG**, or **--LG** to detect DE (differentially expressed) genes, transition gens, and leaf genes respectively:
 
 For **Mac OS**:
 ```sh
@@ -382,7 +384,7 @@ $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.
 
 ### **Mapping**
 
-To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Olsson.tsv.gz, data_perturbation.tsv (Olsson, A. et al.2016) as an example. We assume that **all the datasets are in the current folder**.
+To explore the feature **mapping**, users need to provide two dataset, one is used for inferring trajectories. The other is the dataset that is going to be mapped to the inferred trajectories. Here we take data_Olsson.tsv.gz, data_perturbation.tsv (Olsson, A. et al.,2016) as an example. We assume that **all the datasets are in the current folder**.
 
 Users first need to run the following command to get initial inferred trajetories from wild-type cells:
 
@@ -410,7 +412,7 @@ After running this command,  a folder named **'mapping_result'** will be created
 
 ### **scATAC-seq data**
 
-To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format. We assume that **they are in the current folder**.
+To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format. (Buenrostro, J.D. et al., 2018). We assume that **they are in the current folder**.
 
 Using these three files, users can run STREAM with the following command (note the flag **--atac** ):
 
@@ -453,7 +455,7 @@ $ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --atac -m zscore.tsv.g
 Output description
 ------------------
 
-STREAM write all the results by default in the folder STREAM_results, unless a different directory is specified by the user with the flag -o. This folder contains the following files and directories:
+STREAM write all the results by default in the folder **stream_result**, unless a different directory is specified by the user with the flag **-o**. This folder mainly contains the following files and directories:
 
 *   **std_vs_means.pdf**: selected most variable genes.
 *   **dimension_reduction.pdf**: projected cells in the MLLE 3D space.
