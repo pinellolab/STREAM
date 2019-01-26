@@ -2863,21 +2863,21 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
             y_st = dict_shift_dist[edge_i]
             for cellname in cell_list_sorted:
                 ##top line
-                px_top = df_bins_top.loc['center',map(lambda x: 'win' + str(x), id_wins)]
-                py_top = df_bins_top.loc[cellname,map(lambda x: 'win' + str(x), id_wins)]
+                px_top = df_bins_top.loc['center',list(map(lambda x: 'win' + str(x), id_wins))]
+                py_top = df_bins_top.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))]
                 px_top_prime = x_st  + px_top
                 py_top_prime = y_st  + py_top
                 dict_ep_top[cellname][edge_i] = [px_top_prime[-1],py_top_prime[-1]]
-                df_top_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = px_top_prime
-                df_top_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = py_top_prime
+                df_top_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = px_top_prime
+                df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = py_top_prime
                 ##base line
-                px_base = df_bins_base.loc['center',map(lambda x: 'win' + str(x), id_wins)]
-                py_base = df_bins_base.loc[cellname,map(lambda x: 'win' + str(x), id_wins)]
+                px_base = df_bins_base.loc['center',list(map(lambda x: 'win' + str(x), id_wins))]
+                py_base = df_bins_base.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))]
                 px_base_prime = x_st + px_base
                 py_base_prime = y_st + py_base
                 dict_ep_base[cellname][edge_i] = [px_base_prime[-1],py_base_prime[-1]]
-                df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = px_base_prime
-                df_base_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = py_base_prime
+                df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = px_base_prime
+                df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = py_base_prime
             dict_ep_center[edge_i] = np.array([px_top_prime[-1], y_st])
 
         id_wins_start = [i for i,x in enumerate(df_bins_cumsum_norm.loc['edge',:]) if x[0]==(node_start,node_start)]
@@ -2886,19 +2886,19 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
                                     for x in dict_forest[cell_list_sorted[0]][node_start]['next']])
             for cellname in cell_list_sorted:
                 ##top line
-                px_top = df_bins_top.loc['center',map(lambda x: 'win' + str(x), id_wins_start)]
-                py_top = df_bins_top.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)]
+                px_top = df_bins_top.loc['center',list(map(lambda x: 'win' + str(x), id_wins_start))]
+                py_top = df_bins_top.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))]
                 px_top_prime = 0  + px_top
                 py_top_prime = mean_shift_dist  + py_top
-                df_top_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = px_top_prime
-                df_top_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = py_top_prime
+                df_top_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = px_top_prime
+                df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = py_top_prime
                 ##base line
-                px_base = df_bins_base.loc['center',map(lambda x: 'win' + str(x), id_wins_start)]
-                py_base = df_bins_base.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)]
+                px_base = df_bins_base.loc['center',list(map(lambda x: 'win' + str(x), id_wins_start))]
+                py_base = df_bins_base.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))]
                 px_base_prime = 0 + px_base
                 py_base_prime = mean_shift_dist + py_base
-                df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = px_base_prime
-                df_base_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = py_base_prime
+                df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = px_base_prime
+                df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = py_base_prime
 
         #determine joints points
         dict_joint_top = {cellname:dict() for cellname in cell_list_sorted} #coordinates of joint points
@@ -2960,8 +2960,8 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
                 id_wins_top.insert(0,1)
                 id_wins_top.insert(0,0)
             for cellname in cell_list_sorted:
-                x_top = df_top_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_top)].tolist()
-                y_top = df_top_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_top)].tolist()
+                x_top = df_top_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_top))].tolist()
+                y_top = df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_top))].tolist()
                 f_top_linear = interpolate.interp1d(x_top, y_top, kind = 'linear')
                 x_top_new = [x for x in x_smooth if (x>=x_top[0]) and (x<=x_top[-1])] + [x_top[-1]]
                 x_top_new = np.unique(x_top_new).tolist()
@@ -2980,8 +2980,8 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
                 id_wins_base.insert(0,1)
                 id_wins_base.insert(0,0)
             for cellname in cell_list_sorted:
-                x_base = df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_base)].tolist()
-                y_base = df_base_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_base)].tolist()
+                x_base = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_base))].tolist()
+                y_base = df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_base))].tolist()
                 f_base_linear = interpolate.interp1d(x_base, y_base, kind = 'linear')
                 x_base_new = [x for x in x_smooth if (x>=x_base[0]) and (x<=x_base[-1])] + [x_base[-1]]
                 x_base_new = np.unique(x_base_new).tolist()
@@ -3157,8 +3157,8 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
 
 def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_top_x,df_top_y,xmin,xmax,ymin,ymax,im_nrow,im_ncol,step_w,dict_shift_dist,id_wins,edge_i,cellname,id_wins_prev,prev_edge):
     pad_ratio = 0.008
-    xmin_edge = df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins)].min()
-    xmax_edge = df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins)].max()
+    xmin_edge = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].min()
+    xmax_edge = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].max()
     id_st_x = int(np.floor(((xmin_edge - xmin)/(xmax - xmin))*(im_ncol-1)))
     id_ed_x =  int(np.floor(((xmax_edge - xmin)/(xmax - xmin))*(im_ncol-1)))
     if (flat_tree.degree(edge_i[1])==1):
@@ -3171,14 +3171,14 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
         id_ed_x = im_ncol - 1
     if(prev_edge != ''):
         shift_dist = dict_shift_dist[edge_i] - dict_shift_dist[prev_edge]
-        gene_color = df_bins_gene.loc[cellname,map(lambda x: 'win' + str(x), [id_wins_prev[-1]] + id_wins[1:])].tolist()
+        gene_color = df_bins_gene.loc[cellname,list(map(lambda x: 'win' + str(x), [id_wins_prev[-1]] + id_wins[1:]))].tolist()
     else:
-        gene_color = df_bins_gene.loc[cellname,map(lambda x: 'win' + str(x), id_wins)].tolist()
-    x_axis = df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins)].tolist()
+        gene_color = df_bins_gene.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
+    x_axis = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
     x_base = np.linspace(x_axis[0],x_axis[-1],id_ed_x-id_st_x+1)
     gene_color_new = np.interp(x_base,x_axis,gene_color)
-    y_axis_base = df_base_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins)].tolist()
-    y_axis_top = df_top_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins)].tolist()
+    y_axis_base = df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
+    y_axis_top = df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
     f_base_linear = interpolate.interp1d(x_axis, y_axis_base, kind = 'linear')
     f_top_linear = interpolate.interp1d(x_axis, y_axis_top, kind = 'linear')
     y_base = f_base_linear(x_base)
@@ -3641,21 +3641,21 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             y_st = dict_shift_dist[edge_i]
             for cellname in cell_list_sorted:
                 ##top line
-                px_top = df_bins_top.loc['center',map(lambda x: 'win' + str(x), id_wins)]
-                py_top = df_bins_top.loc[cellname,map(lambda x: 'win' + str(x), id_wins)]
+                px_top = df_bins_top.loc['center',list(map(lambda x: 'win' + str(x), id_wins))]
+                py_top = df_bins_top.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))]
                 px_top_prime = x_st  + px_top
                 py_top_prime = y_st  + py_top
                 dict_ep_top[cellname][edge_i] = [px_top_prime[-1],py_top_prime[-1]]
-                df_top_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = px_top_prime
-                df_top_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = py_top_prime
+                df_top_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = px_top_prime
+                df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = py_top_prime
                 ##base line
-                px_base = df_bins_base.loc['center',map(lambda x: 'win' + str(x), id_wins)]
-                py_base = df_bins_base.loc[cellname,map(lambda x: 'win' + str(x), id_wins)]
+                px_base = df_bins_base.loc['center',list(map(lambda x: 'win' + str(x), id_wins))]
+                py_base = df_bins_base.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))]
                 px_base_prime = x_st + px_base
                 py_base_prime = y_st + py_base
                 dict_ep_base[cellname][edge_i] = [px_base_prime[-1],py_base_prime[-1]]
-                df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = px_base_prime
-                df_base_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins)] = py_base_prime
+                df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = px_base_prime
+                df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))] = py_base_prime
             dict_ep_center[edge_i] = np.array([px_top_prime[-1], y_st])
 
         id_wins_start = [i for i,x in enumerate(df_bins_cumsum_norm.loc['edge',:]) if x[0]==(node_start,node_start)]
@@ -3664,19 +3664,19 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                                     for x in dict_forest[cell_list_sorted[0]][node_start]['next']])
             for cellname in cell_list_sorted:
                 ##top line
-                px_top = df_bins_top.loc['center',map(lambda x: 'win' + str(x), id_wins_start)]
-                py_top = df_bins_top.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)]
+                px_top = df_bins_top.loc['center',list(map(lambda x: 'win' + str(x), id_wins_start))]
+                py_top = df_bins_top.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))]
                 px_top_prime = 0  + px_top
                 py_top_prime = mean_shift_dist  + py_top
-                df_top_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = px_top_prime
-                df_top_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = py_top_prime
+                df_top_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = px_top_prime
+                df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = py_top_prime
                 ##base line
-                px_base = df_bins_base.loc['center',map(lambda x: 'win' + str(x), id_wins_start)]
-                py_base = df_bins_base.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)]
+                px_base = df_bins_base.loc['center',list(map(lambda x: 'win' + str(x), id_wins_start))]
+                py_base = df_bins_base.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))]
                 px_base_prime = 0 + px_base
                 py_base_prime = mean_shift_dist + py_base
-                df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = px_base_prime
-                df_base_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_start)] = py_base_prime
+                df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = px_base_prime
+                df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_start))] = py_base_prime
 
         #determine joints points
         dict_joint_top = {cellname:dict() for cellname in cell_list_sorted} #coordinates of joint points
@@ -3738,8 +3738,8 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                 id_wins_top.insert(0,1)
                 id_wins_top.insert(0,0)
             for cellname in cell_list_sorted:
-                x_top = df_top_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_top)].tolist()
-                y_top = df_top_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_top)].tolist()
+                x_top = df_top_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_top))].tolist()
+                y_top = df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_top))].tolist()
                 f_top_linear = interpolate.interp1d(x_top, y_top, kind = 'linear')
                 x_top_new = [x for x in x_smooth if (x>=x_top[0]) and (x<=x_top[-1])] + [x_top[-1]]
                 x_top_new = np.unique(x_top_new).tolist()
@@ -3758,8 +3758,8 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                 id_wins_base.insert(0,1)
                 id_wins_base.insert(0,0)
             for cellname in cell_list_sorted:
-                x_base = df_base_x.loc[cellname,map(lambda x: 'win' + str(x), id_wins_base)].tolist()
-                y_base = df_base_y.loc[cellname,map(lambda x: 'win' + str(x), id_wins_base)].tolist()
+                x_base = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_base))].tolist()
+                y_base = df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins_base))].tolist()
                 f_base_linear = interpolate.interp1d(x_base, y_base, kind = 'linear')
                 x_base_new = [x for x in x_smooth if (x>=x_base[0]) and (x<=x_base[-1])] + [x_base[-1]]
                 x_base_new = np.unique(x_base_new).tolist()
