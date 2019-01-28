@@ -93,11 +93,7 @@ To run STREAM at the command-line interface:
 
 * start a terminal session;
 
-For **Mac OS**:
-* enter ```docker run  -v $PWD:/data -w /data  pinellolab/stream --help [options]```
-
-For **Windows**:
-* enter ```docker run  -v ${pwd}:/data -w /data  pinellolab/stream --help [options]```
+* enter ```docker run  -v ${PWD}:/data -w /data  pinellolab/stream --help [options]```
 
 Users can specify the following options:
 ```
@@ -333,57 +329,32 @@ Please note that for large dataset analysis it'll be necessary to increase the d
 
 Here we we take a single cell RNA-seq dataset as an example,including data_Nestorowa.tsv.gz, cell_label.tsv.gz and cell_label_color.tsv.gz (Nestorowa, S. et al.,2016), and assuming that **they are in the current folder**, to perform trajectory inference analysis, users can simply run a single command:
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
 ```
 
 If cell labels are not available or no customized cell label color file is available, **-l** or **-c** can also be omitted
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz
 ```
 
 To visualize genes of interest, user can provide a gene list file by adding **-g**, for example: gene_list.tsv.gz. Meanwhile, by adding the flag  **-p**, STREAM will use the precomputed file obtained from the first running (In this way, STREAM will import precomupted pkl file so the analysis will skip structure learning part and only execute the step of visualizing genes):
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
 ```
 
 Users can also provide a set of gene names separated by comma or specify the root by adding **-r**:
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -r S1 -p
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -r S1 -p
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -r S1 -p
 ```
 
 To explore potential marker genes, it is possible to add the flags **--DE**, **--TG**, or **--LG** to detect DE (differentially expressed) genes, transition gens, and leaf genes respectively:
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --DE --TG --LG -p
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --DE --TG --LG -p
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --DE --TG --LG -p
 ```
 
 ### **Mapping**
@@ -392,24 +363,14 @@ To explore the feature **mapping**, users need to provide two dataset, one is us
 
 Users first need to run the following command to get initial inferred trajetories from wild-type cells:
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream -m data_Olsson.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4 --EPG_shift 
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream -m data_Olsson.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4 --EPG_shift
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Olsson.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4 --EPG_shift 
 ```
 
 To map the genetically perturbed cells to the inferred trajectories, users can execute the following command:
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream --new data_perturbation.tsv.gz --new_l cell_perturbation_label.tsv.gz --new_c cell_perturbation_label_color.tsv.gz 
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --new data_perturbation.tsv.gz --new_l cell_perturbation_label.tsv.gz --new_c cell_perturbation_label_color.tsv.gz
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream --new data_perturbation.tsv.gz --new_l cell_perturbation_label.tsv.gz --new_c cell_perturbation_label_color.tsv.gz 
 ```
 After running this command,  a folder named **'mapping_result'** will be created under the current directory along with all the mapping analysis results.
 
@@ -420,41 +381,25 @@ To perform scATAC-seq trajectory inference analysis, three files are necessary, 
 
 Using these three files, users can run STREAM with the following command (note the flag **--atac** ):
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
 
 This command may take a couple of hours with a modest machine because the conversion from counts to k-mer z-score is time-consuming. Therefore STREAM also provides the option to take as input a precomputed z-score file. 
 
 First, the z-score file can be obtained with the following command (add **--atac_zscore**):
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac_zscore
-```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac_zscore
+$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac_zscore
 ```
 
 The above command will generate a file named **'zscore.tsv'**. It’s a tab-delimited z-score matrix with k-mers in row and cells in column. Each entry is a scaled z-score of the accessibility of each k-mer across cells. 
 
 Second, take z-score file as input to infer trajectories:
 
-For **Mac OS**:
 ```sh
-$ docker run  -v $PWD:/data -w /data pinellolab/stream --atac -m zscore.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
+$ docker run  -v ${PWD}:/data -w /data pinellolab/stream --atac -m zscore.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
-For **Windows**:
-```sh
-$ docker run  -v ${pwd}:/data -w /data  pinellolab/stream --atac -m zscore.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
-```
-
 
 Output description
 ------------------
