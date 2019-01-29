@@ -2484,7 +2484,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 plt.close(fig) 
 
 
-def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,preference=None,
+def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,factor_zoomin=100.0,preference=None,
                 save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
     """Generate stream plots
     
@@ -2504,6 +2504,8 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         The ratio between length and width of stream plot. 
     flag_log_view: `bool`, optional (default: False)
         If True,the number of cells (the width) is logarithmized when outputing stream plot.
+    factor_zoomin: `float`, optional (default: 100.0)
+        If flag_log_view is True, the factor used to zoom in the thin branches
     preference: `list`, optional (default: None): 
         The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
     show_all_colors: `bool`, optional (default: False)
@@ -2797,15 +2799,16 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         #original count
         df_bins_ori = df_bins.reindex(cell_list_sorted+['boundary','center','edge'])
         if(flag_log_view):
-            df_bins_ori.iloc[:-3,:] = np.log2(df_bins_ori.iloc[:-3,:].values.astype(float)+1)
+            df_n_cells= df_bins_ori.iloc[:-3,:].sum()
+            df_n_cells = df_n_cells/df_n_cells.max()*factor_zoomin
+            df_bins_ori.iloc[:-3,:] = df_bins_ori.iloc[:-3,:]*np.log2(df_n_cells+1)/(df_n_cells+1) 
+        
         df_bins_cumsum = df_bins_ori.copy()
         df_bins_cumsum.iloc[:-3,:] = df_bins_ori.iloc[:-3,:][::-1].cumsum()[::-1]
 
         #normalization  
         df_bins_cumsum_norm = df_bins_cumsum.copy()
-        df_bins_cumsum_norm.iloc[:-3,:] = min_width + max_width*(df_bins_cumsum.iloc[:-3,:]-(df_bins_cumsum.iloc[:-3,:]).values.min())/\
-                                                         ((df_bins_cumsum.iloc[:-3,:]).values.max()-(df_bins_cumsum.iloc[:-3,:]).values.min())
-
+        df_bins_cumsum_norm.iloc[:-3,:] = min_width + max_width*(df_bins_cumsum.iloc[:-3,:])/(df_bins_cumsum.iloc[:-3,:]).values.max()
 
         df_bins_top = df_bins_cumsum_norm.copy()
         df_bins_top.iloc[:-3,:] = df_bins_cumsum_norm.iloc[:-3,:].subtract(df_bins_cumsum_norm.iloc[0,:]/2.0)
@@ -3206,7 +3209,7 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
     return dict_im_array
 
 
-def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,preference=None,
+def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,factor_zoomin=100.0,preference=None,
                     save_fig=False,fig_path=None,fig_size=(12,8),fig_format='pdf',tick_fontsize=20,label_fontsize=25):  
     """Generate stream plots of genes
     
@@ -3230,6 +3233,8 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
         The ratio between length and width of stream plot. 
     flag_log_view: `bool`, optional (default: False)
         If True,the number of cells (the width) is logarithmized when outputing stream plot.
+    factor_zoomin: `float`, optional (default: 100.0)
+        If flag_log_view is True, the factor used to zoom in the thin branches
     preference: `list`, optional (default: None): 
         The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
     save_fig: `bool`, optional (default: False)
@@ -3548,14 +3553,16 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
         #original count
         df_bins_ori = df_bins.reindex(cell_list_sorted+['boundary','center','edge'])
         if(flag_log_view):
-            df_bins_ori.iloc[:-3,:] = np.log2(df_bins_ori.iloc[:-3,:].values.astype(float)+1)
+            df_n_cells= df_bins_ori.iloc[:-3,:].sum()
+            df_n_cells = df_n_cells/df_n_cells.max()*factor_zoomin
+            df_bins_ori.iloc[:-3,:] = df_bins_ori.iloc[:-3,:]*np.log2(df_n_cells+1)/(df_n_cells+1) 
+        
         df_bins_cumsum = df_bins_ori.copy()
         df_bins_cumsum.iloc[:-3,:] = df_bins_ori.iloc[:-3,:][::-1].cumsum()[::-1]
 
         #normalization  
         df_bins_cumsum_norm = df_bins_cumsum.copy()
-        df_bins_cumsum_norm.iloc[:-3,:] = min_width + max_width*(df_bins_cumsum.iloc[:-3,:]-(df_bins_cumsum.iloc[:-3,:]).values.min())/\
-                                                         ((df_bins_cumsum.iloc[:-3,:]).values.max()-(df_bins_cumsum.iloc[:-3,:]).values.min())
+        df_bins_cumsum_norm.iloc[:-3,:] = min_width + max_width*(df_bins_cumsum.iloc[:-3,:])/(df_bins_cumsum.iloc[:-3,:]).values.max()
 
         df_bins_top = df_bins_cumsum_norm.copy()
         df_bins_top.iloc[:-3,:] = df_bins_cumsum_norm.iloc[:-3,:].subtract(df_bins_cumsum_norm.iloc[0,:]/2.0)
