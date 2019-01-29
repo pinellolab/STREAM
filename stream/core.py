@@ -109,24 +109,20 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='',file
                 adata = ad.read_mtx(_fp(file_name),**kwargs).T 
                 adata.raw = adata
             elif(file_format == 'h5ad'):
-                adata = ad.read_h5ad(_fp(file_name),**kwargs)           
+                adata = ad.read_h5ad(_fp(file_name),**kwargs)
             else:
                 print('file format ' + file_format + ' is not supported')
                 return
         elif(experiment == 'atac-seq'):
-            if(file_format == 'pklz'):
-                f = gzip.open(_fp(file_name), 'rb')
-                adata = pickle.load(f)
-                f.close()  
-            elif(file_format == 'pkl'):
-                f = open(_fp(file_name), 'rb')
-                adata = pickle.load(f)
-                f.close()
-            else:            
-                if(file_name_sample is None):
-                    print('sample file must be provided')
-                if(file_name_region is None):
-                    print('region file must be provided')
+            if((file_name_sample is None) and (file_name_region is None)):
+                #read in z-score matrix
+                if(file_format in ['tsv','txt','tab','data']):
+                    adata = ad.read_text(_fp(file_name),delimiter=delimiter,**kwargs).T
+                    adata.raw = adata        
+                elif(file_format == 'csv'):
+                    adata = ad.read_csv(_fp(file_name),delimiter=delimiter,**kwargs).T
+                    adata.raw = adata
+            else:
                 df_counts = pd.read_csv(file_name,sep='\t',header=None,names=['i','j','x'],compression= 'gzip' if file_name.split('.')[-1]=='gz' else None)
                 df_regions = pd.read_csv(file_name_region,sep='\t',header=None,compression= 'gzip' if file_name_region.split('.')[-1]=='gz' else None)
                 df_regions = df_regions.iloc[:,:3]
@@ -149,7 +145,6 @@ def read(file_name,file_name_sample=None,file_name_region=None,file_path='',file
     adata.uns['workdir'] = workdir
     print('Saving results in: %s' % workdir)
     return adata
-
 
 def counts_to_kmers(adata,k=7,n_jobs = multiprocessing.cpu_count()):
     """Covert counts files to kmer files.
@@ -191,6 +186,9 @@ def counts_to_kmers(adata,k=7,n_jobs = multiprocessing.cpu_count()):
     BiocParallel = importr('BiocParallel')
     BiocParallel.register(BiocParallel.MulticoreParam(n_jobs))
     pandas2ri.activate()
+    
+    workdir = adata.uns['workdir']
+    
     df_regions = adata.uns['atac-seq']['region']
     r_regions_dataframe = pandas2ri.py2ri(df_regions)
     regions = GenomicRanges.makeGRangesFromDataFrame(r_regions_dataframe)
@@ -217,9 +215,10 @@ def counts_to_kmers(adata,k=7,n_jobs = multiprocessing.cpu_count()):
     df_zscores = pd.DataFrame(scores,index=rn,columns=cn)
     df_zscores_scaled = preprocessing.scale(df_zscores,axis=1)
     df_zscores_scaled = pd.DataFrame(df_zscores_scaled,index=df_zscores.index,columns=df_zscores.columns)
+    df_zscores_scaled.to_csv(os.path.join(workdir,'zscore.tsv.gz'),sep = '\t',compression='gzip')
     adata_new = ad.AnnData(X=df_zscores_scaled.values.T, obs={'obs_names':df_zscores_scaled.columns},var={'var_names':df_zscores_scaled.index})
     adata_new.raw = adata_new
-    adata_new.uns['workdir'] = adata.uns['workdir']
+    adata_new.uns['workdir'] = workdir
     adata_new.uns['experiment'] = adata.uns['experiment']
     adata_new.uns['atac-seq'] = dict()
     adata_new.uns['atac-seq']['count'] = df_counts
@@ -2797,12 +2796,10 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         cell_list_sorted = cell_list[np.argsort(id_nonzero)].tolist()
         #original count
         df_bins_ori = df_bins.reindex(cell_list_sorted+['boundary','center','edge'])
+        if(flag_log_view):
+            df_bins_ori.iloc[:-3,:] = np.log2(df_bins_ori.iloc[:-3,:].values.astype(float)+1)
         df_bins_cumsum = df_bins_ori.copy()
         df_bins_cumsum.iloc[:-3,:] = df_bins_ori.iloc[:-3,:][::-1].cumsum()[::-1]
-
-        if(flag_log_view):
-            df_bins_cumsum.iloc[:-3,:] = (df_bins_cumsum.iloc[:-3,:].values.astype(float))/(df_bins_cumsum.iloc[:-3,:]).values.max()
-            df_bins_cumsum.iloc[:-3,:] = np.log2(df_bins_cumsum.iloc[:-3,:].values.astype(float)+0.01)
 
         #normalization  
         df_bins_cumsum_norm = df_bins_cumsum.copy()
@@ -3550,12 +3547,10 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
         cell_list_sorted = cell_list[np.argsort(id_nonzero)].tolist()
         #original count
         df_bins_ori = df_bins.reindex(cell_list_sorted+['boundary','center','edge'])
+        if(flag_log_view):
+            df_bins_ori.iloc[:-3,:] = np.log2(df_bins_ori.iloc[:-3,:].values.astype(float)+1)
         df_bins_cumsum = df_bins_ori.copy()
         df_bins_cumsum.iloc[:-3,:] = df_bins_ori.iloc[:-3,:][::-1].cumsum()[::-1]
-
-        if(flag_log_view):
-            df_bins_cumsum.iloc[:-3,:] = (df_bins_cumsum.iloc[:-3,:].values.astype(float))/(df_bins_cumsum.iloc[:-3,:]).values.max()
-            df_bins_cumsum.iloc[:-3,:] = np.log2(df_bins_cumsum.iloc[:-3,:].values.astype(float)+0.01)
 
         #normalization  
         df_bins_cumsum_norm = df_bins_cumsum.copy()
