@@ -1,5 +1,5 @@
 ############################################################
-# Dockerfile to build STREAM
+# Dockerfile to build STREAM v0.3.2
 ############################################################
 
 # Set the base image to anaconda python 3.6
