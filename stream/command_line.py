@@ -361,8 +361,7 @@ def main():
                         print('Finished')
                 else:
                     print('Reading in atac zscore matrix...')
-                    adata = st.read(file_name=input_filename,workdir=workdir)
-                    adata.uns['experiment'] = 'atac-seq'
+                    adata = st.read(file_name=input_filename,workdir=workdir,experiment='atac-seq')
             else:
                 adata=st.read(file_name=input_filename,workdir=workdir)
                 print('Input: '+ str(adata.obs.shape[0]) + ' cells, ' + str(adata.var.shape[0]) + ' genes')
