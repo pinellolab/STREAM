@@ -14,7 +14,7 @@ print('''
   ____) |  | |  | | \ \| |____ / ____ \| |  | |
  |_____/   |_|  |_|  \_\______/_/    \_\_|  |_|
                                                
-''')
+''',flush=True)
 
 import stream as st
 import argparse
@@ -33,8 +33,8 @@ mpl.rc('pdf', fonttype=42)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
-print('- STREAM Single-cell Trajectory Reconstruction And Mapping -')
-print('Version %s\n' % st.__version__)
+print('- STREAM Single-cell Trajectory Reconstruction And Mapping -',flush=True)
+print('Version %s\n' % st.__version__,flush=True)
     
 
 def output_for_website(adata):

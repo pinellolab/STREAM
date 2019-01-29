@@ -4577,7 +4577,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
                         df_leaf_genes.loc[gene,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
                         df_leaf_genes.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
     df_leaf_genes.rename(columns={x:dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue' for x in leaf_edges},inplace=True)
-    df_leaf_genes.sort_values(by='H_pvalue',inplace=True)
+    df_leaf_genes.sort_values(by=['H_pvalue','zscore'],ascending=[True,False],inplace=True)
     df_leaf_genes.to_csv(os.path.join(file_path,'leaf_genes.tsv'),sep = '\t',index = True)
     dict_leaf_genes = dict()
     for x in leaf_edges:
