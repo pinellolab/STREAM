@@ -182,17 +182,7 @@ def main():
     parser.add_argument("--norm",dest="flag_norm", action="store_true",
                         help="normalize data based on library size")
     parser.add_argument("--atac",dest="flag_atac", action="store_true",
-                        help="indicate scATAC-seq data")
-    parser.add_argument("--atac_counts",dest="atac_counts",default = None,
-                        help="scATAC-seq counts file name", metavar="FILE")
-    parser.add_argument("--atac_regions",dest="atac_regions",default = None,
-                        help="scATAC-seq regions file name", metavar="FILE")
-    parser.add_argument("--atac_samples",dest="atac_samples",default = None,
-                        help="scATAC-seq samples file name", metavar="FILE")    
-    parser.add_argument("--atac_k",dest="atac_k",type=int,default=7,
-                        help="specify k-mers in scATAC-seq")
-    parser.add_argument("--atac_zscore",dest="flag_atac_zscore",action="store_true",
-                        help="indicate precomputed atac zscore matrix file")    
+                        help="indicate scATAC-seq data")  
     parser.add_argument("--n_processes",dest = "n_processes",type=int, default=multiprocessing.cpu_count(),
                         help="Specify the number of processes to use. (default, all the available cores)")
     parser.add_argument("--loess_frac",dest = "loess_frac",type=float, default=0.1,
@@ -266,8 +256,8 @@ def main():
 
 
     args = parser.parse_args()
-    if (args.input_filename is None) and (args.new_filename is None) and (args.atac_counts is None):
-       parser.error("at least one of -m,--atac_counts, or --new required") 
+    if (args.input_filename is None) and (args.new_filename is None):
+       parser.error("at least one of -m, --new required")
 
     new_filename = args.new_filename
     new_label_filename = args.new_label_filename
@@ -300,11 +290,6 @@ def main():
     flag_log2 = args.flag_log2
     flag_norm = args.flag_norm
     flag_atac = args.flag_atac
-    atac_regions = args.atac_regions
-    atac_counts = args.atac_counts
-    atac_samples = args.atac_samples
-    atac_k = args.atac_k
-    flag_atac_zscore = args.flag_atac_zscore
     lle_n_nb_percent = args.lle_n_nb_percent #LLE neighbour percent
     lle_n_component = args.lle_n_component #LLE dimension reduction
     AP_damping_factor = args.AP_damping_factor
@@ -349,21 +334,10 @@ def main():
             adata = st.read(file_name='stream_result.pkl',file_format='pkl',file_path=workdir)
         else:
             if(flag_atac):
-                if(input_filename is None):
-                    print('Reading in atac seq data...')
-                    adata = st.read(atac_counts,file_name_sample=atac_samples,file_name_region=atac_regions,experiment='atac-seq',workdir=workdir)
-                    adata = st.counts_to_kmers(adata,k=atac_k,n_jobs = n_processes)
-                    if(flag_atac_zscore):
-                        print('Generating atac zscore matrix...')
-                        df_zscore = pd.DataFrame(adata.X.T,columns=adata.obs_names,index=adata.var_names)
-                        df_zscore.to_csv(os.path.join(workdir,'zscore.tsv'),sep = '\t')
-                        sys.exit(0)
-                        print('Finished')
-                else:
-                    print('Reading in atac zscore matrix...')
-                    adata = st.read(file_name=input_filename,workdir=workdir,experiment='atac-seq')
+                print('Reading in atac zscore matrix...')
+                adata = st.read(file_name=input_filename,workdir=workdir,experiment='atac-seq')
             else:
-                adata=st.read(file_name=input_filename,workdir=workdir)
+                adata = st.read(file_name=input_filename,workdir=workdir)
                 print('Input: '+ str(adata.obs.shape[0]) + ' cells, ' + str(adata.var.shape[0]) + ' genes')
             adata.var_names_make_unique()
             adata.obs_names_make_unique()

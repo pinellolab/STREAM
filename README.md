@@ -385,7 +385,7 @@ Using these three files, users can run STREAM with the following command (note t
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
 
-This command may take a couple of hours with a modest machine because the conversion from counts to k-mer z-score is time-consuming. Therefore STREAM also provides the option to take as input a precomputed z-score file. 
+**The above command may take a couple of hours with a modest machine because the conversion from counts to k-mer z-score is time-consuming.** Therefore STREAM also provides the option to take as input a precomputed z-score file. 
 
 First, the z-score file can be obtained with the following command (add **--atac_zscore**):
 
