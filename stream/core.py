@@ -90,7 +90,6 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna
         adata = pickle.load(f)
         f.close()
     else:
-        adata.uns['experiment'] = experiment
         if(experiment not in ['rna-seq','atac-seq']):
             print('The experiment '+experiment +' is not supported')
             return         
@@ -107,7 +106,8 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna
             adata = ad.read_h5ad(_fp(file_name),**kwargs)
         else:
             print('file format ' + file_format + ' is not supported')
-            return        
+            return
+        adata.uns['experiment'] = experiment        
     if(workdir==None):
         workdir = os.path.join(os.getcwd(), 'stream_result')
         print("Using default working directory.")
