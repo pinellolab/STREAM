@@ -25,18 +25,27 @@ $ conda config --add channels bioconda
 $ conda config --add channels conda-forge
 ```
 
-3)	Recommended: Create an environment named ‘myenv’ and activate it with the following commands:
+3)	Recommended: Create an environment named `myenv` and activate it with the following commands:
 
 ```sh
 $ conda create -n myenv python=3.6
 $ conda activate myenv
 ```
 
-4)	Install the bioconda STREAM package within the environment ‘myenv’ with the following command:
+4)	Install the bioconda STREAM package within the environment `myenv` with the following command:
 
 ```sh
 $ conda install stream
 ```
+
+5)  To perform STREAM analyis in Jupyter Notebook as shown in **Tutorial**, run the following commands within `myenv`:
+
+```sh
+$ conda install jupyter
+$ jupyter notebook
+```
+
+You should see the notebook open in your browser.
 
 Tutorial
 --------
