@@ -25,23 +25,23 @@ $ conda config --add channels bioconda
 $ conda config --add channels conda-forge
 ```
 
-3)	Recommended: Create an environment named `myenv` and activate it with the following commands:
+3)	Create an environment named `myenv` , install **stream**, **jupyter**, and activate it with the following commands:
 
 ```sh
-$ conda create -n myenv python=3.6
+$ conda create -n myenv python=3.6 stream jupyter
 $ conda activate myenv
 ```
 
-4)	Install the bioconda STREAM package within the environment `myenv` with the following command:
+**Note: For single cell atac-seq analysis, please run the following commands:**
 
 ```sh
-$ conda install stream
+$ conda create -n myenv python=3.6 stream stream_atac jupyter
+$ conda activate myenv
 ```
 
-5)  To perform STREAM analyis in Jupyter Notebook as shown in **Tutorial**, run the following commands within `myenv`:
+4)  To perform STREAM analyis in Jupyter Notebook as shown in **Tutorial**, type `jupyter notebook` within `myenv`:
 
 ```sh
-$ conda install jupyter
 $ jupyter notebook
 ```
 
@@ -129,17 +129,7 @@ perform log2 transformation
 --norm  
 normalize data based on library size
 --atac
-indicate scATAC-seq data
---atac_counts
-scATAC-seq counts file name in .tsv or .tsv.gz format. Counts file is a compressed sparse matrix that contains three columns including region indices, sample indices and the number of reads(default: None)
---atac_regions
-scATAC-seq regions file name in .tsv or .tsv.gz format. Regions file contains three columns including chromosome names, start and end positions of regions (default: None)
---atac_samples
-scATAC-seq samples file name in .tsv or tsv.gz. Samples file contains one column of cell names  (default: None)
---atac_k
-specify k-mers length for scATAC-seq analysis (default: 7)
---atac_zscore  
-Indicate precomputed atac zscore matrix file
+indicate scATAC-seq data  
 --n_processes  
 Specify the number of processes to use. (default, all the available cores).
 --loess_frac  
@@ -338,30 +328,55 @@ Please note that for large dataset analysis it'll be necessary to increase the d
 
 Here we we take a single cell RNA-seq dataset as an example,including data_Nestorowa.tsv.gz, cell_label.tsv.gz and cell_label_color.tsv.gz (Nestorowa, S. et al.,2016), and assuming that **they are in the current folder**, to perform trajectory inference analysis, users can simply run a single command:
 
+*Using Bioconda:*
+```sh
+$ stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
+```
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz
 ```
 
 If cell labels are not available or no customized cell label color file is available, **-l** or **-c** can also be omitted
 
+*Using Bioconda:*
+```sh
+$ stream -m data_Nestorowa.tsv.gz
+```
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz
 ```
 
 To visualize genes of interest, user can provide a gene list file by adding **-g**, for example: gene_list.tsv.gz. Meanwhile, by adding the flag  **-p**, STREAM will use the precomputed file obtained from the first running (In this way, STREAM will import precomupted pkl file so the analysis will skip structure learning part and only execute the step of visualizing genes):
 
+*Using Bioconda:*
+```sh
+$ stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
+```
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g gene_list.tsv.gz -p
 ```
 
 Users can also provide a set of gene names separated by comma or specify the root by adding **-r**:
 
+*Using Bioconda:*
+```sh
+$ stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -r S1 -p
+```
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz -g Gata1,Mpo -r S1 -p
 ```
 
 To explore potential marker genes, it is possible to add the flags **--DE**, **--TG**, or **--LG** to detect DE (differentially expressed) genes, transition gens, and leaf genes respectively:
 
+*Using Bioconda:*
+```sh
+$ stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --DE --TG --LG -p
+```
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Nestorowa.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --DE --TG --LG -p
 ```
@@ -372,12 +387,22 @@ To explore the feature **mapping**, users need to provide two dataset, one is us
 
 Users first need to run the following command to get initial inferred trajetories from wild-type cells:
 
+*Using Bioconda:*
+```sh
+$ stream -m data_Olsson.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4 --EPG_shift 
+```
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream -m data_Olsson.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4 --EPG_shift 
 ```
 
 To map the genetically perturbed cells to the inferred trajectories, users can execute the following command:
 
+*Using Bioconda:*
+```sh
+$ stream --new data_perturbation.tsv.gz --new_l cell_perturbation_label.tsv.gz --new_c cell_perturbation_label_color.tsv.gz 
+```
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data  pinellolab/stream --new data_perturbation.tsv.gz --new_l cell_perturbation_label.tsv.gz --new_c cell_perturbation_label_color.tsv.gz 
 ```
@@ -388,24 +413,20 @@ After running this command,  a folder named **'mapping_result'** will be created
 
 To perform scATAC-seq trajectory inference analysis, three files are necessary, a .tsv file of counts in compressed sparse format, a sample file in .tsv format and a region file in .bed format. (Buenrostro, J.D. et al., 2018). We assume that **they are in the current folder**.
 
-Using these three files, users can run STREAM with the following command (note the flag **--atac** ):
+Using these three files, users can run `stream_atac` with the following command to preprocess sc-atac-seq data and get a z_score matrix file named **'zscore.tsv.gz'** (This step may take a couple of hours with a modest machine):
 
+*Using Bioconda:*
 ```sh
-$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
+$ stream_atac -c count_file.tsv.gz -s sample_file.tsv.gz -r region_file.bed.gz
 ```
 
-**The above command may take a couple of hours with a modest machine because the conversion from counts to k-mer z-score is time-consuming.** Therefore STREAM also provides the option to take as input a precomputed z-score file. 
+Then, take z-score file as input to infer trajectories using `stream`:
 
-First, the z-score file can be obtained with the following command (add **--atac_zscore**):
-
+*Using Bioconda:*
 ```sh
-$ docker run  -v ${PWD}:/data -w /data  pinellolab/stream --atac --atac_counts count_file.tsv.gz --atac_samples sample_file.tsv.gz --atac_regions region_file.bed.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --atac_zscore
+$ stream --atac -m zscore.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
-
-The above command will generate a file named **'zscore.tsv'**. It’s a tab-delimited z-score matrix with k-mers in row and cells in column. Each entry is a scaled z-score of the accessibility of each k-mer across cells. 
-
-Second, take z-score file as input to infer trajectories:
-
+*Using Docker:*
 ```sh
 $ docker run  -v ${PWD}:/data -w /data pinellolab/stream --atac -m zscore.tsv.gz -l cell_label.tsv.gz -c cell_label_color.tsv.gz --lle_components 4
 ```
