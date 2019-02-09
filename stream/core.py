@@ -456,9 +456,9 @@ def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jo
     print(str(len(id_var_genes))+' variable genes are selected')
     ###plotting
     fig = plt.figure(figsize=fig_size)      
-    plt.scatter(mean_genes[id_non_var_genes], std_genes[id_non_var_genes],s=5,alpha=0.2,zorder=None,c='#6baed6')
-    plt.scatter(mean_genes[id_var_genes], std_genes[id_var_genes],s=5,alpha=0.9,zorder=1,c='#EC4E4E')
-    plt.plot(np.sort(mean_genes), loess_fitted[np.argsort(mean_genes)],linewidth=3,zorder=2,c='#3182bd')
+    plt.scatter(mean_genes[id_non_var_genes], std_genes[id_non_var_genes],s=5,alpha=0.2,zorder=1,c='#6baed6')
+    plt.scatter(mean_genes[id_var_genes], std_genes[id_var_genes],s=5,alpha=0.9,zorder=2,c='#EC4E4E')
+    plt.plot(np.sort(mean_genes), loess_fitted[np.argsort(mean_genes)],linewidth=3,zorder=3,c='#3182bd')
     plt.xlabel('mean value')
     plt.ylabel('standard deviation')
     if(save_fig):
@@ -763,10 +763,10 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             branch_i_color = flat_tree.edges[edge_i]['color']
             branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=None)
-        ax.scatter(nodes_pos[:,0],nodes_pos[:,1],nodes_pos[:,2],color='gray',s=12,alpha=1,zorder=5)
+            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=1)
+        ax.scatter(nodes_pos[:,0],nodes_pos[:,1],nodes_pos[:,2],color='gray',s=12,alpha=1,zorder=2)
         for i in dict_nodes_pos.keys():
-            ax.text(dict_nodes_pos[i][0],dict_nodes_pos[i][1],dict_nodes_pos[i][2],i,color='black',fontsize = 10)
+            ax.text(dict_nodes_pos[i][0],dict_nodes_pos[i][1],dict_nodes_pos[i][2],i,color='black',fontsize = 10,zorder=3)
         max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min(), coord[2].max()-coord[2].min()]).max() / 1.9
         mid_x = (coord[0].max()+coord[0].min()) * 0.5
         mid_y = (coord[1].max()+coord[1].min()) * 0.5
@@ -787,10 +787,10 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             branch_i_color = flat_tree.edges[edge_i]['color']
             branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,comp1],branch_i_pos[:,comp2],c = branch_i_color,lw=5,zorder=None)
-        ax.scatter(nodes_pos[:,comp1],nodes_pos[:,comp2],color='gray',s=12,alpha=1,zorder=5)
+            ax.plot(branch_i_pos[:,comp1],branch_i_pos[:,comp2],c = branch_i_color,lw=5,zorder=1)
+        ax.scatter(nodes_pos[:,comp1],nodes_pos[:,comp2],color='gray',s=12,alpha=1,zorder=2)
         for i in dict_nodes_pos.keys():
-            ax.text(dict_nodes_pos[i][comp1],dict_nodes_pos[i][comp2],i,color='black',fontsize = 10)
+            ax.text(dict_nodes_pos[i][comp1],dict_nodes_pos[i][comp2],i,color='black',fontsize = 10,zorder=3)
         max_range = np.array([coord[comp1].max()-coord[comp1].min(), coord[comp2].max()-coord[comp2].min()]).max() / 1.9
         mid_x = (coord[comp1].max()+coord[comp1].min()) * 0.5
         mid_y = (coord[comp2].max()+coord[comp2].min()) * 0.5
@@ -896,7 +896,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             branch_i_color = flat_tree.edges[edge_i]['color']
             branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=None)
+            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=5)
         for node_i in flat_tree.nodes():
             ax.text(dict_nodes_pos[node_i][0],dict_nodes_pos[node_i][1],dict_nodes_pos[node_i][2],
                     flat_tree.nodes[node_i]['label'],color='black',fontsize = 12,zorder=10)
@@ -930,7 +930,7 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
             branch_i_nodes = flat_tree.edges[edge_i]['nodes']
             branch_i_color = flat_tree.edges[edge_i]['color']
             branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,comp1],branch_i_pos[:,comp2],c = branch_i_color,lw=5,zorder=None)
+            ax.plot(branch_i_pos[:,comp1],branch_i_pos[:,comp2],c = branch_i_color,lw=5,zorder=5)
 #         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],color='gray',s=12,alpha=1,zorder=5)
         for node_i in flat_tree.nodes():
             ax.text(dict_nodes_pos[node_i][comp1],dict_nodes_pos[node_i][comp2],
@@ -2092,11 +2092,11 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
         for edge in dict_edges_pos.keys():  
             edge_pos = dict_edges_pos[edge]
             edge_color = flat_tree.edges[edge]['color']
-            ax.plot(edge_pos[:,0],edge_pos[:,1],c=edge_color,alpha=1,lw=5,zorder=None)
+            ax.plot(edge_pos[:,0],edge_pos[:,1],c=edge_color,alpha=1,lw=5,zorder=1)
             if(edge[0] in dict_bfs_pre.keys()):
                 pre_node = dict_bfs_pre[edge[0]]
                 link_edge_pos = np.array([dict_edges_pos[(pre_node,edge[0])][1,],dict_edges_pos[edge][0,]])
-                ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=None)
+                ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=1)
                 edge_pos = np.vstack((link_edge_pos,edge_pos))
             adata.uns['subwaymap_'+root]['edges'][edge]=edge_pos
         if(flat_tree.degree(root_node)>1):
@@ -2106,7 +2106,7 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
             min_y_pos = min([dict_edges_pos[x][0,1] for x in edges])
             x_pos = dict_nodes_pos[root_node][0]
             link_edge_pos = np.array([[x_pos,min_y_pos],[x_pos,max_y_pos]])
-            ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=None)
+            ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=1)
             adata.uns['subwaymap_'+root]['edges'][(root_node,root_node)]=link_edge_pos
         for node_i in flat_tree.nodes():
             ax.text(dict_nodes_pos[node_i][0],dict_nodes_pos[node_i][1],
@@ -2291,11 +2291,11 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
             for edge in dict_edges_pos.keys():  
                 edge_pos = dict_edges_pos[edge]
                 edge_color = flat_tree.edges[edge]['color']
-                ax.plot(edge_pos[:,0],edge_pos[:,1],c='gray',alpha=1,lw=5,zorder=None)
+                ax.plot(edge_pos[:,0],edge_pos[:,1],c='gray',alpha=1,lw=5,zorder=1)
                 if(edge[0] in dict_bfs_pre.keys()):
                     pre_node = dict_bfs_pre[edge[0]]
                     link_edge_pos = np.array([dict_edges_pos[(pre_node,edge[0])][1,],dict_edges_pos[edge][0,]])
-                    ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=None)
+                    ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=1)
             if(flat_tree.degree(root_node)>1):
                 suc_nodes = dict_bfs_suc[root_node]
                 edges = [(root_node,sn) for sn in suc_nodes]
@@ -2303,7 +2303,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 min_y_pos = min([dict_edges_pos[x][0,1] for x in edges])
                 x_pos = dict_nodes_pos[root_node][0]
                 link_edge_pos = np.array([[x_pos,min_y_pos],[x_pos,max_y_pos]])
-                ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=None)
+                ax.plot(link_edge_pos[:,0],link_edge_pos[:,1],c='gray',alpha=0.5,lw=5,zorder=1)
 
             for node_i in flat_tree.nodes():
                 ax.text(dict_nodes_pos[node_i][0],dict_nodes_pos[node_i][1],
