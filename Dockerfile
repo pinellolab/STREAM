@@ -1,5 +1,5 @@
 ############################################################
-# Dockerfile to build STREAM v0.3.4
+# Dockerfile to build STREAM v0.3.5
 ############################################################
 
 # Set the base image to anaconda python 3.6
@@ -17,7 +17,7 @@ RUN conda config --add channels bioconda
 RUN apt-get update && apt-get install gsl-bin libgsl0-dev -y && apt-get clean
 
 #Install stream package
-RUN conda install stream -y && conda clean --all -y
+RUN conda install libgfortran stream -y && conda clean --all -y
 
 #steps to sync with master on github
 RUN packagepath=$(python -c "import stream; print(stream.__path__[0])") && rm -rf ${packagepath}*
