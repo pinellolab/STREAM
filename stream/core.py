@@ -1011,7 +1011,7 @@ def infer_initial_structure(adata_low,nb_min=5):
         init_edges = epg_low.edges()
     return init_nodes_pos,init_edges
 
-def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='ap',damping=0.75,pref_perc=50,n_clusters=20,max_n_clusters=200,nb_pct=0.1):
+def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='ap',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,nb_pct=0.1):
     
     """Seeding the initial elastic principal graph.
     
@@ -1033,7 +1033,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
         Damping factor (between 0.5 and 1) for affinity propagation.
     pref_perc: `int`, optional (default: 50)
         Preference percentile (between 0 and 100). The percentile of the input similarities for affinity propagation.
-    n_clusters: `int`, optional (default: 20)
+    n_clusters: `int`, optional (default: 10)
         Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').
     max_n_clusters: `int`, optional (default: 200)
         The allowed maximum number of clusters for 'ap'.

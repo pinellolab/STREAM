@@ -197,8 +197,12 @@ def main():
                         help="LLE neighbour percent ")
     parser.add_argument("--lle_components",dest="lle_n_component", type=int, default=3,
                         help="number of components for LLE space ")
-    parser.add_argument("--AP_damping_factor",dest="AP_damping_factor", type=float, default=0.75,
-                        help="Affinity Propagation: damping factor")    
+    parser.add_argument("--clustering",dest="clustering",default='ap',
+                        help="Clustering method used for seeding the intial structure, choose from 'ap','kmeans','sc'")
+    parser.add_argument("--damping",dest="damping", type=float, default=0.75,
+                        help="Affinity Propagation: damping factor") 
+    parser.add_argument("--n_clusters",dest="n_clusters", type=int, default=10,
+                        help="Number of clusters for spectral clustering or kmeans")
     parser.add_argument("--EPG_n_nodes",dest="EPG_n_nodes", type=int, default=50,
                         help=" Number of nodes for elastic principal graph")      
     parser.add_argument("--EPG_lambda",dest="EPG_lambda", type=float, default=0.02,
@@ -292,7 +296,9 @@ def main():
     flag_atac = args.flag_atac
     lle_n_nb_percent = args.lle_n_nb_percent #LLE neighbour percent
     lle_n_component = args.lle_n_component #LLE dimension reduction
-    AP_damping_factor = args.AP_damping_factor
+    clustering = args.clustering
+    damping = args.damping
+    n_clusters = args.n_clusters
     EPG_n_nodes = args.EPG_n_nodes 
     EPG_lambda = args.EPG_lambda
     EPG_mu = args.EPG_mu
@@ -376,7 +382,7 @@ def main():
                     print('Keep all the genes...')
                     st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_processes,feature='all')
             st.plot_dimension_reduction(adata,save_fig=flag_savefig)
-            st.seed_elastic_principal_graph(adata,damping=AP_damping_factor)
+            st.seed_elastic_principal_graph(adata,clustering=clustering,damping=damping,n_clusters=n_clusters)
             st.plot_branches(adata,save_fig=flag_savefig,fig_name='seed_elastic_principal_graph_skeleton.pdf')
             st.plot_branches_with_cells(adata,save_fig=flag_savefig,fig_name='seed_elastic_principal_graph.pdf')
 
