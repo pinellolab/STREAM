@@ -7,6 +7,7 @@ import shapely.geometry as geom
 from copy import deepcopy
 import itertools
 from scipy.spatial import distance,cKDTree,KDTree
+from scipy import interpolate
 from sklearn.metrics.pairwise import pairwise_distances_argmin_min
 import math
 from scipy.linalg import eigh, svd, qr, solve
@@ -578,6 +579,61 @@ def find_paths(dict_tree,bfs_nodes):
                     stack_top.append(cur_node_top)
                 dict_paths_top[(node_i,next_nodes[i_mid+1])] = stack_top
     return dict_paths_top,dict_paths_base
+
+
+def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_top_x,df_top_y,xmin,xmax,ymin,ymax,im_nrow,im_ncol,step_w,dict_shift_dist,id_wins,edge_i,cellname,id_wins_prev,prev_edge):
+    pad_ratio = 0.008
+    xmin_edge = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].min()
+    xmax_edge = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].max()
+    id_st_x = int(np.floor(((xmin_edge - xmin)/(xmax - xmin))*(im_ncol-1)))
+    id_ed_x =  int(np.floor(((xmax_edge - xmin)/(xmax - xmin))*(im_ncol-1)))
+    if (flat_tree.degree(edge_i[1])==1):
+        id_ed_x = id_ed_x + 1
+    if(id_st_x < 0):
+        id_st_x = 0
+    if(id_st_x >0):
+        id_st_x  = id_st_x + 1
+    if(id_ed_x>(im_ncol-1)):
+        id_ed_x = im_ncol - 1
+    if(prev_edge != ''):
+        shift_dist = dict_shift_dist[edge_i] - dict_shift_dist[prev_edge]
+        gene_color = df_bins_gene.loc[cellname,list(map(lambda x: 'win' + str(x), [id_wins_prev[-1]] + id_wins[1:]))].tolist()
+    else:
+        gene_color = df_bins_gene.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
+    x_axis = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
+    x_base = np.linspace(x_axis[0],x_axis[-1],id_ed_x-id_st_x+1)
+    gene_color_new = np.interp(x_base,x_axis,gene_color)
+    y_axis_base = df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
+    y_axis_top = df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
+    f_base_linear = interpolate.interp1d(x_axis, y_axis_base, kind = 'linear')
+    f_top_linear = interpolate.interp1d(x_axis, y_axis_top, kind = 'linear')
+    y_base = f_base_linear(x_base)
+    y_top = f_top_linear(x_base)
+    id_y_base = np.ceil((1-(y_base-ymin)/(ymax-ymin))*(im_nrow-1)).astype(int) + int(im_ncol * pad_ratio)
+    id_y_base[id_y_base<0]=0
+    id_y_base[id_y_base>(im_nrow-1)]=im_nrow-1
+    id_y_top = np.floor((1-(y_top-ymin)/(ymax-ymin))*(im_nrow-1)).astype(int) - int(im_ncol * pad_ratio)
+    id_y_top[id_y_top<0]=0
+    id_y_top[id_y_top>(im_nrow-1)]=im_nrow-1
+    id_x_base = range(id_st_x,(id_ed_x+1))
+    for x in range(len(id_y_base)):
+        if(x in range(int(step_w/xmax * im_ncol)) and prev_edge != ''):
+            if(shift_dist>0):
+                id_y_base[x] = id_y_base[x] - int(im_ncol * pad_ratio)
+                id_y_top[x] = id_y_top[x] + int(im_ncol * pad_ratio) - \
+                                int(abs(shift_dist)/abs(ymin -ymax) * im_nrow * 0.3)
+                if(id_y_top[x] < 0):
+                    id_y_top[x] = 0
+            if(shift_dist<0):
+                id_y_base[x] = id_y_base[x] - int(im_ncol * pad_ratio) + \
+                                int(abs(shift_dist)/abs(ymin -ymax) * im_nrow * 0.3)
+                id_y_top[x] = id_y_top[x] + int(im_ncol * pad_ratio)
+                if(id_y_base[x] > im_nrow-1):
+                    id_y_base[x] = im_nrow-1
+        dict_im_array[cellname][id_y_top[x]:(id_y_base[x]+1),id_x_base[x]] =  np.tile(gene_color_new[x],\
+                                                                          (id_y_base[x]-id_y_top[x]+1))
+    return dict_im_array
+
 
 def adjust_spines(ax, spines):
     for loc, spine in ax.spines.items():

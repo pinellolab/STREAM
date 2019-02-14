@@ -2375,7 +2375,7 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
 
 
 def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,factor_zoomin=100.0,preference=None,
-                save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
+                save_fig=False,fig_path=None,fig_name='stream_plot.pdf',fig_size=(12,8),fig_legend=True,fig_legend_ncol=3,tick_fontsize=20,label_fontsize=25):  
     """Generate stream plots
     
     Parameters
@@ -2408,6 +2408,8 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'stream_plot.pdf')
         if save_fig is True, specify figure name.
+    fig_legend: `bool`, optional (default: False)
+        if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
     tick_fontsize: `int`, optional (default: 20)
@@ -3037,66 +3039,13 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         ax.arrow(fig_xmin, fig_ymin-(fig_ymax-fig_ymin)*0.1, fig_xmax-fig_xmin, 0., fc='k', ec='k', lw = 1.0,
                  head_width=fig_hw, head_length=fig_hl, overhang = 0.3,
                  length_includes_head= True, clip_on = False)
-        plt.legend(legend_labels,prop={'size':tick_fontsize},loc='center', bbox_to_anchor=(0.5, 1.20),ncol=fig_legend_ncol, \
+        if(fig_legend):
+            plt.legend(legend_labels,prop={'size':tick_fontsize},loc='center', bbox_to_anchor=(0.5, 1.20),ncol=fig_legend_ncol, \
                    fancybox=True, shadow=True)
 
         if(save_fig):
             plt.savefig(os.path.join(file_path_S,fig_name),pad_inches=1,bbox_inches='tight',dpi=120)
-            plt.close(fig)  
-
-
-def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_top_x,df_top_y,xmin,xmax,ymin,ymax,im_nrow,im_ncol,step_w,dict_shift_dist,id_wins,edge_i,cellname,id_wins_prev,prev_edge):
-    pad_ratio = 0.008
-    xmin_edge = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].min()
-    xmax_edge = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].max()
-    id_st_x = int(np.floor(((xmin_edge - xmin)/(xmax - xmin))*(im_ncol-1)))
-    id_ed_x =  int(np.floor(((xmax_edge - xmin)/(xmax - xmin))*(im_ncol-1)))
-    if (flat_tree.degree(edge_i[1])==1):
-        id_ed_x = id_ed_x + 1
-    if(id_st_x < 0):
-        id_st_x = 0
-    if(id_st_x >0):
-        id_st_x  = id_st_x + 1
-    if(id_ed_x>(im_ncol-1)):
-        id_ed_x = im_ncol - 1
-    if(prev_edge != ''):
-        shift_dist = dict_shift_dist[edge_i] - dict_shift_dist[prev_edge]
-        gene_color = df_bins_gene.loc[cellname,list(map(lambda x: 'win' + str(x), [id_wins_prev[-1]] + id_wins[1:]))].tolist()
-    else:
-        gene_color = df_bins_gene.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
-    x_axis = df_base_x.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
-    x_base = np.linspace(x_axis[0],x_axis[-1],id_ed_x-id_st_x+1)
-    gene_color_new = np.interp(x_base,x_axis,gene_color)
-    y_axis_base = df_base_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
-    y_axis_top = df_top_y.loc[cellname,list(map(lambda x: 'win' + str(x), id_wins))].tolist()
-    f_base_linear = interpolate.interp1d(x_axis, y_axis_base, kind = 'linear')
-    f_top_linear = interpolate.interp1d(x_axis, y_axis_top, kind = 'linear')
-    y_base = f_base_linear(x_base)
-    y_top = f_top_linear(x_base)
-    id_y_base = np.ceil((1-(y_base-ymin)/(ymax-ymin))*(im_nrow-1)).astype(int) + int(im_ncol * pad_ratio)
-    id_y_base[id_y_base<0]=0
-    id_y_base[id_y_base>(im_nrow-1)]=im_nrow-1
-    id_y_top = np.floor((1-(y_top-ymin)/(ymax-ymin))*(im_nrow-1)).astype(int) - int(im_ncol * pad_ratio)
-    id_y_top[id_y_top<0]=0
-    id_y_top[id_y_top>(im_nrow-1)]=im_nrow-1
-    id_x_base = range(id_st_x,(id_ed_x+1))
-    for x in range(len(id_y_base)):
-        if(x in range(int(step_w/xmax * im_ncol)) and prev_edge != ''):
-            if(shift_dist>0):
-                id_y_base[x] = id_y_base[x] - int(im_ncol * pad_ratio)
-                id_y_top[x] = id_y_top[x] + int(im_ncol * pad_ratio) - \
-                                int(abs(shift_dist)/abs(ymin -ymax) * im_nrow * 0.3)
-                if(id_y_top[x] < 0):
-                    id_y_top[x] = 0
-            if(shift_dist<0):
-                id_y_base[x] = id_y_base[x] - int(im_ncol * pad_ratio) + \
-                                int(abs(shift_dist)/abs(ymin -ymax) * im_nrow * 0.3)
-                id_y_top[x] = id_y_top[x] + int(im_ncol * pad_ratio)
-                if(id_y_base[x] > im_nrow-1):
-                    id_y_base[x] = im_nrow-1
-        dict_im_array[cellname][id_y_top[x]:(id_y_base[x]+1),id_x_base[x]] =  np.tile(gene_color_new[x],\
-                                                                          (id_y_base[x]-id_y_top[x]+1))
-    return dict_im_array
+            plt.close(fig)
 
 
 def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,factor_zoomin=100.0,preference=None,

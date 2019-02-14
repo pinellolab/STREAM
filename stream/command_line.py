@@ -331,7 +331,7 @@ def main():
             workdir = output_folder
         if(use_precomputed):
             print('Importing the precomputed pkl file...')
-            adata = st.read(file_name='stream_result.pkl',file_format='pkl',file_path=workdir)
+            adata = st.read(file_name='stream_result.pkl',file_format='pkl',file_path=workdir,workdir=workdir)
         else:
             if(flag_atac):
                 print('Reading in atac zscore matrix...')
@@ -413,7 +413,7 @@ def main():
                 for ns in list_node_start:
                     if(flag_web):
                         st.subwaymap_plot(adata,percentile_dist=100,root=ns,save_fig=flag_savefig)
-                        st.stream_plot(adata,root=ns,fig_size=(8,8),save_fig=True,flag_log_view=flag_stream_log_view,fig_name='stream_plot.png')                        
+                        st.stream_plot(adata,root=ns,fig_size=(8,8),save_fig=True,flag_log_view=flag_stream_log_view,fig_legend=False,fig_name='stream_plot.png')                        
                     else:
                         st.subwaymap_plot(adata,percentile_dist=100,root=ns,save_fig=flag_savefig)
                         st.stream_plot(adata,root=ns,fig_size=(8,8),save_fig=flag_savefig,flag_log_view=flag_stream_log_view)
@@ -463,7 +463,7 @@ def main():
             workdir_ref = os.path.join(os.getcwd(),'stream_result')
         else:
             workdir_ref = output_folder
-        adata = st.read(file_name='stream_result.pkl',file_format='pkl',file_path=workdir_ref)
+        adata = st.read(file_name='stream_result.pkl',file_format='pkl',file_path=workdir_ref, workdir=workdir_ref)
         workdir = os.path.join(workdir_ref,os.pardir,'mapping_result')
         adata_new=st.read(file_name=new_filename,workdir=workdir)
         st.add_cell_labels(adata_new,file_name=new_label_filename)
@@ -492,7 +492,7 @@ def main():
             else:
                 st.subwaymap_plot_gene(adata,adata_new=adata_new,percentile_dist=100,root=root,save_fig=flag_savefig,flag_log_view=flag_stream_log_view)
         st.write(adata_new,file_name='stream_mapping_result.pkl')
-    print('Finished computation...')
+    print('Finished computation.')
 
 if __name__ == "__main__":
     main()
