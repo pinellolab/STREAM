@@ -143,9 +143,13 @@ Specify the number of processes to use. The default uses all the cores available
 --lle_neighbours  
 LLE neighbour percent (default: 0.1)
 --lle_components  
-number of components for LLE space (default: 3)
---AP_damping_factor  
+Number of components for LLE space (default: 3)
+--clustering
+Clustering method used for seeding the intial structure, choose from 'ap','kmeans','sc'.  
+--damping  
 Affinity Propagation: damping factor (default: 0.75)
+--n_clusters  
+Number of clusters for spectral clustering or kmeans
 --EPG_n_nodes
 Number of nodes for elastic principal graph (default: 50)
 --EPG_lambda
