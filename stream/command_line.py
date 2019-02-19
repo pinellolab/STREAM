@@ -434,14 +434,52 @@ def main():
         if(flag_gene_TG_detection):
             print('Identifying transition genes...')
             st.detect_transistion_genes(adata,cutoff_spearman=TG_spearman_cutoff,cutoff_logfc = TG_logfc_cutoff,n_jobs = n_processes)
-            st.plot_transition_genes(adata,save_fig=flag_savefig)
+            if(flag_web):
+                ## Plot top5 genes
+                flat_tree = adata.uns['flat_tree']
+                list_node_start = [value for key,value in nx.get_node_attributes(flat_tree,'label').items()]
+                gene_list = []
+                for x in adata.uns['transition_genes'].keys():
+                    gene_list = gene_list + adata.uns['transition_genes'][x].index[:5].tolist() 
+                gene_list = np.unique(gene_list)
+                for ns in list_node_start:
+                    output_for_website_subwaymap_gene(adata,gene_list)
+                    st.stream_plot_gene(adata,root=ns,fig_size=(8,8),genes=gene_list,save_fig=True,flag_log_view=flag_stream_log_view,fig_format='png')
+            else:
+                st.plot_transition_genes(adata,save_fig=flag_savefig)
+
         if(flag_gene_DE_detection):
             print('Identifying differentially expressed genes...')
             st.detect_de_genes(adata,cutoff_zscore=DE_logfc_cutoff,cutoff_logfc = DE_logfc_cutoff,n_jobs = n_processes)
-            st.plot_de_genes(adata,save_fig=flag_savefig)
+            if(flag_web):
+                flat_tree = adata.uns['flat_tree']
+                list_node_start = [value for key,value in nx.get_node_attributes(flat_tree,'label').items()]
+                gene_list = []
+                for x in adata.uns['de_genes_greater'].keys():
+                    gene_list = gene_list + adata.uns['de_genes_greater'][x].index[:5].tolist() 
+                for x in adata.uns['de_genes_less'].keys():
+                    gene_list = gene_list + adata.uns['de_genes_less'][x].index[:5].tolist()
+                gene_list = np.unique(gene_list)
+                for ns in list_node_start:
+                    output_for_website_subwaymap_gene(adata,gene_list)
+                    st.stream_plot_gene(adata,root=ns,fig_size=(8,8),genes=gene_list,save_fig=True,flag_log_view=flag_stream_log_view,fig_format='png')
+            else:
+                st.plot_de_genes(adata,save_fig=flag_savefig)
+
         if(flag_gene_LG_detection):
             print('Identifying leaf genes...')
             st.detect_leaf_genes(adata,cutoff_zscore=LG_zscore_cutoff,cutoff_pvalue=LG_pvalue_cutoff,n_jobs = n_processes)
+            if(flag_web):
+                ## Plot top5 genes
+                flat_tree = adata.uns['flat_tree']
+                list_node_start = [value for key,value in nx.get_node_attributes(flat_tree,'label').items()]
+                gene_list = []
+                for x in adata.uns['leaf_genes'].keys():
+                    gene_list = gene_list + adata.uns['leaf_genes'][x].index[:5].tolist() 
+                gene_list = np.unique(gene_list)
+                for ns in list_node_start:
+                    output_for_website_subwaymap_gene(adata,gene_list)
+                    st.stream_plot_gene(adata,root=ns,fig_size=(8,8),genes=gene_list,save_fig=True,flag_log_view=flag_stream_log_view,fig_format='png')
 
         if((genes!=None) and (len(gene_list)>0)):
             print('Visualizing genes...')
