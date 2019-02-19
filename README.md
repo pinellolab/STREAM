@@ -27,13 +27,12 @@ $ conda config --add channels conda-forge
 
 3)	Create an environment named `myenv` , install **stream**, **jupyter**, and activate it with the following commands:
 
+* *For single cell **RNA-seq** analysis*:
 ```sh
 $ conda create -n myenv python=3.6 stream jupyter
 $ conda activate myenv
 ```
-
-**Note: For single cell atac-seq analysis, please run the following commands:**
-
+* *For single cell **ATAC-seq** analysis*:
 ```sh
 $ conda create -n myenv python=3.6 stream stream_atac jupyter
 $ conda activate myenv
