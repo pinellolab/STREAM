@@ -108,6 +108,12 @@ def output_for_website(adata):
         for edge_i in adata.uns['subwaymap_'+root]['edges'].keys():
             df_edge_pos =  pd.DataFrame(adata.uns['subwaymap_'+root]['edges'][edge_i])
             df_edge_pos.to_csv(os.path.join(workdir,root, 'subway_coord_line_'+dict_nodes_label[edge_i[0]] + '_' + dict_nodes_label[edge_i[1]]+'.csv'),sep='\t',index=False)
+    #mapping between original gene names and slugified gene names
+    df_genenames = pd.DataFrame(index=adata.var_names,columns=['ori','converted'])
+    for x in df_genenames.index:
+        df_genenames.loc[x,['ori','converted']] = [x,slugify(x)]
+    df_genenames.to_csv(os.path.join(workdir,'gene_conversion.tsv'),sep = '\t',index = False,header=True)
+
 
 def output_for_website_subwaymap_gene(adata,gene_list):
     workdir = adata.uns['workdir']
