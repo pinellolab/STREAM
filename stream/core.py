@@ -101,6 +101,13 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna
             adata.raw = adata
         elif(file_format == 'mtx'):
             adata = ad.read_mtx(_fp(file_name),**kwargs).T 
+            adata.X = np.array(adata.X.todense())
+            print(_fp(os.path.join(os.path.dirname(file_name),'genes.tsv')))
+            genes = pd.read_csv(_fp(os.path.join(os.path.dirname(file_name),'genes.tsv')), header=None, sep='\t')
+            adata.var_names = genes[1]
+            adata.var['gene_ids'] = genes[0].values
+            print(_fp(os.path.join(os.path.dirname(file_name),'barcodes.tsv')))
+            adata.obs_names = pd.read_csv(_fp(os.path.join(os.path.dirname(file_name),'barcodes.tsv')), header=None)[0]
             adata.raw = adata
         elif(file_format == 'h5ad'):
             adata = ad.read_h5ad(_fp(file_name),**kwargs)
@@ -116,7 +123,6 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna
     adata.uns['workdir'] = workdir
     print('Saving results in: %s' % workdir)
     return adata
-
 
 def write(adata,file_name=None,file_path='',file_format='pkl'):
     """Write Anndate object to file
