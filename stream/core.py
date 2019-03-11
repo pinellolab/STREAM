@@ -4504,3 +4504,188 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
+
+def save_web_report(adata,n_genes=5,file_name='stream_report', fig_size=(8,8),flag_stream_log_view=False):
+    """save stream report for the interactive website visualization. A zip file will be generated under the work directory
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    file_name: `str`, optional (default: 'stream_report')
+        Ouput Zip file name.
+    n_genes: `int`, optional (default: 5)
+        Number of top genes selected from each output marker gene file. 
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    Returns
+    -------
+    None
+    """    
+
+    reportdir = os.path.join(adata.uns['workdir'],file_name)
+    if(not os.path.exists(reportdir)):
+        os.makedirs(reportdir)
+    experiment = adata.uns['experiment']
+    epg = adata.uns['epg']
+    flat_tree = adata.uns['flat_tree']
+    dict_nodes_pos = nx.get_node_attributes(epg,'pos')
+    dict_nodes_label = nx.get_node_attributes(flat_tree,'label')
+    dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
+
+    print('Generating coordinates of cells in 3D plots...')
+    #coordinates of cells in 3D plots
+    df_sample = adata.obs[['label','label_color']].copy()
+    df_coord = pd.DataFrame(adata.obsm['X_dr'],index=adata.obs_names)
+    color = df_sample.sample(frac=1,random_state=100)['label_color'] 
+    coord = df_coord.sample(frac=1,random_state=100)
+    df_coord_cells = pd.concat([color, coord], axis=1)
+    df_coord_cells.columns = ['color','D0','D1','D2']
+    df_coord_cells.to_csv(os.path.join(reportdir,'coord_cells.csv'),sep='\t')
+
+    print('Generating coordinates of curves in 3D plots...')
+    #coordinates of curves in 3D plots
+    for edge_i in flat_tree.edges():
+        branch_i_nodes = flat_tree.edges[edge_i]['nodes']
+        branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
+        df_coord_curve_i = pd.DataFrame(branch_i_pos)
+        df_coord_curve_i.to_csv(os.path.join(reportdir, 'coord_curve_'+dict_nodes_label[edge_i[0]] + '_' + dict_nodes_label[edge_i[1]]+'.csv'),sep='\t',index=False)
+
+    print('Generating coordinates of states/nodes in 3D plots...')
+    #coordinates of states(nodes) in 3D plots
+    df_coord_states = pd.DataFrame(columns=[0,1,2])
+    for x in dict_nodes_label.keys():
+        df_coord_states.loc[dict_nodes_label[x]] = dict_nodes_pos[x]
+    df_coord_states.sort_index(inplace=True)
+    df_coord_states.to_csv(os.path.join(reportdir,'coord_states.csv'),sep='\t')
+
+    print('Generating coordinates of cells in flat tree...')
+    #coordinates of cells in flat tree
+    df_sample = adata.obs[['label','label_color']].copy()
+    df_coord = pd.DataFrame(adata.obsm['X_spring'],index=adata.obs_names)
+    color = df_sample.sample(frac=1,random_state=100)['label_color'] 
+    coord = df_coord.sample(frac=1,random_state=100)
+    df_flat_tree_coord_cells = pd.concat([color, coord], axis=1)
+    df_flat_tree_coord_cells.columns = ['color','D0','D1']
+    df_flat_tree_coord_cells.to_csv(os.path.join(reportdir, 'flat_tree_coord_cells.csv'),sep='\t')
+
+    print('Generating coordinates of flat tree...')
+    #nodes in flat tree
+    df_nodes_flat_tree = pd.DataFrame(columns=['D0','D1'])
+    for x in dict_nodes_label.keys():
+        df_nodes_flat_tree.loc[dict_nodes_label[x]] = flat_tree.node[x]['pos_spring']
+    df_nodes_flat_tree.sort_index(inplace=True)
+    df_nodes_flat_tree.to_csv(os.path.join(reportdir,'nodes.csv'),sep='\t')
+
+    #edges in flat tree
+    df_edges_flat_tree = pd.DataFrame(columns=[0,1])
+    for i,edge_i in enumerate(flat_tree.edges()):
+        df_edges_flat_tree.loc[i] = [dict_nodes_label[edge_i[0]],dict_nodes_label[edge_i[1]]]
+        df_edges_flat_tree.to_csv(os.path.join(reportdir,'edges.tsv'),sep = '\t',index = False,header=False)
+
+    #mapping between original gene names and slugified gene names
+    df_genenames = pd.DataFrame(index=adata.var_names,columns=['ori','converted'])
+    for x in df_genenames.index:
+        df_genenames.loc[x,['ori','converted']] = [x,slugify(x)]
+    df_genenames.to_csv(os.path.join(reportdir,'gene_conversion.tsv'),sep = '\t',index = False,header=True)
+
+    print('Generating subway map plots and stream plots of cells...')
+    #subway map plots and stream plots of cells
+    list_node_start = dict_label_node.keys()
+    for ns in list_node_start:
+        st.subwaymap_plot(adata,percentile_dist=100,root=ns,save_fig=False,fig_path=reportdir)
+        st.stream_plot(adata,root=ns,fig_size=fig_size,save_fig=True,fig_legend=False,fig_path=reportdir,flag_log_view=flag_stream_log_view ,fig_name='stream_plot.png') 
+
+
+    gene_list = []
+
+    if('transition_genes' not in adata.uns_keys()):
+        print('Please run st.detect_transistion_genes(adata)')
+        return
+    else:
+        print('Generating transition genes...')
+        #transition genes
+        file_path = os.path.join(reportdir,'transition_genes')
+        if(not os.path.exists(file_path)):
+            os.makedirs(file_path)   
+        for edge_i in adata.uns['transition_genes'].keys():
+            df_tg_i = adata.uns['transition_genes'][edge_i]
+            df_tg_i.to_csv(os.path.join(file_path,'transition_genes_'+ dict_nodes_label[edge_i[0]]+'_'+dict_nodes_label[edge_i[1]] + '.tsv'),sep = '\t',index = True)
+            gene_list = gene_list + df_tg_i.index[:n_genes].tolist() 
+
+    if(('de_genes_greater' not in adata.uns_keys()) or ('de_genes_less' not in adata.uns_keys())):
+        print('Please run st.detect_de_genes(adata)')
+        return
+    else:
+        print('Generating DE genes...')
+        #DE genes
+        file_path = os.path.join(reportdir,'de_genes')
+        if(not os.path.exists(file_path)):
+            os.makedirs(file_path)
+        for pair_i in adata.uns['de_genes_greater'].keys():  
+            df_de_i_greater = adata.uns['de_genes_greater'][pair_i]
+            df_de_i_greater.to_csv(os.path.join(file_path,'de_genes_greater_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
+                                                + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True) 
+            gene_list = gene_list + df_de_i_greater.index[:n_genes].tolist() 
+        for pair_i in adata.uns['de_genes_less'].keys():
+            df_de_i_less = adata.uns['de_genes_less'][pair_i]
+            df_de_i_less.to_csv(os.path.join(file_path,'de_genes_less_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
+                                             + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)
+            gene_list = gene_list + df_de_i_less.index[:n_genes].tolist()
+
+    if('leaf_genes' not in adata.uns_keys()):
+        print('Please run st.detect_leaf_genes(adata)')
+        return
+    else:
+        print('Generating leaf genes...')
+        #leaf genes
+        file_path = os.path.join(reportdir,'leaf_genes')
+        if(not os.path.exists(file_path)):
+            os.makedirs(file_path)   
+        for leaf_i in adata.uns['leaf_genes'].keys():  
+            df_lg_i =  adata.uns['leaf_genes'][leaf_i]
+            df_lg_i.to_csv(os.path.join(file_path,'leaf_genes'+dict_nodes_label[leaf_i[0]]+'_'+dict_nodes_label[leaf_i[1]] + '.tsv'),sep = '\t',index = True)
+            gene_list = gene_list + df_lg_i.index[:n_genes].tolist() 
+
+    gene_list = np.unique(gene_list)
+    print('Visualizing ' + str(gene_list.shape[0]) + ' genes from detected top marker genes...') 
+
+    print('Generating subway map plots and stream plots of genes...')
+    #subway map plots and stream plots of genes
+    df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
+                                data = adata.raw[:,gene_list].X,
+                                columns=gene_list)
+    for root in list_node_start:
+        df_sample = adata.obs[['label','label_color']].copy()
+        df_coord = pd.DataFrame(adata.obsm['X_subwaymap_'+root],index=adata.obs_names)
+        color = df_sample.sample(frac=1,random_state=100)['label_color'] 
+        coord = df_coord.sample(frac=1,random_state=100)
+        df_subwaymap_coord_cells = pd.concat([color, coord], axis=1)
+        df_subwaymap_coord_cells.columns = ['color','D0','D1']   
+        df_subwaymap_coord_cells.to_csv(os.path.join(reportdir,root,'subway_coord_cells.csv'),sep='\t')
+        for edge_i in adata.uns['subwaymap_'+root]['edges'].keys():
+            df_edge_pos =  pd.DataFrame(adata.uns['subwaymap_'+root]['edges'][edge_i])
+            df_edge_pos.to_csv(os.path.join(reportdir, root, 'subway_coord_line_'+dict_nodes_label[edge_i[0]] + '_' + dict_nodes_label[edge_i[1]]+'.csv'),sep='\t',index=False)
+
+        for g in gene_list:
+            if(experiment=='rna-seq'):
+                gene_expr = df_gene_expr[g].copy()
+                max_gene_expr = np.percentile(gene_expr[gene_expr>0],95)
+                gene_expr[gene_expr>max_gene_expr] = max_gene_expr   
+            elif(experiment=='atac-seq'):
+                gene_expr = df_gene_expr[g].copy()
+                min_gene_expr = np.percentile(gene_expr[gene_expr<0],100-95)
+                max_gene_expr = np.percentile(gene_expr[gene_expr>0],95)  
+                gene_expr[gene_expr>max_gene_expr] = max_gene_expr
+                gene_expr[gene_expr<min_gene_expr] = min_gene_expr
+            df_subwaymap_gene_expr = pd.Series(gene_expr).sample(frac=1,random_state=100)
+            df_subwaymap_coord_cells_expr = pd.concat([df_subwaymap_coord_cells[['D0','D1']],df_subwaymap_gene_expr], axis=1)
+            df_subwaymap_coord_cells_expr.to_csv(os.path.join(reportdir,root, 'subway_coord_' + slugify(g) + '.csv'),sep='\t')
+        st.stream_plot_gene(adata,root=root,fig_size=fig_size,genes=gene_list,save_fig=True,fig_path=reportdir,flag_log_view=flag_stream_log_view,fig_format='png')
+
+    print('Zipping the files...')
+    shutil.make_archive(base_name='stream_report', format='zip',root_dir=reportdir)
+    shutil.rmtree(reportdir)
+    os.chdir(adata.uns['workdir'])
+
+    print('Done!')
