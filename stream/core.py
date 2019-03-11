@@ -38,6 +38,7 @@ from decimal import *
 import matplotlib.gridspec as gridspec
 import pickle
 import gzip
+import shutil
 
 
 from rpy2.robjects.packages import importr
