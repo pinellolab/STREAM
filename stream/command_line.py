@@ -203,7 +203,7 @@ def main():
                         help="LLE neighbour percent ")
     parser.add_argument("--lle_components",dest="lle_n_component", type=int, default=3,
                         help="number of components for LLE space ")
-    parser.add_argument("--clustering",dest="clustering",default='ap',
+    parser.add_argument("--clustering",dest="clustering",default='kmeans',
                         help="Clustering method used for seeding the intial structure, choose from 'ap','kmeans','sc'")
     parser.add_argument("--damping",dest="damping", type=float, default=0.75,
                         help="Affinity Propagation: damping factor") 
@@ -263,6 +263,8 @@ def main():
                         help="Output folder")
     parser.add_argument("--for_web",dest="flag_web", action="store_true",
                         help="Output files for website")
+    parser.add_argument("--n_genes",dest="n_genes", type=int, default=5,
+                        help="Number of top genes selected from each output marker gene file for website gene visualization")
 
 
     args = parser.parse_args()
@@ -322,6 +324,7 @@ def main():
     EPG_ext_mode = args.EPG_ext_mode
     EPG_ext_par = args.EPG_ext_par
     output_folder = args.output_folder #work directory
+    n_genes = args.n_genes
    
     if(flag_web):
         flag_savefig = False
@@ -446,7 +449,7 @@ def main():
                 list_node_start = [value for key,value in nx.get_node_attributes(flat_tree,'label').items()]
                 gene_list = []
                 for x in adata.uns['transition_genes'].keys():
-                    gene_list = gene_list + adata.uns['transition_genes'][x].index[:5].tolist() 
+                    gene_list = gene_list + adata.uns['transition_genes'][x].index[:n_genes].tolist() 
                 gene_list = np.unique(gene_list)
                 for ns in list_node_start:
                     output_for_website_subwaymap_gene(adata,gene_list)
@@ -462,9 +465,9 @@ def main():
                 list_node_start = [value for key,value in nx.get_node_attributes(flat_tree,'label').items()]
                 gene_list = []
                 for x in adata.uns['de_genes_greater'].keys():
-                    gene_list = gene_list + adata.uns['de_genes_greater'][x].index[:5].tolist() 
+                    gene_list = gene_list + adata.uns['de_genes_greater'][x].index[:n_genes].tolist() 
                 for x in adata.uns['de_genes_less'].keys():
-                    gene_list = gene_list + adata.uns['de_genes_less'][x].index[:5].tolist()
+                    gene_list = gene_list + adata.uns['de_genes_less'][x].index[:n_genes].tolist()
                 gene_list = np.unique(gene_list)
                 for ns in list_node_start:
                     output_for_website_subwaymap_gene(adata,gene_list)
@@ -481,7 +484,7 @@ def main():
                 list_node_start = [value for key,value in nx.get_node_attributes(flat_tree,'label').items()]
                 gene_list = []
                 for x in adata.uns['leaf_genes'].keys():
-                    gene_list = gene_list + adata.uns['leaf_genes'][x].index[:5].tolist() 
+                    gene_list = gene_list + adata.uns['leaf_genes'][x].index[:n_genes].tolist() 
                 gene_list = np.unique(gene_list)
                 for ns in list_node_start:
                     output_for_website_subwaymap_gene(adata,gene_list)
