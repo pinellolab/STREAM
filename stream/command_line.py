@@ -203,7 +203,7 @@ def main():
                         help="LLE neighbour percent ")
     parser.add_argument("--lle_components",dest="lle_n_component", type=int, default=3,
                         help="number of components for LLE space ")
-    parser.add_argument("--clustering",dest="clustering",default='kmeans',
+    parser.add_argument("--clustering",dest="clustering",default='ap',
                         help="Clustering method used for seeding the intial structure, choose from 'ap','kmeans','sc'")
     parser.add_argument("--damping",dest="damping", type=float, default=0.75,
                         help="Affinity Propagation: damping factor") 
