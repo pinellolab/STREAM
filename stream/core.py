@@ -39,6 +39,7 @@ import matplotlib.gridspec as gridspec
 import pickle
 import gzip
 import shutil
+import json
 
 
 from rpy2.robjects.packages import importr
@@ -4506,7 +4507,11 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
 
-def save_web_report(adata,n_genes=5,file_name='stream_report', fig_size=(8,8),flag_stream_log_view=False):
+def save_web_report(adata,n_genes=5,file_name='stream_report',
+                    title="experiment name",
+                    description="experiment description",
+                    starting_node="root node",
+                    command_used="command used to generate the analysis",**kwargs):
     """save stream report for the interactive website visualization. A zip file will be generated under the work directory
     
     Parameters
@@ -4517,14 +4522,23 @@ def save_web_report(adata,n_genes=5,file_name='stream_report', fig_size=(8,8),fl
         Ouput Zip file name.
     n_genes: `int`, optional (default: 5)
         Number of top genes selected from each output marker gene file. 
-    fig_size: `tuple`, optional (default: (8,8))
-        figure size.
+    title: `str`, optional (default: 'experiment name')
+        Experiment name displayed on the website.
+    description: `str`, optional (default: 'experiment description')
+        Experiment description displayed on the website.
+    starting_node: `str`, optional (default: 'root node')
+        Root node displayed on the website.
+    command_used: `str`, optional (default: 'command used to generate the analysis') 
+        Command used for the analysis displayed on the website
+    **kwargs: additional arguments to stream_plot() and stream_plot_gene()
+    
     Returns
     -------
     None
     """    
 
-    reportdir = os.path.join(adata.uns['workdir'],file_name)
+    rootdir = os.path.join(adata.uns['workdir'],file_name)
+    reportdir = os.path.join(rootdir,file_name)
     if(not os.path.exists(reportdir)):
         os.makedirs(reportdir)
     experiment = adata.uns['experiment']
@@ -4595,7 +4609,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report', fig_size=(8,8),fl
     list_node_start = dict_label_node.keys()
     for ns in list_node_start:
         st.subwaymap_plot(adata,percentile_dist=100,root=ns,save_fig=False,fig_path=reportdir)
-        st.stream_plot(adata,root=ns,fig_size=fig_size,save_fig=True,fig_legend=False,fig_path=reportdir,flag_log_view=flag_stream_log_view ,fig_name='stream_plot.png') 
+        st.stream_plot(adata,root=ns,save_fig=True,fig_legend=False,fig_path=reportdir,fig_name='stream_plot.png',**kwargs) 
 
 
     gene_list = []
@@ -4682,11 +4696,19 @@ def save_web_report(adata,n_genes=5,file_name='stream_report', fig_size=(8,8),fl
             df_subwaymap_gene_expr = pd.Series(gene_expr).sample(frac=1,random_state=100)
             df_subwaymap_coord_cells_expr = pd.concat([df_subwaymap_coord_cells[['D0','D1']],df_subwaymap_gene_expr], axis=1)
             df_subwaymap_coord_cells_expr.to_csv(os.path.join(reportdir,root, 'subway_coord_' + slugify(g) + '.csv'),sep='\t')
-        st.stream_plot_gene(adata,root=root,fig_size=fig_size,genes=gene_list,save_fig=True,fig_path=reportdir,flag_log_view=flag_stream_log_view,fig_format='png')
+        st.stream_plot_gene(adata,root=root,genes=gene_list,save_fig=True,fig_path=reportdir,fig_format='png',**kwargs)
 
+    dict_analysis = {}
+    dict_analysis['title']=title
+    dict_analysis['description'] = description
+    dict_analysis['starting_node'] = starting_node
+    dict_analysis['command_used'] = command_used     
+    with open(os.path.join(rootdir,'analysis_description.json'), 'w') as fp:
+        json.dump(dict_analysis, fp,indent=2)
+        
     print('Zipping the files...')
-    shutil.make_archive(base_name='stream_report', format='zip',root_dir=reportdir)
-    shutil.rmtree(reportdir)
+    shutil.make_archive(base_name=os.path.join(adata.uns['workdir'],file_name), format='zip',root_dir=rootdir)
+    shutil.rmtree(rootdir)
     os.chdir(adata.uns['workdir'])
-
     print('Done!')
+    
