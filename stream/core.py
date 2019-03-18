@@ -1998,7 +1998,7 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
         'label': the cell labels (stored in adata.obs['label'])
         'branch': the bracnh id identifed by STREAM
     preference: `list`, optional (default: None): 
-        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of subway plot. The higher ranks the node have, the closer to the top the branch with that node is.
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
     fig_size: `tuple`, optional (default: (8,8))
@@ -4507,7 +4507,7 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
 
-def save_web_report(adata,n_genes=5,file_name='stream_report',
+def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
                     title="experiment name",
                     description="experiment description",
                     starting_node="root node",
@@ -4523,13 +4523,16 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',
     n_genes: `int`, optional (default: 5)
         Number of top genes selected from each output marker gene file. 
     title: `str`, optional (default: 'experiment name')
-        Experiment name displayed on the website.
+        Experiment name displayed on STREAM website.
     description: `str`, optional (default: 'experiment description')
-        Experiment description displayed on the website.
+        Experiment description displayed on STREAM website.
     starting_node: `str`, optional (default: 'root node')
-        Root node displayed on the website.
+        Root node displayed on STREAM website.
     command_used: `str`, optional (default: 'command used to generate the analysis') 
-        Command used for the analysis displayed on the website
+        Command used for the analysis displayed on STREAM website.
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part. 
+        The higher ranks the node have, the closer to the top the branch with that node is.
     **kwargs: additional arguments to stream_plot() and stream_plot_gene()
     
     Returns
@@ -4608,8 +4611,8 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',
     #subway map plots and stream plots of cells
     list_node_start = dict_label_node.keys()
     for ns in list_node_start:
-        st.subwaymap_plot(adata,percentile_dist=100,root=ns,save_fig=False,fig_path=reportdir)
-        st.stream_plot(adata,root=ns,save_fig=True,fig_legend=False,fig_path=reportdir,fig_name='stream_plot.png',**kwargs) 
+        st.subwaymap_plot(adata,percentile_dist=100,root=ns,preference=preference,save_fig=False,fig_path=reportdir)
+        st.stream_plot(adata,root=ns,preference=preference,save_fig=True,fig_legend=False,fig_path=reportdir,fig_name='stream_plot.png',**kwargs) 
 
 
     gene_list = []
@@ -4696,7 +4699,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',
             df_subwaymap_gene_expr = pd.Series(gene_expr).sample(frac=1,random_state=100)
             df_subwaymap_coord_cells_expr = pd.concat([df_subwaymap_coord_cells[['D0','D1']],df_subwaymap_gene_expr], axis=1)
             df_subwaymap_coord_cells_expr.to_csv(os.path.join(reportdir,root, 'subway_coord_' + slugify(g) + '.csv'),sep='\t')
-        st.stream_plot_gene(adata,root=root,genes=gene_list,save_fig=True,fig_path=reportdir,fig_format='png',**kwargs)
+        st.stream_plot_gene(adata,root=root,preference=preference,genes=gene_list,save_fig=True,fig_path=reportdir,fig_format='png',**kwargs)
 
     dict_analysis = {}
     dict_analysis['title']=title
@@ -4711,4 +4714,3 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',
     shutil.rmtree(rootdir)
     os.chdir(adata.uns['workdir'])
     print('Done!')
-    
