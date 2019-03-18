@@ -4558,6 +4558,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
     color = df_sample.sample(frac=1,random_state=100)['label_color'] 
     coord = df_coord.sample(frac=1,random_state=100)
     df_coord_cells = pd.concat([color, coord], axis=1)
+    df_coord_cells = df_coord_cells.iloc[:,:4]
     df_coord_cells.columns = ['color','D0','D1','D2']
     df_coord_cells.to_csv(os.path.join(reportdir,'coord_cells.csv'),sep='\t')
 
@@ -4573,7 +4574,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
     #coordinates of states(nodes) in 3D plots
     df_coord_states = pd.DataFrame(columns=[0,1,2])
     for x in dict_nodes_label.keys():
-        df_coord_states.loc[dict_nodes_label[x]] = dict_nodes_pos[x]
+        df_coord_states.loc[dict_nodes_label[x]] = dict_nodes_pos[x][:3]
     df_coord_states.sort_index(inplace=True)
     df_coord_states.to_csv(os.path.join(reportdir,'coord_states.csv'),sep='\t')
 
