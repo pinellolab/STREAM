@@ -4611,8 +4611,8 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
     #subway map plots and stream plots of cells
     list_node_start = dict_label_node.keys()
     for ns in list_node_start:
-        st.subwaymap_plot(adata,percentile_dist=100,root=ns,preference=preference,save_fig=False,fig_path=reportdir)
-        st.stream_plot(adata,root=ns,preference=preference,save_fig=True,fig_legend=False,fig_path=reportdir,fig_name='stream_plot.png',**kwargs) 
+        subwaymap_plot(adata,percentile_dist=100,root=ns,preference=preference,save_fig=False,fig_path=reportdir)
+        stream_plot(adata,root=ns,preference=preference,save_fig=True,fig_legend=False,fig_path=reportdir,fig_name='stream_plot.png',**kwargs) 
 
 
     gene_list = []
@@ -4699,7 +4699,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
             df_subwaymap_gene_expr = pd.Series(gene_expr).sample(frac=1,random_state=100)
             df_subwaymap_coord_cells_expr = pd.concat([df_subwaymap_coord_cells[['D0','D1']],df_subwaymap_gene_expr], axis=1)
             df_subwaymap_coord_cells_expr.to_csv(os.path.join(reportdir,root, 'subway_coord_' + slugify(g) + '.csv'),sep='\t')
-        st.stream_plot_gene(adata,root=root,preference=preference,genes=gene_list,save_fig=True,fig_path=reportdir,fig_format='png',**kwargs)
+        stream_plot_gene(adata,root=root,preference=preference,genes=gene_list,save_fig=True,fig_path=reportdir,fig_format='png',**kwargs)
 
     dict_analysis = {}
     dict_analysis['title']=title
