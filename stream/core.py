@@ -4551,6 +4551,8 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
     dict_nodes_label = nx.get_node_attributes(flat_tree,'label')
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
 
+    adata.obs[['label','label_color']].to_csv(os.path.join(reportdir,'metadata.tsv'),sep = '\t',index = True)
+
     print('Generating coordinates of cells in 3D plots...')
     #coordinates of cells in 3D plots
     df_sample = adata.obs[['label','label_color']].copy()
