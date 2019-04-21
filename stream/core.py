@@ -4592,7 +4592,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
     if('transition_genes' not in adata.uns_keys()):
         raise ValueError('Please run st.detect_transistion_genes(adata) before saving web report')
     if(('de_genes_greater' not in adata.uns_keys()) or ('de_genes_less' not in adata.uns_keys())):
-        raise ValueError('Please finish st.detect_de_genes(adata) before saving web report')
+        raise ValueError('Please run st.detect_de_genes(adata) before saving web report')
     
     rootdir = os.path.join(adata.uns['workdir'],file_name)
     reportdir = os.path.join(rootdir,file_name)
