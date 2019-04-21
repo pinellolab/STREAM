@@ -4585,7 +4585,15 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
     -------
     None
     """    
-
+    if('flat_tree' not in adata.uns_keys()):
+        raise ValueError('Please run st.plot_flat_tree(adata) before saving web report')
+    if('leaf_genes' not in adata.uns_keys()):
+        raise ValueError('Please run st.detect_leaf_genes(adata) before saving web report')
+    if('transition_genes' not in adata.uns_keys()):
+        raise ValueError('Please run st.detect_transistion_genes(adata) before saving web report')
+    if(('de_genes_greater' not in adata.uns_keys()) or ('de_genes_less' not in adata.uns_keys())):
+        raise ValueError('Please finish st.detect_de_genes(adata) before saving web report')
+    
     rootdir = os.path.join(adata.uns['workdir'],file_name)
     reportdir = os.path.join(rootdir,file_name)
     if(not os.path.exists(reportdir)):
@@ -4666,53 +4674,41 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
 
     gene_list = []
 
-    if('transition_genes' not in adata.uns_keys()):
-        print('Please run st.detect_transistion_genes(adata)')
-        return
-    else:
-        print('Generating transition genes...')
-        #transition genes
-        file_path = os.path.join(reportdir,'transition_genes')
-        if(not os.path.exists(file_path)):
-            os.makedirs(file_path)   
-        for edge_i in adata.uns['transition_genes'].keys():
-            df_tg_i = adata.uns['transition_genes'][edge_i]
-            df_tg_i.to_csv(os.path.join(file_path,'transition_genes_'+ dict_nodes_label[edge_i[0]]+'_'+dict_nodes_label[edge_i[1]] + '.tsv'),sep = '\t',index = True)
-            gene_list = gene_list + df_tg_i.index[:n_genes].tolist() 
+    print('Generating transition genes...')
+    #transition genes
+    file_path = os.path.join(reportdir,'transition_genes')
+    if(not os.path.exists(file_path)):
+        os.makedirs(file_path)   
+    for edge_i in adata.uns['transition_genes'].keys():
+        df_tg_i = adata.uns['transition_genes'][edge_i]
+        df_tg_i.to_csv(os.path.join(file_path,'transition_genes_'+ dict_nodes_label[edge_i[0]]+'_'+dict_nodes_label[edge_i[1]] + '.tsv'),sep = '\t',index = True)
+        gene_list = gene_list + df_tg_i.index[:n_genes].tolist() 
 
-    if(('de_genes_greater' not in adata.uns_keys()) or ('de_genes_less' not in adata.uns_keys())):
-        print('Please run st.detect_de_genes(adata)')
-        return
-    else:
-        print('Generating DE genes...')
-        #DE genes
-        file_path = os.path.join(reportdir,'de_genes')
-        if(not os.path.exists(file_path)):
-            os.makedirs(file_path)
-        for pair_i in adata.uns['de_genes_greater'].keys():  
-            df_de_i_greater = adata.uns['de_genes_greater'][pair_i]
-            df_de_i_greater.to_csv(os.path.join(file_path,'de_genes_greater_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
-                                                + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True) 
-            gene_list = gene_list + df_de_i_greater.index[:n_genes].tolist() 
-        for pair_i in adata.uns['de_genes_less'].keys():
-            df_de_i_less = adata.uns['de_genes_less'][pair_i]
-            df_de_i_less.to_csv(os.path.join(file_path,'de_genes_less_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
-                                             + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)
-            gene_list = gene_list + df_de_i_less.index[:n_genes].tolist()
+    print('Generating DE genes...')
+    #DE genes
+    file_path = os.path.join(reportdir,'de_genes')
+    if(not os.path.exists(file_path)):
+        os.makedirs(file_path)
+    for pair_i in adata.uns['de_genes_greater'].keys():  
+        df_de_i_greater = adata.uns['de_genes_greater'][pair_i]
+        df_de_i_greater.to_csv(os.path.join(file_path,'de_genes_greater_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
+                                            + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True) 
+        gene_list = gene_list + df_de_i_greater.index[:n_genes].tolist() 
+    for pair_i in adata.uns['de_genes_less'].keys():
+        df_de_i_less = adata.uns['de_genes_less'][pair_i]
+        df_de_i_less.to_csv(os.path.join(file_path,'de_genes_less_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
+                                         + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)
+        gene_list = gene_list + df_de_i_less.index[:n_genes].tolist()
 
-    if('leaf_genes' not in adata.uns_keys()):
-        print('Please run st.detect_leaf_genes(adata)')
-        return
-    else:
-        print('Generating leaf genes...')
-        #leaf genes
-        file_path = os.path.join(reportdir,'leaf_genes')
-        if(not os.path.exists(file_path)):
-            os.makedirs(file_path)   
-        for leaf_i in adata.uns['leaf_genes'].keys():  
-            df_lg_i =  adata.uns['leaf_genes'][leaf_i]
-            df_lg_i.to_csv(os.path.join(file_path,'leaf_genes'+dict_nodes_label[leaf_i[0]]+'_'+dict_nodes_label[leaf_i[1]] + '.tsv'),sep = '\t',index = True)
-            gene_list = gene_list + df_lg_i.index[:n_genes].tolist() 
+    print('Generating leaf genes...')
+    #leaf genes
+    file_path = os.path.join(reportdir,'leaf_genes')
+    if(not os.path.exists(file_path)):
+        os.makedirs(file_path)   
+    for leaf_i in adata.uns['leaf_genes'].keys():  
+        df_lg_i =  adata.uns['leaf_genes'][leaf_i]
+        df_lg_i.to_csv(os.path.join(file_path,'leaf_genes'+dict_nodes_label[leaf_i[0]]+'_'+dict_nodes_label[leaf_i[1]] + '.tsv'),sep = '\t',index = True)
+        gene_list = gene_list + df_lg_i.index[:n_genes].tolist() 
 
     gene_list = np.unique(gene_list)
     print('Visualizing ' + str(gene_list.shape[0]) + ' genes from detected top marker genes...') 
