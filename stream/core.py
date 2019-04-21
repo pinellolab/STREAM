@@ -2592,9 +2592,13 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         if(size_w>min(len_ori.values())/np.float(factor_min_win)):
             size_w = min(len_ori.values())/np.float(factor_min_win)
             
-        step_w = size_w/2 #step of sliding window (the divisor should be even)    
+        step_w = size_w/2 #step of sliding window (the divisor should be even)
 
-        max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+        if(len(dict_shift_dist)>1):
+            max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+        else:
+            max_width = max_path_len/np.float(factor_width)
+        # max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
         dict_shift_dist = {x: dict_shift_dist[x]*max_width for x in dict_shift_dist.keys()}
         min_width = 0.0 #min width of branch
         min_cellnum = 0 #the minimal cell number in one branch
@@ -3084,7 +3088,7 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         fig_hw = 1./20.*(fig_ymax-fig_ymin)
         fig_hl = 1./20.*(fig_xmax-fig_xmin)
         ax.arrow(fig_xmin, fig_ymin-(fig_ymax-fig_ymin)*0.1, fig_xmax-fig_xmin, 0., fc='k', ec='k', lw = 1.0,
-                 head_width=fig_hw, head_length=fig_hl, overhang = 0.3,
+                 head_width=fig_hw, head_length=fig_hl, overhang = 0.3, width=fig_hw/20.0,
                  length_includes_head= True, clip_on = False)
         if(fig_legend):
             plt.legend(legend_labels,prop={'size':tick_fontsize},loc='center', bbox_to_anchor=(0.5, 1.20),ncol=fig_legend_ncol, \
@@ -3249,8 +3253,11 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             size_w = min(len_ori.values())/np.float(factor_min_win)
             
         step_w = size_w/2 #step of sliding window (the divisor should be even)    
-
-        max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+        if(len(dict_shift_dist)>1):
+            max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+        else:
+            max_width = max_path_len/np.float(factor_width)
+        # max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
         dict_shift_dist = {x: dict_shift_dist[x]*max_width for x in dict_shift_dist.keys()}
         min_width = 0.0 #min width of branch
         min_cellnum = 0 #the minimal cell number in one branch
@@ -3909,7 +3916,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             fig_hw = 1./20.*(fig_ymax-fig_ymin)
             fig_hl = 1./20.*(fig_xmax-fig_xmin)
             ax.arrow(fig_xmin, fig_ymin, fig_xmax-fig_xmin, 0., fc='k', ec='k', lw = 1.0,
-                     head_width=fig_hw, head_length=fig_hl, overhang = 0.3,
+                     head_width=fig_hw, head_length=fig_hl, overhang = 0.3,width=fig_hw/20.0,
                      length_includes_head= True, clip_on = False)
             if(save_fig):
                 plt.savefig(os.path.join(file_path_S,'stream_plot_' + slugify(gene_name) + '.' + fig_format),dpi=120)
