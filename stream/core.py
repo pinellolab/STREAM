@@ -1058,7 +1058,7 @@ def infer_initial_structure(adata_low,nb_min=5):
         init_edges = epg_low.edges()
     return init_nodes_pos,init_edges
 
-def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='ap',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,nb_pct=0.1):
+def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='kmeans',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,nb_pct=0.1):
     
     """Seeding the initial elastic principal graph.
     
@@ -1070,7 +1070,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
         initial node positions
     init_edges: `array`, shape = [n_edges,2], optional (default: `None`)
         initial edges, all the initial nodes should be included in the tree structure
-    clustering: `str`, optional (default: 'ap')
+    clustering: `str`, optional (default: 'kmeans')
         Choose from {{'ap','kmeans','sc'}}
         clustering method used to infer the initial nodes.
         'ap' affinity propagation
