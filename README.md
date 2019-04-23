@@ -6,7 +6,7 @@
 
 STREAM (**S**ingle-cell **T**rajectories **R**econstruction, **E**xploration **A**nd **M**apping) is an interactive pipeline capable of disentangling and visualizing complex branching trajectories from both single-cell transcriptomic and epigenomic data.
 
-STREAM is now published in *Nature Communications*! Please cite our paper [H Chen, L Albergante, JY Hsu, CA Lareau, GL Bosco, J Guan, S Zhou, AN Gorban, DE Bauer, MJ Aryee, DM Langenau, A Zinovyev, JD Buenrostro, GC Yuan, L Pinello. Single-cell trajectories reconstruction, exploration and mapping of omics data with STREAM.](https://www.nature.com/articles/s41467-019-09670-4) *Nature Communicationsvolume* 10, Article number: 1903 (2019). if you find STREAM helpful for your research.
+STREAM is now published in *Nature Communications*! Please cite our paper [H Chen, L Albergante, JY Hsu, CA Lareau, GL Bosco, J Guan, S Zhou, AN Gorban, DE Bauer, MJ Aryee, DM Langenau, A Zinovyev, JD Buenrostro, GC Yuan, L Pinello. Single-cell trajectories reconstruction, exploration and mapping of omics data with STREAM.](https://www.nature.com/articles/s41467-019-09670-4)  *Nature Communications*, volume 10, Article number: 1903 (2019). if you find STREAM helpful for your research.
 
 <img src="https://github.com/pinellolab/STREAM/blob/stream_python2/STREAM/static/images/Figure1.png">
 
