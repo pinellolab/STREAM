@@ -55,8 +55,9 @@ Tutorial
 
 * Example for complex trajectories: [3.STREAM_complex_trajectories.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/3.STREAM_complex_trajectories.ipynb?flush_cache=true)
 
-* Example for scATAC-seq: [4.STREAM_scATAC-seq.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/4.STREAM_scATAC-seq.ipynb?flush_cache=true)
+* Example for scATAC-seq(using k-mers): [4.STREAM_scATAC-seq_k-mers.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/4.STREAM_scATAC-seq_k-mers.ipynb?flush_cache=true)
 
+* Example for scATAC-seq(using motifs): [5.STREAM_scATAC-seq_motifs.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/5.STREAM_scATAC-seq_motifs.ipynb?flush_cache=true)
 
 Installation with Docker
 ------------------------
