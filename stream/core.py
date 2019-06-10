@@ -4480,6 +4480,99 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     adata.uns['leaf_genes'] = dict_leaf_genes
 
 
+def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+                use_precomputed=True):
+    """Detect markers (highly expressed or suppressed) for the specified ident.
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    cutoff_zscore: `float`, optional (default: 1.5)
+        The z-score cutoff used for mean values of all leaf branches.
+    cutoff_pvalue: `float`, optional (default: 1e-2)
+        The p value cutoff used for Kruskal-Wallis H-test and post-hoc pairwise Conover’s test.
+    percentile_expr: `int`, optional (default: 95)
+        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+    n_jobs: `int`, optional (default: all available cpus)
+        The number of parallel jobs to run when scaling the gene expressions .
+    use_precomputed: `bool`, optional (default: True)
+        If True, the previously computed scaled gene expression will be used
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
+        Scaled gene expression for marker gene detection.    
+    markers_ident_all: `pandas.core.frame.DataFrame` (`adata.uns['markers_ident_all']`)
+        All markers for all ident labels.
+    markers_ident: `dict` (`adata.uns['markers_']`)
+        Markers for each ident label.
+    """    
+    file_path = os.path.join(adata.uns['workdir'],'markers_found')
+    if(not os.path.exists(file_path)):
+        os.makedirs(file_path)  
+        
+    if ident not in adata.obs.columns:
+        raise ValueError(ident + ' does not exist in adata.obs')
+    df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
+                         data = adata.raw.X,
+                         columns=adata.raw.var_names.tolist())
+    input_genes = adata.raw.var_names.tolist()
+    #exclude genes that are expressed in fewer than min_num_cells cells
+    min_num_cells = max(5,int(round(df_sc.shape[0]*0.001)))
+    print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+    input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+    df_sc_filtered = df_sc[input_genes_expressed].copy()
+
+    if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
+        print('Importing precomputed scaled gene expression matrix ...')
+        results = adata.uns['scaled_gene_expr']          
+    else:
+        params = [(df_sc_filtered,x,percentile_expr) for x in input_genes_expressed]
+        pool = multiprocessing.Pool(processes=n_jobs)
+        results = pool.map(scale_gene_expr,params)
+        pool.close()
+        adata.uns['scaled_gene_expr'] = results
+
+    df_input = pd.DataFrame(results).T  
+    df_input[ident] = adata.obs[ident]
+    
+    uniq_ident = np.unique(df_input[ident]).tolist()
+
+    df_markers = pd.DataFrame(columns=['zscore','H_statistic','H_pvalue']+uniq_ident)
+    for gene in input_genes_expressed:
+        mean_values = df_input[[ident,gene]].groupby(by = ident)[gene].mean()
+        mean_values.sort_values(inplace=True)
+        list_marker_expr = df_input[[ident,gene]].groupby(by = ident)[gene].apply(list)
+        if(mean_values.shape[0]<2):
+            print('At least two distinct' + ident + 'are required')
+        else:
+            zscores = stats.zscore(mean_values)
+            if(abs(zscores)[abs(zscores)>cutoff_zscore].shape[0]>=1):
+                if(any(zscores>cutoff_zscore)):
+                    cand_ident = mean_values.index[-1]
+                    cand_zscore = zscores[-1]
+                else:
+                    cand_ident = mean_values.index[0]
+                    cand_zscore = zscores[0]
+                kurskal_statistic,kurskal_pvalue = stats.kruskal(*list_marker_expr)
+                if(kurskal_pvalue<cutoff_pvalue):  
+                    df_conover_pvalues= posthoc_conover(df_input, 
+                                                       val_col=gene, group_col=ident, p_adjust = 'fdr_bh')
+                    cand_conover_pvalues = df_conover_pvalues[cand_ident]
+                    if(all(cand_conover_pvalues < cutoff_pvalue)):
+    #                     df_markers.loc[gene,:] = 1.0
+                        df_markers.loc[gene,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
+                        df_markers.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
+    df_markers.sort_values(by=['H_pvalue','zscore'],ascending=[True,False],inplace=True)    
+    df_markers.to_csv(os.path.join(file_path,'markers_'+ident+'.tsv'),sep = '\t',index = True)
+    dict_markers = dict()
+    for x in uniq_ident:
+        dict_markers[x] = df_markers[df_markers[x]==-1].loc[:,df_markers.columns!=x]
+        dict_markers[x].to_csv(os.path.join(file_path,'markers_'+ident+'_'+x+'.tsv'),sep = '\t',index = True)
+    adata.uns['markers_'+ident+'_all'] = df_markers
+    adata.uns['markers_'+ident] = dict_markers    
+
 def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=True):
     """ Map new data to the inferred trajectories
     
