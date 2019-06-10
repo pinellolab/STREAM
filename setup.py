@@ -13,13 +13,13 @@ if sys.version_info.major != 3:
 #https://github.com/bioconda/bioconda-recipes/tree/master/recipes/stream
 
 setup(name='stream',
-      version="0.3.8a",
+      version="0.3.9",
       description='Single-cell Trajectories Reconstruction, Exploration And Mapping of single-cell data',
       long_description=Path('README.md').read_text('utf-8'),
       url='https://github.com/pinellolab/stream',
       author='Huidong Chen',
       author_email='huidong.chen AT mgh DOT harvard DOT edu',
-      license='Affero',
+      license='AGPL-3',
       packages=['stream'],
       package_dir={'stream':'stream'},
       package_data={'stream': ['tests/*']},
