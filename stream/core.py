@@ -3927,7 +3927,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                 plt.savefig(os.path.join(file_path_S,'stream_plot_' + slugify(gene_name) + '.' + fig_format),dpi=120)
                 plt.close(fig) 
 
-def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = multiprocessing.cpu_count(),
+def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,
                              use_precomputed=True, root='S0',preference=None):
 
     """Detect transition genes along one branch.
@@ -4090,7 +4090,7 @@ def plot_transition_genes(adata,num_genes = 15,
             plt.close(fig)    
 
 
-def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,
                     use_precomputed=True, root='S0',preference=None):
 
     """Detect differentially expressed genes between different sub-branches.
@@ -4363,7 +4363,7 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
                 plt.close(fig) 
 
 
-def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,
                       use_precomputed=True, root='S0',preference=None):
     """Detect leaf genes for each branch.
     Parameters
@@ -4485,7 +4485,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     adata.uns['leaf_genes'] = dict_leaf_genes
 
 
-def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = multiprocessing.cpu_count(),
+def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,
                 use_precomputed=True):
     """Detect markers (highly expressed or suppressed) for the specified ident.
     Parameters
