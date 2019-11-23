@@ -683,7 +683,7 @@ def dimension_reduction(adata,n_neighbors=30, nb_pct = None,n_components = 3,n_j
     return None
 
 def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
-                             save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=(8,8),fig_legend_ncol=3):
+                             save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=(8,8),fig_legend=True,fig_legend_ncol=3):
     """Plot cells after dimension reduction.
 
     Parameters
@@ -704,6 +704,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'dimension_reduction.pdf')
         if save_fig is True, specify figure name.
+    fig_legend: `bool`, optional (default: True)
+        if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
         
@@ -737,8 +739,9 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
         ax.set_xlabel('Component1',labelpad=20)
         ax.set_ylabel('Component2',labelpad=20)
         ax.set_zlabel('Component3',labelpad=20)
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
-                  ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+        if(fig_legend):
+            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
+                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
@@ -753,8 +756,9 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
         ax.set_xlabel('Component1',labelpad=20)
         ax.set_ylabel('Component2',labelpad=20)
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
-                  ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+        if(fig_legend):
+            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
+                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
@@ -860,7 +864,7 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save
 
 
 def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,comp2=1,key_graph='epg',show_all_cells=True,
-                             save_fig=False,fig_name='branches_with_cells.pdf',fig_path=None,fig_size=(8,8),fig_legend_ncol=3):    
+                             save_fig=False,fig_name='branches_with_cells.pdf',fig_path=None,fig_size=(8,8),fig_legend=True,fig_legend_ncol=3):    
     """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
     
     Parameters
@@ -891,6 +895,8 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,co
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'branches_with_cells.pdf')
         if save_fig is True, specify figure name.
+    fig_legend: `bool`, optional (default: True)
+        if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
 
@@ -968,8 +974,9 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,co
         ax.set_xlabel('Component1',labelpad=20)
         ax.set_ylabel('Component2',labelpad=20)
         ax.set_zlabel('Component3',labelpad=20)
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-                  ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+        if(fig_legend):
+            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
+                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
@@ -1000,8 +1007,9 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,co
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
         ax.set_xlabel('Component'+str(comp1+1),labelpad=20)
         ax.set_ylabel('Component'+str(comp2+1),labelpad=20)
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-                  ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+        if(fig_legend):
+            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
+                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
@@ -1853,7 +1861,7 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         plt.close(fig) 
 
 def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=30, nb_pct=None,perplexity=30.0,color_by='label',use_precomputed=True,
-                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend_ncol=3):  
+                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend=True,fig_legend_ncol=3):  
 
     """ Visualize the results in 2D plane
     
@@ -1891,6 +1899,8 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'visualization_2D.pdf')
         if save_fig is True, specify figure name.
+    fig_legend: `bool`, optional (default: True)
+        if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
 
@@ -2032,16 +2042,17 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             color_new = df_sample_new.sample(frac=1,random_state=100)['branch_color'] 
             coord_new = df_coord_new.sample(frac=1,random_state=100)               
             ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8)           
-            ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)                    
-    ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-              ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+            ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
+    if(fig_legend):                    
+        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
+                  ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
 
 def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',preference=None,
-                   save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend_ncol=3):  
+                   save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend=True,fig_legend_ncol=3):  
     """Generate subway map plots
     
     Parameters
@@ -2073,6 +2084,8 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'subway_map.pdf')
         if save_fig is True, specify figure name.
+    fig_legend: `bool`, optional (default: True)
+        if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
 
@@ -2236,8 +2249,9 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
                 ax.scatter(coord_new[0], coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8,zorder=10) 
             else:
                 ax.scatter(coord_new[0], coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8,zorder=10)
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-                  ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+        if(fig_legend):
+            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
+                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         ax.set_xlabel('pseudotime')
         if(save_fig):
             plt.savefig(os.path.join(file_path_S,fig_name), pad_inches=1,bbox_inches='tight')
@@ -2482,7 +2496,7 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'stream_plot.pdf')
         if save_fig is True, specify figure name.
-    fig_legend: `bool`, optional (default: False)
+    fig_legend: `bool`, optional (default: True)
         if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
