@@ -4636,6 +4636,10 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         input_data = adata_new[:,adata.var.index].X
     adata_new.uns['epg'] = adata.uns['epg'].copy()
     adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy() 
+    if(method == 'se'):
+        trans = adata.uns['trans_se']
+        adata_new.obsm['X_se_mapping'] = trans.transform(input_data)
+        adata_new.obsm['X_dr'] = adata_new.obsm['X_se_mapping'].copy()
     if(method == 'mlle'):
         trans = adata.uns['trans_mlle']
         if(use_radius):
