@@ -682,7 +682,7 @@ def dimension_reduction(adata,n_neighbors=30, nb_pct = None,n_components = 3,n_j
         adata.obsm['X_dr'] = adata.obsm['X_pca']
     return None
 
-def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
+def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
                              save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=(8,8),fig_legend_ncol=3):
     """Plot cells after dimension reduction.
 
@@ -690,7 +690,7 @@ def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
     ----------
     adata: AnnData
         Annotated data matrix.
-    n_components: `int`, optional (default: 3)
+    n_components: `int`, optional (default: None)
         Number of components to be plotted.
     comp1: `int`, optional (default: 0)
         Component used for x axis.
@@ -721,6 +721,8 @@ def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
         list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))
     color = df_sample.sample(frac=1,random_state=100)['label_color'] 
     coord = df_coord.sample(frac=1,random_state=100)
+    if(n_components==None):
+        n_components = min(3,df_coord.shape[1])
     if(n_components==3): 
         fig = plt.figure(figsize=fig_size)
         ax = fig.add_subplot(111, projection='3d')
@@ -758,14 +760,14 @@ def plot_dimension_reduction(adata,n_components = 3,comp1=0,comp2=1,
             plt.close(fig)
 
 
-def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=(8,8)):  
+def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=(8,8)):  
     """Plot branches skeleton with all nodes.
 
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    n_components: `int`, optional (default: 3)
+    n_components: `int`, optional (default: None)
         Number of components to be plotted.
     comp1: `int`, optional (default: 0)
         Component used for x axis.
@@ -808,7 +810,9 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
     dict_nodes_pos = nx.get_node_attributes(epg,'pos')
     nodes_pos = np.array(list(dict_nodes_pos.values()))
     coord = pd.DataFrame(adata.obsm['X_dr'])
-    if(n_components>=3): 
+    if(n_components==None):
+        n_components = min(3,coord.shape[1])    
+    if(n_components==3): 
         fig = plt.figure(figsize=fig_size)
         ax = fig.add_subplot(111, projection='3d')
         for edge_i in flat_tree.edges():
@@ -855,7 +859,7 @@ def plot_branches(adata,n_components = 3,comp1=0,comp2=1,key_graph='epg',save_fi
             plt.close(fig)        
 
 
-def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2=1,key_graph='epg',show_all_cells=True,
+def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,comp2=1,key_graph='epg',show_all_cells=True,
                              save_fig=False,fig_name='branches_with_cells.pdf',fig_path=None,fig_size=(8,8),fig_legend_ncol=3):    
     """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
     
@@ -933,7 +937,9 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = 3,comp1=0,comp2
         df_coord_new = pd.DataFrame(adata_new.obsm['X_dr'],index=adata_new.obs_names)
         color_new = df_sample_new.sample(frac=1,random_state=100)['label_color'] 
         coord_new = df_coord_new.sample(frac=1,random_state=100)                    
-    if(n_components>=3): 
+    if(n_components==None):
+        n_components = min(3,coord.shape[1])    
+    if(n_components==3):  
         fig = plt.figure(figsize=fig_size)
         ax = fig.add_subplot(111, projection='3d')
         if(adata_new is None):
