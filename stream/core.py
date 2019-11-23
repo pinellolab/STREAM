@@ -1063,7 +1063,7 @@ def infer_initial_structure(adata_low,nb_min=5):
         init_edges = epg_low.edges()
     return init_nodes_pos,init_edges
 
-def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='kmeans',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,nb_pct=0.1):
+def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='kmeans',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,n_neighbors=30, nb_pct=None):
     
     """Seeding the initial elastic principal graph.
     
@@ -1089,8 +1089,11 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
         Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').
     max_n_clusters: `int`, optional (default: 200)
         The allowed maximum number of clusters for 'ap'.
-    nb_pct: `float`, optional (default: 0.1)
-        Neighbor percentage. The percentage of points used as neighbors for spectral clustering.
+    n_neighbors: `int`, optional (default: 30)
+        The number of neighbor cells used for spectral clustering.
+    nb_pct: `float`, optional (default: None)
+        The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
+
 
     Returns
     -------
@@ -1118,6 +1121,8 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
 
     print('Seeding initial elastic principal graph...')
     input_data = adata.obsm['X_dr']
+    if(nb_pct!=None):
+        n_neighbors = int(np.around(input_data.shape[0]*nb_pct))    
     if(init_nodes_pos is None):
         print('Clustering...')
         if(clustering=='ap'):
@@ -1133,7 +1138,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
             epg_nodes_pos = init_nodes_pos  
         elif(clustering=='sc'):
             print('Spectral clustering ...')
-            sc = SpectralClustering(n_clusters=n_clusters,affinity='nearest_neighbors',n_neighbors=np.int(input_data.shape[0]*nb_pct),
+            sc = SpectralClustering(n_clusters=n_clusters,affinity='nearest_neighbors',n_neighbors=n_neighbors,
                                     eigen_solver='arpack',random_state=42).fit(input_data)
             cluster_labels = sc.labels_ 
             init_nodes_pos = np.empty((0,input_data.shape[1])) #cluster centers
@@ -1834,7 +1839,7 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
-def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',nb_pct=0.1,perplexity=30.0,color_by='label',use_precomputed=True,
+def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=30, nb_pct=None,perplexity=30.0,color_by='label',use_precomputed=True,
                           save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend_ncol=3):  
 
     """ Visualize the results in 2D plane
@@ -1852,8 +1857,10 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         Method used for visualization.
         'umap': Uniform Manifold Approximation and Projection      
         'tsne': t-Distributed Stochastic Neighbor Embedding
-    nb_pct: `float`, optional (default: 0.1)
-        The percentage neighbor cells (only valid when 'umap' is specified). 
+    n_neighbors: `int`, optional (default: 30)
+        The number of neighbor cells (only valid when 'umap' is specified).
+    nb_pct: `float`, optional (default: None)
+        The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
     perplexity: `float`, optional (default: 30.0)
         The perplexity used for tSNE.       
     color_by: `str`, optional (default: 'label')
@@ -1899,13 +1906,15 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
     input_data = adata.obsm['X_dr']
     if(adata_new != None):
         input_data = np.vstack((input_data,adata_new.obsm['X_dr']))
-    if(method == 'umap'):
+    if(nb_pct!=None):
+        n_neighbors = int(np.around(input_data.shape[0]*nb_pct)) 
+    if(method == 'umap'):       
         if(adata_new is None):
             if(use_precomputed and ('X_vis_umap' in adata.obsm_keys())):
                 print('Importing precomputed umap visualization ...')
                 embedding = adata.obsm['X_vis_umap']
             else:
-                reducer = umap.UMAP(n_neighbors=int(input_data.shape[0]*nb_pct),n_components=2,random_state=42)
+                reducer = umap.UMAP(n_neighbors=n_neighbors,n_components=2,random_state=42)
                 embedding = reducer.fit_transform(input_data)
                 adata.obsm['X_vis_umap'] = embedding
         else:
@@ -1913,7 +1922,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
                 print('Importing precomputed umap visualization ...')
                 embedding = adata_new.uns['merged_X_vis_umap']
             else:
-                reducer = umap.UMAP(n_neighbors=int(input_data.shape[0]*nb_pct),n_components=2,random_state=42)
+                reducer = umap.UMAP(n_neighbors=n_neighbors,n_components=2,random_state=42)
                 embedding = reducer.fit_transform(input_data)  
                 adata_new.uns['merged_X_vis_umap'] = embedding
 
