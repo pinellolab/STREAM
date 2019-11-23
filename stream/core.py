@@ -558,8 +558,8 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
     return None
 
 
-def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiprocessing.cpu_count(),
-                        feature='var_genes',method = 'mlle',eigen_solver=None):
+def dimension_reduction(adata,n_neighbors=30, nb_pct = None,n_components = 3,n_jobs = 1,
+                        feature='var_genes',method = 'se',eigen_solver=None):
 
     """Perform dimension reduction.
     
@@ -567,11 +567,13 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
     ----------
     adata: AnnData
         Annotated data matrix.
-    nb_pct: `float`, optional (default: 0.1)
-        The percentage neighbor cells (only valid when 'mlle','se', or 'umap' is specified).
+    n_neighbors: `int`, optional (default: 30)
+        The number of neighbor cells used for manifold learning (only valid when 'mlle','se', or 'umap' is specified).
+    nb_pct: `float`, optional (default: None)
+        The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
     n_components: `int`, optional (default: 3)
         Number of components to keep.
-    n_jobs: `int`, optional (default: all available cpus)
+    n_jobs: `int`, optional (default: 1)
         The number of parallel jobs to run.
     feature: `str`, optional (default: 'var_genes')
         Choose from {{'var_genes','top_pcs','all'}}
@@ -627,24 +629,27 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
     print(str(n_jobs)+' cpus are being used ...')
     if(method not in ['mlle','se','umap','pca']):
         raise ValueError("unrecognized method '%s'" % method)
+    if(nb_pct!=None):
+        n_neighbors = int(np.around(input_data.shape[0]*nb_pct))
+
     if(method == 'mlle'):
         np.random.seed(2)
         if(eigen_solver==None):
             if(input_data.shape[0]<=2000):
-                reducer = LocallyLinearEmbedding(n_neighbors=int(np.around(input_data.shape[0]*nb_pct)), 
+                reducer = LocallyLinearEmbedding(n_neighbors=n_neighbors, 
                                                      n_components=n_components,
                                                      n_jobs = n_jobs,
                                                      method = 'modified',eigen_solver = 'dense',random_state=10,
                                                      neighbors_algorithm = 'kd_tree')
             else:
-                reducer = LocallyLinearEmbedding(n_neighbors=int(np.around(input_data.shape[0]*nb_pct)), 
+                reducer = LocallyLinearEmbedding(n_neighbors=n_neighbors, 
                                                      n_components=n_components,
                                                      n_jobs = n_jobs,
                                                      method = 'modified',eigen_solver = 'arpack',random_state=10,
                                                      neighbors_algorithm = 'kd_tree')
                 
         else:
-            reducer = LocallyLinearEmbedding(n_neighbors=int(np.around(input_data.shape[0]*nb_pct)), 
+            reducer = LocallyLinearEmbedding(n_neighbors=n_neighbors, 
                                                  n_components=n_components,
                                                  n_jobs = n_jobs,
                                                  method = 'modified',eigen_solver = eigen_solver,random_state=10,
@@ -655,7 +660,7 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
         adata.obsm['X_dr'] = trans.embedding_
     if(method == 'se'):
         np.random.seed(2)
-        reducer = SpectralEmbedding(n_neighbors=int(np.around(input_data.shape[0]*nb_pct)), 
+        reducer = SpectralEmbedding(n_neighbors=n_neighbors, 
                                          n_components=n_components,
                                          n_jobs = n_jobs,
                                          eigen_solver = eigen_solver,random_state=10)
@@ -664,7 +669,7 @@ def dimension_reduction(adata,nb_pct = 0.1,n_components = 3,n_jobs = multiproces
         adata.obsm['X_se'] = trans.embedding_
         adata.obsm['X_dr'] = trans.embedding_
     if(method == 'umap'):
-        reducer = umap.UMAP(n_neighbors=int(input_data.shape[0]*nb_pct),n_components=n_components,random_state=42)
+        reducer = umap.UMAP(n_neighbors=n_neighbors,n_components=n_components,random_state=42)
         trans = reducer.fit(input_data)
         adata.uns['trans_umap'] = trans
         adata.obsm['X_umap'] = trans.embedding_
