@@ -2043,6 +2043,12 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             coord_new = df_coord_new.sample(frac=1,random_state=100)               
             ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8)           
             ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
+    if(method == 'umap'):
+        ax.set_xlabel('UMAP 1')
+        ax.set_ylabel('UMAP 2')
+    if(method == 'tsne'):
+        ax.set_xlabel('tSNE 1')
+        ax.set_ylabel('tSNE 2')
     if(fig_legend):                    
         ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
                   ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
