@@ -257,7 +257,7 @@ def add_cell_colors(adata,file_path='',file_name=None):
 #     return None
 
 
-def filter_genes(adata,min_num_cells = None,min_pct_cells = None,min_count = None, expr_cutoff = 1):
+def filter_genes(adata,min_num_cells = 5,min_pct_cells = None,min_count = None, expr_cutoff = 1):
     """Filter out genes based on different metrics.
 
     Parameters
@@ -300,7 +300,7 @@ def filter_genes(adata,min_num_cells = None,min_pct_cells = None,min_count = Non
     return None
 
 
-def filter_cells(adata,min_num_genes = None,min_pct_genes = None,min_count=None,expr_cutoff = 1):
+def filter_cells(adata,min_num_genes = 10,min_pct_genes = None,min_count=None,expr_cutoff = 1):
     """Filter out cells based on different metrics.
 
     Parameters
@@ -403,7 +403,7 @@ def remove_mt_genes(adata):
         adata._inplace_subset_var(gene_subset)
 
 
-def select_variable_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,n_jobs = multiprocessing.cpu_count(),
+def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_jobs = multiprocessing.cpu_count(),
                           save_fig=False,fig_name='std_vs_means.pdf',fig_path=None,fig_size=(5,5)):
 
     """Select the most variable genes.
