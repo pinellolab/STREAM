@@ -162,6 +162,31 @@ def write(adata,file_name=None,file_path='',file_format='pkl'):
         print('file format ' + file_format + ' is not supported')
         return
 
+def add_metadata(adata,file_name,delimiter='\t',file_path=''):
+    """Add metadata.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    fig_path: `str`, optional (default: '')
+        The file path of metadata file.
+    fig_name: `str`, optional (default: None)
+        The file name of metadata file. 
+        
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    label: `pandas.core.series.Series` (`adata.obs['label']`,dtype `str`)
+        Array of #observations that stores the label of each cell.
+    """
+    _fp = lambda f:  os.path.join(file_path,f)
+    _fp = lambda f:  os.path.join(file_path,f)
+    df_metadata = pd.read_csv(_fp(file_name),sep=delimiter,index_col=0)
+    adata.obs = adata.obs.merge(df_metadata, how = 'left',left_index=True,right_index=True)
+    return None
+
 
 def add_cell_labels(adata,file_path='',file_name=None):
     """Add cell lables.
