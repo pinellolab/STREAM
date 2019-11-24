@@ -182,9 +182,25 @@ def add_metadata(adata,file_name,delimiter='\t',file_path=''):
         Array of #observations that stores the label of each cell.
     """
     _fp = lambda f:  os.path.join(file_path,f)
-    _fp = lambda f:  os.path.join(file_path,f)
     df_metadata = pd.read_csv(_fp(file_name),sep=delimiter,index_col=0)
-    adata.obs = adata.obs.merge(df_metadata, how = 'left',left_index=True,right_index=True)
+    if('label' not in df_metadata.columns):
+        print("No column 'label' found in metadata, \'unknown\' is used as the default cell labels")
+        df_metadata['label'] = 'unknown'
+    if('label_color' in df_metadata.columns):
+        adata.uns['label_color'] = pd.Series(data=df_metadata.label_color.tolist(),index=df_metadata.label.tolist()).to_dict()
+    else:
+        print("No column 'label_color' found in metadata, random color is generated for each cell label")
+        labels_unique = df_metadata['label'].unique()
+        if(len(labels_unique)==1):
+            adata.uns['label_color'] = {labels_unique[0]:'gray'}
+        else:
+            list_colors = sns.color_palette("hls",n_colors=len(labels_unique)).as_hex()
+            adata.uns['label_color'] = {x:list_colors[i] for i,x in enumerate(labels_unique)}
+        df_metadata['label_color'] = ''
+        for x in labels_unique:
+            id_cells = np.where(df_metadata['label']==x)[0]
+            df_metadata.loc[df_metadata.index[id_cells],'label_color'] = adata.uns['label_color'][x]
+    adata.obs = df_metadata.loc[adata.obs.index,:]
     return None
 
 
