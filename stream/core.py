@@ -622,8 +622,8 @@ def dimension_reduction(adata,n_neighbors=30, nb_pct = None,n_components = 3,n_j
         'var_genes': most variable genes
         'top_pcs': top principal components
         'all': all genes
-    method: `str`, optional (default: 'mlle')
-        Choose from {{'mlle','umap','pca'}}
+    method: `str`, optional (default: 'se')
+        Choose from {{'se','mlle','umap','pca'}}
         Method used for dimension reduction.
         'mlle': Modified locally linear embedding algorithm
         'se': Spectral embedding algorithm

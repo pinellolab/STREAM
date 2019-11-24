@@ -189,8 +189,8 @@ def main():
                         help="normalize data based on library size")
     parser.add_argument("--atac",dest="flag_atac", action="store_true",
                         help="indicate scATAC-seq data")  
-    parser.add_argument("--n_processes",dest = "n_processes",type=int, default=multiprocessing.cpu_count(),
-                        help="Specify the number of processes to use. (default, all the available cores)")
+    parser.add_argument("--n_jobs",dest = "n_jobs",type=int, default=1,
+                        help="Specify the number of processes to use. (default, 1")
     parser.add_argument("--loess_frac",dest = "loess_frac",type=float, default=0.1,
                         help="The fraction of the data used in LOESS regression")
     parser.add_argument("--loess_cutoff",dest="loess_cutoff", type = int, default=95,
@@ -199,6 +199,8 @@ def main():
                         help="keep first PC")
     parser.add_argument("--pca_n_PC",dest="pca_n_PC", type=int,default=15,
                         help="The number of selected PCs,it's 15 by default")
+    parser.add_argument("--dr_method",dest="dr_method", default='se',
+                        help="Method used for dimension reduction.")    
     parser.add_argument("--lle_neighbours",dest="lle_n_nb_percent", type=float,default=0.1,
                         help="LLE neighbour percent ")
     parser.add_argument("--lle_components",dest="lle_n_component", type=int, default=3,
@@ -295,7 +297,7 @@ def main():
     cell_label_color_filename = args.cell_label_color_filename
     s_method = args.s_method
     use_precomputed = args.use_precomputed
-    n_processes = args.n_processes
+    n_jobs = args.n_jobs
     loess_frac = args.loess_frac
     loess_cutoff = args.loess_cutoff
     pca_n_PC = args.pca_n_PC
@@ -367,7 +369,7 @@ def main():
             if(flag_atac):
                 print('Selecting top principal components...')
                 st.select_top_principal_components(adata,n_pc = pca_n_PC,first_pc = flag_first_PC,save_fig=True)
-                st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_processes,feature='top_pcs')                
+                st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_jobs,feature='top_pcs')                
             else:
                 if(flag_norm):
                     st.normalize_per_cell(adata)
@@ -382,14 +384,14 @@ def main():
                         print('Selecting most variable genes...')
                         st.select_variable_genes(adata,loess_frac=loess_frac,percentile=loess_cutoff,save_fig=True)
                         pd.DataFrame(adata.uns['var_genes']).to_csv(os.path.join(workdir,'selected_variable_genes.tsv'),sep = '\t',index = None,header=False)
-                        st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_processes,feature='var_genes')
+                        st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_jobs,feature='var_genes')
                     if(s_method == 'PCA'):
                         print('Selecting top principal components...')
                         st.select_top_principal_components(adata,n_pc = pca_n_PC,first_pc = flag_first_PC,save_fig=True)
-                        st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_processes,feature='top_pcs')
+                        st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_jobs,feature='top_pcs')
                 else:
                     print('Keep all the genes...')
-                    st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_processes,feature='all')
+                    st.dimension_reduction(adata,n_components=lle_n_component,nb_pct=lle_n_nb_percent,n_jobs=n_jobs,feature='all')
             st.plot_dimension_reduction(adata,save_fig=flag_savefig)
             st.seed_elastic_principal_graph(adata,clustering=clustering,damping=damping,n_clusters=n_clusters)
             st.plot_branches(adata,save_fig=flag_savefig,fig_name='seed_elastic_principal_graph_skeleton.pdf')
@@ -442,7 +444,7 @@ def main():
 
         if(flag_gene_TG_detection):
             print('Identifying transition genes...')
-            st.detect_transistion_genes(adata,cutoff_spearman=TG_spearman_cutoff,cutoff_logfc = TG_logfc_cutoff,n_jobs = n_processes)
+            st.detect_transistion_genes(adata,cutoff_spearman=TG_spearman_cutoff,cutoff_logfc = TG_logfc_cutoff,n_jobs = n_jobs)
             if(flag_web):
                 ## Plot top5 genes
                 flat_tree = adata.uns['flat_tree']
@@ -459,7 +461,7 @@ def main():
 
         if(flag_gene_DE_detection):
             print('Identifying differentially expressed genes...')
-            st.detect_de_genes(adata,cutoff_zscore=DE_logfc_cutoff,cutoff_logfc = DE_logfc_cutoff,n_jobs = n_processes)
+            st.detect_de_genes(adata,cutoff_zscore=DE_logfc_cutoff,cutoff_logfc = DE_logfc_cutoff,n_jobs = n_jobs)
             if(flag_web):
                 flat_tree = adata.uns['flat_tree']
                 list_node_start = [value for key,value in nx.get_node_attributes(flat_tree,'label').items()]
@@ -477,7 +479,7 @@ def main():
 
         if(flag_gene_LG_detection):
             print('Identifying leaf genes...')
-            st.detect_leaf_genes(adata,cutoff_zscore=LG_zscore_cutoff,cutoff_pvalue=LG_pvalue_cutoff,n_jobs = n_processes)
+            st.detect_leaf_genes(adata,cutoff_zscore=LG_zscore_cutoff,cutoff_pvalue=LG_pvalue_cutoff,n_jobs = n_jobs)
             if(flag_web):
                 ## Plot top5 genes
                 flat_tree = adata.uns['flat_tree']
