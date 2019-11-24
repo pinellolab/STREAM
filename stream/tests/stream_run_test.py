@@ -33,7 +33,7 @@ def stream_test_Nestorowa_2016():
 	gene_list_file = os.path.join(workdir,'gene_list.tsv.gz')
 	comp_temp_folder = os.path.join(temp_folder,'stream_result_comp')
 
-	stream_cmd='stream -m {0} -l {1} -c {2} -g {3} -o {4} --clustering ap --TG --DE --LG'.format(input_file,label_file,label_color_file,gene_list_file,comp_temp_folder)
+	stream_cmd='stream -m {0} -l {1} -c {2} -g {3} -o {4} --dr_method mlle --nb_pct 0.1 --clustering ap --TG --DE --LG --n_jobs 4'.format(input_file,label_file,label_color_file,gene_list_file,comp_temp_folder)
 	print(stream_cmd)
 	code = subprocess.call(stream_cmd,shell=True) 
 	if(code!=0):
