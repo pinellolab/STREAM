@@ -16,6 +16,7 @@ install:
   - conda config --add channels bioconda 
   - conda config --add channels conda-forge
   - conda install libgfortran tzlocal stream -y
+  - Rscript -e 'install.packages("stringi",repos="https://cloud.r-project.org/")'
   - installationpath=$PWD
   - echo $installationpath
   - cd ..
