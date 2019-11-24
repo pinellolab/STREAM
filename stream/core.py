@@ -604,7 +604,7 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
     return None
 
 
-def dimension_reduction(adata,n_neighbors=30, nb_pct = None,n_components = 3,n_jobs = 1,
+def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_jobs = 1,
                         feature='var_genes',method = 'se',eigen_solver=None):
 
     """Perform dimension reduction.
@@ -613,7 +613,7 @@ def dimension_reduction(adata,n_neighbors=30, nb_pct = None,n_components = 3,n_j
     ----------
     adata: AnnData
         Annotated data matrix.
-    n_neighbors: `int`, optional (default: 30)
+    n_neighbors: `int`, optional (default: 50)
         The number of neighbor cells used for manifold learning (only valid when 'mlle','se', or 'umap' is specified).
     nb_pct: `float`, optional (default: None)
         The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
@@ -630,8 +630,8 @@ def dimension_reduction(adata,n_neighbors=30, nb_pct = None,n_components = 3,n_j
     method: `str`, optional (default: 'se')
         Choose from {{'se','mlle','umap','pca'}}
         Method used for dimension reduction.
-        'mlle': Modified locally linear embedding algorithm
         'se': Spectral embedding algorithm
+        'mlle': Modified locally linear embedding algorithm
         'umap': Uniform Manifold Approximation and Projection
         'pca': Principal component analysis
     eigen_solver: `str`, optional (default: None)
@@ -1123,7 +1123,7 @@ def infer_initial_structure(adata_low,nb_min=5):
         init_edges = epg_low.edges()
     return init_nodes_pos,init_edges
 
-def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='kmeans',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,n_neighbors=30, nb_pct=None):
+def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='kmeans',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,n_neighbors=50, nb_pct=None):
     
     """Seeding the initial elastic principal graph.
     
@@ -1149,7 +1149,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
         Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').
     max_n_clusters: `int`, optional (default: 200)
         The allowed maximum number of clusters for 'ap'.
-    n_neighbors: `int`, optional (default: 30)
+    n_neighbors: `int`, optional (default: 50)
         The number of neighbor cells used for spectral clustering.
     nb_pct: `float`, optional (default: None)
         The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
@@ -1909,7 +1909,7 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
-def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=30, nb_pct=None,perplexity=30.0,color_by='label',use_precomputed=True,
+def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color_by='label',use_precomputed=True,
                           save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend=True,fig_legend_ncol=3):  
 
     """ Visualize the results in 2D plane
@@ -1927,7 +1927,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         Method used for visualization.
         'umap': Uniform Manifold Approximation and Projection      
         'tsne': t-Distributed Stochastic Neighbor Embedding
-    n_neighbors: `int`, optional (default: 30)
+    n_neighbors: `int`, optional (default: 50)
         The number of neighbor cells (only valid when 'umap' is specified).
     nb_pct: `float`, optional (default: None)
         The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
