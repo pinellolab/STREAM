@@ -1381,7 +1381,8 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_co
         epg_obj = adata.uns['epg_obj']
         epg = adata.uns['epg']
     if(len(extract_branches(epg))<3):
-        raise ValueError("No branching points are present")
+        print("No branching points are detected. This step is skipped")
+        return
     input_data = adata.obsm['X_dr']
     epg_obj_collapse = ElPiGraph.CollapseBrances(X = input_data, TargetPG = epg_obj[0], Mode = epg_collapse_mode, ControlPar = epg_collapse_par, **kwargs)
 
@@ -1481,7 +1482,8 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
         epg_obj = adata.uns['epg_obj']
         epg = adata.uns['epg']
     if(len(extract_branches(epg))<3):
-        raise ValueError("No branching points are present")
+        print("No branching points are detected. This step is skipped")
+        return
 
     input_data = adata.obsm['X_dr']
 
@@ -1587,7 +1589,8 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
         epg_obj = adata.uns['epg_obj']
         epg = adata.uns['epg']
     if(len(extract_branches(epg))<3):
-        raise ValueError("No branching points are present")
+        print("No branching points are detected. This step is skipped")
+        return
     input_data = adata.obsm['X_dr']
 
     epg_obj_shift = ElPiGraph.ShiftBranching(X = input_data, 
