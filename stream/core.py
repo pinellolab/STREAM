@@ -173,13 +173,18 @@ def add_metadata(adata,file_name,delimiter='\t',file_path=''):
         The file path of metadata file.
     fig_name: `str`, optional (default: None)
         The file name of metadata file. 
-        
 
     Returns
     -------
     updates `adata` with the following fields.
     label: `pandas.core.series.Series` (`adata.obs['label']`,dtype `str`)
         Array of #observations that stores the label of each cell.
+    label_color: `pandas.core.series.Series` (`adata.obs['label_color']`,dtype `str`)
+        Array of #observations that stores the color of each cell (hex color code).
+    label_color: `dict` (`adata.uns['label_color']`,dtype `str`)
+        Array of #observations that stores the color of each cell (hex color code). 
+
+    updates `adata.obs` with additional columns in metadata file.
     """
     _fp = lambda f:  os.path.join(file_path,f)
     df_metadata = pd.read_csv(_fp(file_name),sep=delimiter,index_col=0)
