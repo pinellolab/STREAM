@@ -2267,7 +2267,7 @@ def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile
             plt.close(fig)
 
 
-def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,preference=None,
+def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root='S0',percentile_dist=98,percentile_expr=95,factor=2.0,preference=None,vmin=None,vmax=None,
                         save_fig=False,fig_path=None,fig_format='pdf',fig_size=(10,6)):  
     """Generate subway map plots of genes
     
@@ -2289,6 +2289,8 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
         The factor used to adjust the distances between branches of subway map.
     preference: `list`, optional (default: None): 
         The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. The higher ranks the node have, the closer to the top the branch with that node is.
+    vmin,vmax: 'float', optional (default: None)
+        Setting color range.
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
     fig_size: `tuple`, optional (default: (8,8))
@@ -2409,17 +2411,21 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
             if(experiment=='rna-seq'):
                 gene_expr = df_gene_expr[g].copy()
                 max_gene_expr = np.percentile(gene_expr[gene_expr>0],percentile_expr)
-                gene_expr[gene_expr>max_gene_expr] = max_gene_expr   
-                vmin = 0
-                vmax = max_gene_expr
+                gene_expr[gene_expr>max_gene_expr] = max_gene_expr 
+                if(vmin==None):  
+                    vmin = 0
+                if(vmax==None):
+                    vmax = max_gene_expr
             elif(experiment=='atac-seq'):
                 gene_expr = df_gene_expr[g].copy()
                 min_gene_expr = np.percentile(gene_expr[gene_expr<0],100-percentile_expr)
                 max_gene_expr = np.percentile(gene_expr[gene_expr>0],percentile_expr)
                 gene_expr[gene_expr>max_gene_expr] = max_gene_expr
                 gene_expr[gene_expr<min_gene_expr] = min_gene_expr
-                vmin = -max(abs(min_gene_expr),max_gene_expr)
-                vmax = max(abs(min_gene_expr),max_gene_expr)
+                if(vmin==None):
+                    vmin = -max(abs(min_gene_expr),max_gene_expr)
+                if(vmax==None):
+                    vmax = max(abs(min_gene_expr),max_gene_expr)
             else:
                 print('The experiment '+experiment +' is not supported')
                 return
@@ -2441,20 +2447,28 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 coord_new = df_coord_new.sample(frac=1,random_state=100)     
                 if(show_all_cells):
                     if(experiment=='rna-seq'):
-                        vmin = 0
-                        vmax = max(max_gene_expr,max_gene_expr_new)   
+                        if(vmin==None):
+                            vmin = 0
+                        if(vmax==None):
+                            vmax = max(max_gene_expr,max_gene_expr_new)   
                     if(experiment=='atac-seq'):
-                        vmin = -max(max(abs(min_gene_expr),abs(min_gene_expr_new)),max(max_gene_expr,max_gene_expr_new))
-                        vmax = max(max_gene_expr,max_gene_expr_new)                    
+                        if(vmin==None):
+                            vmin = -max(max(abs(min_gene_expr),abs(min_gene_expr_new)),max(max_gene_expr,max_gene_expr_new))
+                        if(vmax==None):
+                            vmax = max(max_gene_expr,max_gene_expr_new)                    
                     sc=ax.scatter(pd.concat([coord[0],coord_new[0]]), pd.concat([coord[1],coord_new[1]]),c=pd.concat([color,color_new]),
                                   vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
                 else:
                     if(experiment=='rna-seq'):
-                        vmin = 0
-                        vmax = max_gene_expr_new
+                        if(vmin==None):
+                            vmin = 0
+                        if(vmax==None):
+                            vmax = max_gene_expr_new
                     if(experiment=='atac-seq'):
-                        vmin = -max(abs(min_gene_expr_new),max_gene_expr_new)
-                        vmax = max(abs(min_gene_expr_new),max_gene_expr_new)
+                        if(vmin==None):
+                            vmin = -max(abs(min_gene_expr_new),max_gene_expr_new)
+                        if(vmax==None):
+                            vmax = max(abs(min_gene_expr_new),max_gene_expr_new)
                     sc=ax.scatter(coord_new[0], coord_new[1],c=color_new,vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)                      
             else:            
                 sc=ax.scatter(coord[0], coord[1],c=color,vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10) 
@@ -3149,7 +3163,7 @@ def stream_plot(adata,adata_new=None,show_all_colors=False,root='S0',factor_num_
             plt.close(fig)
 
 
-def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,factor_zoomin=100.0,preference=None,
+def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_win=10,factor_min_win=2.0,factor_width=2.5,flag_log_view = False,factor_zoomin=100.0,preference=None,vmin=None,vmax=None,
                     save_fig=False,fig_path=None,fig_size=(12,8),fig_format='pdf',tick_fontsize=20,label_fontsize=25):  
     """Generate stream plots of genes
     
@@ -3916,11 +3930,15 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             # cmap1 = mpl.colors.ListedColormap(sns.diverging_palette(250, 10,s=90,l=35, n=256))
             for cellname in cell_list_sorted:
                 if(experiment=='rna-seq'):
-                    vmin = 0
-                    vmax = df_bins_gene.values.max()
+                    if(vmin==None):
+                        vmin = 0
+                    if(vmax==None):
+                        vmax = df_bins_gene.values.max()
                 elif(experiment=='atac-seq'):
-                    vmin = -max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
-                    vmax = max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                    if(vmin==None):
+                        vmin = -max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                    if(vmax==None):
+                        vmax = max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
                 else:
                     print('The experiment '+experiment +' is not supported')
                     return                
