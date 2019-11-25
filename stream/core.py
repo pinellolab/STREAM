@@ -162,6 +162,31 @@ def write(adata,file_name=None,file_path='',file_format='pkl'):
         print('file format ' + file_format + ' is not supported')
         return
 
+def set_workdir(adata,workdir=None):
+    """Set working directory.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.           
+    workdir: `float`, optional (default: None)
+        Working directory. If it's not specified, a folder named 'stream_result' will be created under the current directory
+    **kwargs: additional arguments to `Anndata` reading functions
+   
+    Returns
+    -------
+    updates `adata` with the following fields and create a new working directory if it doesn't existing.
+    workdir: `str` (`adata.uns['workdir']`,dtype `str`)
+        Working directory.  
+    """       
+    if(workdir==None):
+        workdir = os.path.join(os.getcwd(), 'stream_result')
+        print("Using default working directory.")
+    if(not os.path.exists(workdir)):
+        os.makedirs(workdir)
+    adata.uns['workdir'] = workdir
+    print('Saving results in: %s' % workdir)
+
 def add_metadata(adata,file_name,delimiter='\t',file_path=''):
     """Add metadata.
 
