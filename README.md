@@ -29,12 +29,12 @@ $ conda config --add channels conda-forge
 
 * *For single cell **RNA-seq** analysis*:
 ```sh
-$ conda create -n myenv python=3.6 stream jupyter
+$ conda create -n myenv python stream jupyter
 $ conda activate myenv
 ```
 * *For single cell **ATAC-seq** analysis*:
 ```sh
-$ conda create -n myenv python=3.6 stream stream_atac jupyter
+$ conda create -n myenv python stream stream_atac jupyter
 $ conda activate myenv
 ```
 
