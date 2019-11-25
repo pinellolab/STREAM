@@ -4077,7 +4077,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
     min_num_cells: `int`, optional (default: 5)
     	The minimum number of cells in which genes are expressed.
-    n_jobs: `int`, optional (default: all available cpus)
+    n_jobs: `int`, optional (default: 1)
         The number of parallel jobs to run when scaling the gene expressions .
     use_precomputed: `bool`, optional (default: True)
         If True, the previously computed scaled gene expression will be used
@@ -4096,7 +4096,6 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         Transition genes for each branch deteced by STREAM.
     """
 
-    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'transition_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
@@ -4105,26 +4104,31 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
     df_gene_detection = adata.obs.copy()
     df_gene_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
-    df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                         data = adata.raw.X,
-                         columns=adata.raw.var_names.tolist())
-    input_genes = adata.raw.var_names.tolist()
-    #exclude genes that are expressed in fewer than min_num_cells cells
-    #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-    print('Minimum number of cells expressing genes: '+ str(min_num_cells))
-    input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-    df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
     if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
         print('Importing precomputed scaled gene expression matrix ...')
-        results = adata.uns['scaled_gene_expr']        
+        results = adata.uns['scaled_gene_expr']       
+        df_scaled_gene_expr = pd.DataFrame(results).T
+        input_genes_expressed = df_scaled_gene_expr.columns.tolist()
     else:
+        df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
+                             data = adata.raw.X,
+                             columns=adata.raw.var_names.tolist())
+        input_genes = adata.raw.var_names.tolist()
+        #exclude genes that are expressed in fewer than min_num_cells cells
+        #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
+        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
+
+        print(str(n_jobs)+' cpus are being used ...')
         params = [(df_gene_detection,x,percentile_expr) for x in input_genes_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
         results = pool.map(scale_gene_expr,params)
         pool.close()
         adata.uns['scaled_gene_expr'] = results
-        
-    df_gene_detection[input_genes_expressed] = pd.DataFrame(results).T
+        df_scaled_gene_expr = pd.DataFrame(results).T
+
+    df_gene_detection[input_genes_expressed] = df_scaled_gene_expr
     #### TG (Transition Genes) along each branch
     dict_tg_edges = dict()
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -4165,8 +4169,8 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
             p_values = df_stat_pval_qval['pval']
             q_values = multipletests(p_values, method='fdr_bh')[1]
             df_stat_pval_qval['qval'] = q_values
-            dict_tg_edges[edge_i] = df_stat_pval_qval[(abs(df_stat_pval_qval.stat)>=cutoff_spearman)].sort_values(['qval'])
-            dict_tg_edges[edge_i].to_csv(os.path.join(file_path,'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]] + '.tsv'),sep = '\t',index = True)
+            dict_tg_edges[(dict_node_state[edge_i[0]],dict_node_state[edge_i[1]])] = df_stat_pval_qval[(abs(df_stat_pval_qval.stat)>=cutoff_spearman)].sort_values(['qval'])
+            dict_tg_edges[(dict_node_state[edge_i[0]],dict_node_state[edge_i[1]])].to_csv(os.path.join(file_path,'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]] + '.tsv'),sep = '\t',index = True)
     adata.uns['transition_genes'] = dict_tg_edges   
 
 
@@ -4179,9 +4183,10 @@ def plot_transition_genes(adata,num_genes = 15,
 
     dict_tg_edges = adata.uns['transition_genes']
     flat_tree = adata.uns['flat_tree']
-    dict_node_state = nx.get_node_attributes(flat_tree,'label')    
+    # dict_node_state = nx.get_node_attributes(flat_tree,'label')    
     colors = sns.color_palette("Set1", n_colors=8, desat=0.8)
     for edge_i in dict_tg_edges.keys():
+
         df_tg_edge_i = deepcopy(dict_tg_edges[edge_i])
         df_tg_edge_i = df_tg_edge_i.iloc[:num_genes,:]
 
@@ -4198,7 +4203,7 @@ def plot_transition_genes(adata,num_genes = 15,
         ax = fig.add_subplot(1,1,1, adjustable='box')
         ax.barh(pos,stat,align='center',height=0.8,tick_label=[''],color = bar_colors)
         ax.set_xlabel('Spearman Correlation Coefficient')
-        ax.set_title("branch " + dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]])
+        ax.set_title("branch " + edge_i[0]+'_'+edge_i[1])
 
         adjust_spines(ax, ['bottom'])
         ax.spines['left'].set_position('center')
@@ -4221,7 +4226,7 @@ def plot_transition_genes(adata,num_genes = 15,
                 ax.text(rect.get_x()-0.02, rect.get_y()+rect.get_height()/2.0, \
                         "{:.2E}".format(Decimal(str(qvals[i]))),color='w',fontsize=9,**alignment)
         if(save_fig):        
-            plt.savefig(os.path.join(fig_path,'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]]+'.pdf'),\
+            plt.savefig(os.path.join(fig_path,'transition_genes_'+ edge_i[0]+'_'+edge_i[1]+'.pdf'),\
                         pad_inches=1,bbox_inches='tight')
             plt.close(fig)    
 
@@ -4240,7 +4245,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         The log-transformed fold change cutoff between a pair of branches.
     percentile_expr: `int`, optional (default: 95)
         Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
-    n_jobs: `int`, optional (default: all available cpus)
+    n_jobs: `int`, optional (default: 1)
         The number of parallel jobs to run when scaling the gene expressions .
     min_num_cells: `int`, optional (default: 5)
     	The minimum number of cells in which genes are expressed.
@@ -4265,7 +4270,6 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         Store the genes that have higher expression on the latter part of one branch pair.
     """
 
-    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'de_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
@@ -4274,27 +4278,32 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
     df_gene_detection = adata.obs.copy()
     df_gene_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
-    df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                         data = adata.raw.X,
-                         columns=adata.raw.var_names.tolist())
-    input_genes = adata.raw.var_names.tolist()
-    #exclude genes that are expressed in fewer than min_num_cells cells
-    #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-    print('Minimum number of cells expressing genes: '+ str(min_num_cells))
-    input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-    df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
 
     if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
         print('Importing precomputed scaled gene expression matrix ...')
-        results = adata.uns['scaled_gene_expr']          
+        results = adata.uns['scaled_gene_expr']  
+        df_scaled_gene_expr = pd.DataFrame(results).T
+        input_genes_expressed = df_scaled_gene_expr.columns.tolist()        
     else:
+        df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
+                             data = adata.raw.X,
+                             columns=adata.raw.var_names.tolist())
+        input_genes = adata.raw.var_names.tolist()
+        #exclude genes that are expressed in fewer than min_num_cells cells
+        #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
+        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
+
+        print(str(n_jobs)+' cpus are being used ...')
         params = [(df_gene_detection,x,percentile_expr) for x in input_genes_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
         results = pool.map(scale_gene_expr,params)
         pool.close()
         adata.uns['scaled_gene_expr'] = results
+        df_scaled_gene_expr = pd.DataFrame(results).T
 
-    df_gene_detection[input_genes_expressed] = pd.DataFrame(results).T    
+    df_gene_detection[input_genes_expressed] = df_scaled_gene_expr 
 
     #### DE (Differentially expressed genes) between sub-branches
     dict_de_greater = dict()
@@ -4514,7 +4523,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
         The p value cutoff used for Kruskal-Wallis H-test and post-hoc pairwise Conover’s test.
     percentile_expr: `int`, optional (default: 95)
         Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
-    n_jobs: `int`, optional (default: all available cpus)
+    n_jobs: `int`, optional (default: 1)
         The number of parallel jobs to run when scaling the gene expressions .
     min_num_cells: `int`, optional (default: 5)
     	The minimum number of cells in which genes are expressed.
@@ -4537,7 +4546,6 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
         Leaf genes for each branch.
     """
 
-    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'leaf_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
@@ -4546,27 +4554,31 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
     df_gene_detection = adata.obs.copy()
     df_gene_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
-    df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                         data = adata.raw.X,
-                         columns=adata.raw.var_names.tolist())
-    input_genes = adata.raw.var_names.tolist()
-    #exclude genes that are expressed in fewer than min_num_cells cells
-    #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-    print('Minimum number of cells expressing genes: '+ str(min_num_cells))
-    input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-    df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
 
     if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
         print('Importing precomputed scaled gene expression matrix ...')
         results = adata.uns['scaled_gene_expr']          
+        df_scaled_gene_expr = pd.DataFrame(results).T
+        input_genes_expressed = df_scaled_gene_expr.columns.tolist()
     else:
+        df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
+                             data = adata.raw.X,
+                             columns=adata.raw.var_names.tolist())
+        input_genes = adata.raw.var_names.tolist()
+        #exclude genes that are expressed in fewer than min_num_cells cells
+        #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
+        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
+
+        print(str(n_jobs)+' cpus are being used ...')
         params = [(df_gene_detection,x,percentile_expr) for x in input_genes_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
         results = pool.map(scale_gene_expr,params)
         pool.close()
         adata.uns['scaled_gene_expr'] = results
 
-    df_gene_detection[input_genes_expressed] = pd.DataFrame(results).T    
+    df_gene_detection[input_genes_expressed] = df_scaled_gene_expr    
 
     #### find marker genes that are specific to one leaf branch
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -4654,7 +4666,6 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
         Markers for each ident label.
     """    
 
-    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'markers_found')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)  
@@ -4665,23 +4676,28 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
                          data = adata.raw.X,
                          columns=adata.raw.var_names.tolist())
     input_genes = adata.raw.var_names.tolist()
-    #exclude genes that are expressed in fewer than min_num_cells cells
-    min_num_cells = max(5,int(round(df_sc.shape[0]*0.001)))
-    print('Minimum number of cells expressing genes: '+ str(min_num_cells))
-    input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-    df_sc_filtered = df_sc[input_genes_expressed].copy()
 
     if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
         print('Importing precomputed scaled gene expression matrix ...')
-        results = adata.uns['scaled_gene_expr']          
+        results = adata.uns['scaled_gene_expr']
+        df_scaled_gene_expr = pd.DataFrame(results).T
+        input_genes_expressed = df_scaled_gene_expr.columns.tolist()                  
     else:
+        #exclude genes that are expressed in fewer than min_num_cells cells
+        min_num_cells = max(5,int(round(df_sc.shape[0]*0.001)))
+        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_sc_filtered = df_sc[input_genes_expressed].copy()
+
+        print(str(n_jobs)+' cpus are being used ...')
         params = [(df_sc_filtered,x,percentile_expr) for x in input_genes_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
         results = pool.map(scale_gene_expr,params)
         pool.close()
         adata.uns['scaled_gene_expr'] = results
+        df_scaled_gene_expr = pd.DataFrame(results).T
 
-    df_input = pd.DataFrame(results).T  
+    df_input = df_scaled_gene_expr 
     df_input[ident] = adata.obs[ident]
     
     uniq_ident = np.unique(df_input[ident]).tolist()
