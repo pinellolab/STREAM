@@ -4061,7 +4061,7 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
                 plt.savefig(os.path.join(file_path_S,'stream_plot_' + slugify(gene_name) + '.' + fig_format),dpi=120)
                 plt.close(fig) 
 
-def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,
+def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
                              use_precomputed=True, root='S0',preference=None):
 
     """Detect transition genes along one branch.
@@ -4075,6 +4075,8 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         The log-transformed fold change cutoff between cells around start and end node.
     percentile_expr: `int`, optional (default: 95)
         Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+    min_num_cells: `int`, optional (default: 5)
+    	The minimum number of cells in which genes are expressed.
     n_jobs: `int`, optional (default: all available cpus)
         The number of parallel jobs to run when scaling the gene expressions .
     use_precomputed: `bool`, optional (default: True)
@@ -4094,7 +4096,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         Transition genes for each branch deteced by STREAM.
     """
 
-
+    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'transition_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
@@ -4108,7 +4110,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
                          columns=adata.raw.var_names.tolist())
     input_genes = adata.raw.var_names.tolist()
     #exclude genes that are expressed in fewer than min_num_cells cells
-    min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
+    #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
     print('Minimum number of cells expressing genes: '+ str(min_num_cells))
     input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
     df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
@@ -4224,7 +4226,7 @@ def plot_transition_genes(adata,num_genes = 15,
             plt.close(fig)    
 
 
-def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,
+def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,min_num_cells=5,
                     use_precomputed=True, root='S0',preference=None):
 
     """Detect differentially expressed genes between different sub-branches.
@@ -4240,6 +4242,8 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
     n_jobs: `int`, optional (default: all available cpus)
         The number of parallel jobs to run when scaling the gene expressions .
+    min_num_cells: `int`, optional (default: 5)
+    	The minimum number of cells in which genes are expressed.
     use_precomputed: `bool`, optional (default: True)
         If True, the previously computed scaled gene expression will be used
     root: `str`, optional (default: 'S0'): 
@@ -4261,7 +4265,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         Store the genes that have higher expression on the latter part of one branch pair.
     """
 
-
+    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'de_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
@@ -4275,7 +4279,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
                          columns=adata.raw.var_names.tolist())
     input_genes = adata.raw.var_names.tolist()
     #exclude genes that are expressed in fewer than min_num_cells cells
-    min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
+    #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
     print('Minimum number of cells expressing genes: '+ str(min_num_cells))
     input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
     df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
@@ -4497,7 +4501,7 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
                 plt.close(fig) 
 
 
-def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,
+def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
                       use_precomputed=True, root='S0',preference=None):
     """Detect leaf genes for each branch.
     Parameters
@@ -4512,6 +4516,8 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
         Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
     n_jobs: `int`, optional (default: all available cpus)
         The number of parallel jobs to run when scaling the gene expressions .
+    min_num_cells: `int`, optional (default: 5)
+    	The minimum number of cells in which genes are expressed.
     use_precomputed: `bool`, optional (default: True)
         If True, the previously computed scaled gene expression will be used
     root: `str`, optional (default: 'S0'): 
@@ -4531,7 +4537,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
         Leaf genes for each branch.
     """
 
-
+    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'leaf_genes')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
@@ -4545,7 +4551,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
                          columns=adata.raw.var_names.tolist())
     input_genes = adata.raw.var_names.tolist()
     #exclude genes that are expressed in fewer than min_num_cells cells
-    min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
+    #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
     print('Minimum number of cells expressing genes: '+ str(min_num_cells))
     input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
     df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
@@ -4647,6 +4653,8 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
     markers_ident: `dict` (`adata.uns['markers_']`)
         Markers for each ident label.
     """    
+
+    print(str(n_jobs)+' cpus are being used ...')
     file_path = os.path.join(adata.uns['workdir'],'markers_found')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)  
