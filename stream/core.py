@@ -4116,7 +4116,8 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         input_genes = adata.raw.var_names.tolist()
         #exclude genes that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        # print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
         input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
         df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
 
@@ -4128,6 +4129,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         adata.uns['scaled_gene_expr'] = results
         df_scaled_gene_expr = pd.DataFrame(results).T
 
+    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
     df_gene_detection[input_genes_expressed] = df_scaled_gene_expr
     #### TG (Transition Genes) along each branch
     dict_tg_edges = dict()
@@ -4140,6 +4142,7 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
     bfs_edges = bfs_edges_modified(flat_tree,root_node,preference=preference_nodes)
 #     all_branches = np.unique(df_gene_detection['branch_id']).tolist()
     for edge_i in bfs_edges:
+        edge_i_alias = (dict_node_state[edge_i[0]],dict_node_state[edge_i[1]])
         if edge_i in nx.get_edge_attributes(flat_tree,'id').values():
             df_cells_edge_i = deepcopy(df_gene_detection[df_gene_detection.branch_id==edge_i])
             df_cells_edge_i['lam_ordered'] = df_cells_edge_i['lam']
@@ -4164,13 +4167,13 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
                                                                             df_cells_edge_i_sort.loc[:,'lam_ordered'])
                 df_stat_pval_qval.loc[genename,'logfc'] = logfc
         if(df_stat_pval_qval.shape[0]==0):
-            print('No Transition genes are detected in branch ' + dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]])
+            print('No Transition genes are detected in branch ' + edge_i_alias[0]+'_'+edge_i_alias[1])
         else:
             p_values = df_stat_pval_qval['pval']
             q_values = multipletests(p_values, method='fdr_bh')[1]
             df_stat_pval_qval['qval'] = q_values
-            dict_tg_edges[(dict_node_state[edge_i[0]],dict_node_state[edge_i[1]])] = df_stat_pval_qval[(abs(df_stat_pval_qval.stat)>=cutoff_spearman)].sort_values(['qval'])
-            dict_tg_edges[(dict_node_state[edge_i[0]],dict_node_state[edge_i[1]])].to_csv(os.path.join(file_path,'transition_genes_'+ dict_node_state[edge_i[0]]+'_'+dict_node_state[edge_i[1]] + '.tsv'),sep = '\t',index = True)
+            dict_tg_edges[edge_i_alias] = df_stat_pval_qval[(abs(df_stat_pval_qval.stat)>=cutoff_spearman)].sort_values(['qval'])
+            dict_tg_edges[edge_i_alias].to_csv(os.path.join(file_path,'transition_genes_'+ edge_i_alias[0]+'_'+edge_i_alias[1] + '.tsv'),sep = '\t',index = True)
     adata.uns['transition_genes'] = dict_tg_edges   
 
 
@@ -4291,7 +4294,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         input_genes = adata.raw.var_names.tolist()
         #exclude genes that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
         input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
         df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
 
@@ -4303,6 +4306,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         adata.uns['scaled_gene_expr'] = results
         df_scaled_gene_expr = pd.DataFrame(results).T
 
+    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
     df_gene_detection[input_genes_expressed] = df_scaled_gene_expr 
 
     #### DE (Differentially expressed genes) between sub-branches
@@ -4322,6 +4326,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         if(len(neighbor_branches)>1):
             pairs_branches += list(itertools.combinations(neighbor_branches,r=2))
     for pair_i in pairs_branches:
+        pair_i_alias = ((dict_node_state[pair_i[0][0]],dict_node_state[pair_i[0][1]]),(dict_node_state[pair_i[1][0]],dict_node_state[pair_i[1][1]]))
         if(pair_i[0] in nx.get_edge_attributes(flat_tree,'id').values()):
             df_cells_sub1 = df_gene_detection[df_gene_detection.branch_id==pair_i[0]]
         else:
@@ -4360,24 +4365,24 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
                     sigma_U = np.sqrt(len_sub1*len_sub2*(len_sub+1-sum_k)/12.0)
                     df_de_pval_qval.loc[genename,'z_score'] = (df_de_pval_qval.loc[genename,'U']-mu_U)/sigma_U
             if(df_de_pval_qval.shape[0]==0):
-                print('No DE genes are detected between branches ' + dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]]+\
-                      ' and '+dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]])
+                print('No DE genes are detected between branches ' + pair_i_alias[0][0]+'_'+pair_i_alias[0][1]+\
+                      ' and '+pair_i_alias[1][0]+'_'+pair_i_alias[1][1])
             else:
                 p_values = df_de_pval_qval['pval']
                 q_values = multipletests(p_values, method='fdr_bh')[1]
                 df_de_pval_qval['qval'] = q_values
-                dict_de_greater[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
+                dict_de_greater[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
                                                           (df_de_pval_qval['z_score']>0)].sort_values(['z_score'],ascending=False)
-                dict_de_greater[pair_i].to_csv(os.path.join(file_path,'de_genes_greater_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                        + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)
-                dict_de_less[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
+                dict_de_greater[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_greater_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                                        + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)
+                dict_de_less[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
                                                        (df_de_pval_qval['z_score']<0)].sort_values(['z_score'])
-                dict_de_less[pair_i].to_csv(os.path.join(file_path,'de_genes_less_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                     + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)   
+                dict_de_less[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_less_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                                     + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)   
         else:
             print('There are not sufficient cells (should be greater than 20) between branches '+\
-                  dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] +' and '+\
-                  dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]]+ '. fold_change is calculated')
+                  pair_i_alias[0][0]+'_'+pair_i_alias[0][1] +' and '+\
+                  pair_i_alias[1][0]+'_'+pair_i_alias[1][1]+ '. fold_change is calculated')
             df_de_pval_qval = pd.DataFrame(columns = ['logfc','mean_up','mean_down'],dtype=float)
             for genename in input_genes_expressed:
                 sub1_values = df_cells_sub1.loc[:,genename].tolist()
@@ -4395,17 +4400,17 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
                     df_de_pval_qval.loc[genename,'mean_up'] = np.mean(sub1_values)
                     df_de_pval_qval.loc[genename,'mean_down'] = np.mean(sub2_values)
             if(df_de_pval_qval.shape[0]==0):
-                print('No DE genes are detected between branches ' + dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]]+\
-                      ' and '+dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]])
+                print('No DE genes are detected between branches ' + pair_i_alias[0][0]+'_'+pair_i_alias[0][1]+\
+                      ' and '+pair_i_alias[1][0]+'_'+pair_i_alias[1][1])
             else:
-                dict_de_greater[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
+                dict_de_greater[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
                                                           (df_de_pval_qval['logfc']>0)].sort_values(['logfc'],ascending=False)
-                dict_de_greater[pair_i].to_csv(os.path.join(file_path,'de_genes_greater_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                        + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)                
-                dict_de_less[pair_i] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
+                dict_de_greater[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_greater_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                                        + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)                
+                dict_de_less[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
                                                        (df_de_pval_qval['logfc']<0)].sort_values(['logfc'])
-                dict_de_less[pair_i].to_csv(os.path.join(file_path,'de_genes_less_'+dict_node_state[pair_i[0][0]]+'_'+dict_node_state[pair_i[0][1]] + ' and '\
-                                     + dict_node_state[pair_i[1][0]]+'_'+dict_node_state[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)   
+                dict_de_less[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_less_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                                     + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)   
     adata.uns['de_genes_greater'] = dict_de_greater
     adata.uns['de_genes_less'] = dict_de_less
 
@@ -4443,8 +4448,8 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
             ax.set_ylim(0,max(val_greater)+1.5)
             ax.set_ylabel('z_score')
-            ax.set_title('DE genes between branches ' + dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and ' + \
-                         dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]])
+            ax.set_title('DE genes between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
+                         sub_edges_i[1][0]+'_'+sub_edges_i[1][1])
             ax1 = fig.add_subplot(gs[1], adjustable='box')
             if(not dict_de_less[sub_edges_i].empty):
                 val_less = dict_de_less[sub_edges_i].iloc[:num_genes,:]['z_score'].values  # the bar lengths
@@ -4469,8 +4474,8 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             ax1.xaxis.tick_top()
             plt.tight_layout()
             if(save_fig):
-                plt.savefig(os.path.join(fig_path,'de_genes_'+dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and '\
-                            + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf'),pad_inches=1,bbox_inches='tight')
+                plt.savefig(os.path.join(fig_path,'de_genes_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
+                            + sub_edges_i[1][0]+'_'+sub_edges_i[1][1]+'.pdf'),pad_inches=1,bbox_inches='tight')
                 plt.close(fig)
         else:
             if(not dict_de_greater[sub_edges_i].empty):
@@ -4484,8 +4489,8 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
             ax.set_ylim(0,max(val_greater)+1.5)
             ax.set_ylabel('log_fold_change')
-            ax.set_title('DE genes between branches ' + dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and ' + \
-                         dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]])
+            ax.set_title('DE genes between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
+                         sub_edges_i[1][0]+'_'+sub_edges_i[1][1])
             ax1 = fig.add_subplot(gs[1], adjustable='box')
             if(not dict_de_less[sub_edges_i].empty):
                 val_less = dict_de_less[sub_edges_i].iloc[:num_genes,:]['logfc'].values  # the bar lengths
@@ -4505,8 +4510,8 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             ax1.xaxis.tick_top()
             plt.tight_layout()
             if(save_fig):
-                plt.savefig(os.path.join(fig_path,'de_genes_'+dict_node_state[sub_edges_i[0][0]]+'_'+dict_node_state[sub_edges_i[0][1]] + ' and '\
-                            + dict_node_state[sub_edges_i[1][0]]+'_'+dict_node_state[sub_edges_i[1][1]]+'.pdf'),pad_inches=1,bbox_inches='tight')
+                plt.savefig(os.path.join(fig_path,'de_genes_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
+                            + sub_edges_i[1][0]+'_'+sub_edges_i[1][1]+'.pdf'),pad_inches=1,bbox_inches='tight')
                 plt.close(fig) 
 
 
@@ -4567,7 +4572,7 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
         input_genes = adata.raw.var_names.tolist()
         #exclude genes that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
         input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
         df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
 
@@ -4577,7 +4582,9 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
         results = pool.map(scale_gene_expr,params)
         pool.close()
         adata.uns['scaled_gene_expr'] = results
+        df_scaled_gene_expr = pd.DataFrame(results).T
 
+    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
     df_gene_detection[input_genes_expressed] = df_scaled_gene_expr    
 
     #### find marker genes that are specific to one leaf branch
@@ -4631,13 +4638,14 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     df_leaf_genes.to_csv(os.path.join(file_path,'leaf_genes.tsv'),sep = '\t',index = True)
     dict_leaf_genes = dict()
     for x in leaf_edges:
-        dict_leaf_genes[x] = df_leaf_genes[df_leaf_genes[dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue']==1.0]
-        dict_leaf_genes[x].to_csv(os.path.join(file_path,'leaf_genes'+dict_node_state[x[0]]+'_'+dict_node_state[x[1]] + '.tsv'),sep = '\t',index = True)
+        x_alias = (dict_node_state[x[0]],dict_node_state[x[1]])
+        dict_leaf_genes[x_alias] = df_leaf_genes[df_leaf_genes[x_alias[0]+x_alias[1]+'_pvalue']==1.0]
+        dict_leaf_genes[x_alias].to_csv(os.path.join(file_path,'leaf_genes'+x_alias[0]+'_'+x_alias[1] + '.tsv'),sep = '\t',index = True)
     adata.uns['leaf_genes_all'] = df_leaf_genes
     adata.uns['leaf_genes'] = dict_leaf_genes
 
 
-def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,
+def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
                 use_precomputed=True):
     """Detect markers (highly expressed or suppressed) for the specified ident.
     Parameters
@@ -4652,6 +4660,8 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
         Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
     n_jobs: `int`, optional (default: all available cpus)
         The number of parallel jobs to run when scaling the gene expressions .
+    min_num_cells: `int`, optional (default: 5)
+        The minimum number of cells in which genes are expressed.
     use_precomputed: `bool`, optional (default: True)
         If True, the previously computed scaled gene expression will be used
 
@@ -4684,8 +4694,7 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
         input_genes_expressed = df_scaled_gene_expr.columns.tolist()                  
     else:
         #exclude genes that are expressed in fewer than min_num_cells cells
-        min_num_cells = max(5,int(round(df_sc.shape[0]*0.001)))
-        print('Minimum number of cells expressing genes: '+ str(min_num_cells))
+        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
         input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
         df_sc_filtered = df_sc[input_genes_expressed].copy()
 
@@ -4697,6 +4706,7 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
         adata.uns['scaled_gene_expr'] = results
         df_scaled_gene_expr = pd.DataFrame(results).T
 
+    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
     df_input = df_scaled_gene_expr 
     df_input[ident] = adata.obs[ident]
     
