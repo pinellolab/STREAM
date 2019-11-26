@@ -49,7 +49,9 @@ You should see the notebook open in your browser.
 Tutorial
 --------
 
-* Example for scRNA-seq: [1.STREAM_scRNA-seq.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.STREAM_scRNA-seq.ipynb?flush_cache=true)
+* Example for scRNA-seq: [1.1.STREAM_scRNA-seq (on 2D plane).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.STREAM_scRNA-seq.ipynb?flush_cache=true)
+
+* Example for scRNA-seq: [1.2.STREAM_scRNA-seq (in 3D space).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.STREAM_scRNA-seq.ipynb?flush_cache=true)
 
 * Example for *mapping* feature: [2.STREAM_mapping.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.STREAM_mapping.ipynb?flush_cache=true)
 
