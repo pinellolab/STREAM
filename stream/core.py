@@ -1785,7 +1785,7 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
     print('Number of branches after extending leaves: ' + str(len(dict_branches)))    
 
 
-def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_path=None,fig_name='flat_tree.pdf',fig_size=(8,8),fig_legend_ncol=3):  
+def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_path=None,fig_name='flat_tree.pdf',fig_size=(8,8),fig_legend=True,fig_legend_ncol=3):  
     """Plot flat tree based on a modified version of the force-directed layout Fruchterman-Reingold algorithm.
     Parameters
     ----------
@@ -1803,6 +1803,8 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'flat_tree.pdf')
         if save_fig is True, specify figure name.
+    fig_legend: `bool`, optional (default: True)
+        if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
 
@@ -1928,7 +1930,8 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
             ax.scatter(coord_new[0], coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8) 
     else:
         ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
-    ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.15),
+    if(fig_legend):  
+        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.15),
               ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
@@ -2484,9 +2487,13 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 max_gene_expr = np.percentile(gene_expr[gene_expr>0],percentile_expr)
                 gene_expr[gene_expr>max_gene_expr] = max_gene_expr 
                 if(vmin==None):  
-                    vmin = 0
+                    vmin_new = 0
+                else:
+                    vmin_new = vmin
                 if(vmax==None):
-                    vmax = max_gene_expr
+                    vmax_new = max_gene_expr
+                else:
+                    vmax_new = vmax
             elif(experiment=='atac-seq'):
                 gene_expr = df_gene_expr[g].copy()
                 min_gene_expr = np.percentile(gene_expr[gene_expr<0],100-percentile_expr)
@@ -2494,9 +2501,13 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 gene_expr[gene_expr>max_gene_expr] = max_gene_expr
                 gene_expr[gene_expr<min_gene_expr] = min_gene_expr
                 if(vmin==None):
-                    vmin = -max(abs(min_gene_expr),max_gene_expr)
+                    vmin_new = -max(abs(min_gene_expr),max_gene_expr)
+                else:
+                    vmin_new = vmin
                 if(vmax==None):
-                    vmax = max(abs(min_gene_expr),max_gene_expr)
+                    vmax_new = max(abs(min_gene_expr),max_gene_expr)
+                else:
+                    vmax_new = vmax
             else:
                 print('The experiment '+experiment +' is not supported')
                 return
@@ -2519,30 +2530,46 @@ def subwaymap_plot_gene(adata,adata_new=None,show_all_cells=True,genes=None,root
                 if(show_all_cells):
                     if(experiment=='rna-seq'):
                         if(vmin==None):
-                            vmin = 0
+                            vmin_new = 0
+                        else:
+                            vmin_new = vmin
                         if(vmax==None):
-                            vmax = max(max_gene_expr,max_gene_expr_new)   
+                            vmax_new = max(max_gene_expr,max_gene_expr_new)   
+                        else:
+                            vmax_new = vmax
                     if(experiment=='atac-seq'):
                         if(vmin==None):
-                            vmin = -max(max(abs(min_gene_expr),abs(min_gene_expr_new)),max(max_gene_expr,max_gene_expr_new))
+                            vmin_new = -max(max(abs(min_gene_expr),abs(min_gene_expr_new)),max(max_gene_expr,max_gene_expr_new))
+                        else:
+                            vmin_new = vmin
                         if(vmax==None):
-                            vmax = max(max_gene_expr,max_gene_expr_new)                    
+                            vmax_new = max(max_gene_expr,max_gene_expr_new)     
+                        else:       
+                            vmax_new = vmax        
                     sc=ax.scatter(pd.concat([coord[0],coord_new[0]]), pd.concat([coord[1],coord_new[1]]),c=pd.concat([color,color_new]),
-                                  vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
+                                  vmin=vmin_new, vmax=vmax_new, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)
                 else:
                     if(experiment=='rna-seq'):
                         if(vmin==None):
-                            vmin = 0
+                            vmin_new = 0
+                        else:
+                            vmin_new = vmin
                         if(vmax==None):
-                            vmax = max_gene_expr_new
+                            vmax_new = max_gene_expr_new
+                        else:
+                            vmax_new = vmax
                     if(experiment=='atac-seq'):
                         if(vmin==None):
-                            vmin = -max(abs(min_gene_expr_new),max_gene_expr_new)
+                            vmin_new = -max(abs(min_gene_expr_new),max_gene_expr_new)
+                        else:
+                            vmin_new = vmin
                         if(vmax==None):
-                            vmax = max(abs(min_gene_expr_new),max_gene_expr_new)
-                    sc=ax.scatter(coord_new[0], coord_new[1],c=color_new,vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)                      
+                            vmax_new = max(abs(min_gene_expr_new),max_gene_expr_new)
+                        else:
+                            vmax_new = vmax
+                    sc=ax.scatter(coord_new[0], coord_new[1],c=color_new,vmin=vmin_new, vmax=vmax_new, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10)                      
             else:            
-                sc=ax.scatter(coord[0], coord[1],c=color,vmin=vmin, vmax=vmax, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10) 
+                sc=ax.scatter(coord[0], coord[1],c=color,vmin=vmin_new, vmax=vmax_new, s=50, cmap=cm, linewidths=0,alpha=0.5,zorder=10) 
             cbar=plt.colorbar(sc)
             cbar.ax.tick_params(labelsize=20)
             tick_locator = ticker.MaxNLocator(nbins=5)
@@ -4002,19 +4029,27 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
             for cellname in cell_list_sorted:
                 if(experiment=='rna-seq'):
                     if(vmin==None):
-                        vmin = 0
+                        vmin_new = 0
+                    else:
+                        vmin_new = vmin
                     if(vmax==None):
-                        vmax = df_bins_gene.values.max()
+                        vmax_new = df_bins_gene.values.max()
+                    else:
+                        vmax_new = vmax
                 elif(experiment=='atac-seq'):
                     if(vmin==None):
-                        vmin = -max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                        vmin_new = -max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                    else:
+                        vmin_new = vmin
                     if(vmax==None):
-                        vmax = max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                        vmax_new = max(abs(df_bins_gene.values.min()),df_bins_gene.values.max())
+                    else:
+                        vmax_new = vmax
                 else:
                     print('The experiment '+experiment +' is not supported')
                     return                
                 im = ax.imshow(dict_im_array[cellname], cmap=cmap1,interpolation='bicubic',\
-                               extent=[xmin,xmax,ymin,ymax],vmin=vmin,vmax=vmax) 
+                               extent=[xmin,xmax,ymin,ymax],vmin=vmin_new,vmax=vmax_new) 
                 dict_imshow[cellname] = im
                 verts_cell = verts[cellname]
                 clip_path = Polygon(verts_cell, facecolor='none', edgecolor='none', closed=True)
