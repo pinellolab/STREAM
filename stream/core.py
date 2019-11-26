@@ -4951,7 +4951,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
         os.makedirs(file_path)   
     for edge_i in adata.uns['transition_genes'].keys():
         df_tg_i = adata.uns['transition_genes'][edge_i]
-        df_tg_i.to_csv(os.path.join(file_path,'transition_genes_'+ dict_nodes_label[edge_i[0]]+'_'+dict_nodes_label[edge_i[1]] + '.tsv'),sep = '\t',index = True)
+        df_tg_i.to_csv(os.path.join(file_path,'transition_genes_'+ edge_i[0]+'_'+edge_i[1] + '.tsv'),sep = '\t',index = True)
         gene_list = gene_list + df_tg_i.index[:n_genes].tolist() 
 
     print('Generating DE genes...')
@@ -4961,13 +4961,13 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
         os.makedirs(file_path)
     for pair_i in adata.uns['de_genes_greater'].keys():  
         df_de_i_greater = adata.uns['de_genes_greater'][pair_i]
-        df_de_i_greater.to_csv(os.path.join(file_path,'de_genes_greater_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
-                                            + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True) 
+        df_de_i_greater.to_csv(os.path.join(file_path,'de_genes_greater_'+pair_i[0][0]+'_'+pair_i[0][1] + ' and '\
+                                            + pair_i[1][0]+'_'+pair_i[1][1] + '.tsv'),sep = '\t',index = True) 
         gene_list = gene_list + df_de_i_greater.index[:n_genes].tolist() 
     for pair_i in adata.uns['de_genes_less'].keys():
         df_de_i_less = adata.uns['de_genes_less'][pair_i]
-        df_de_i_less.to_csv(os.path.join(file_path,'de_genes_less_'+dict_nodes_label[pair_i[0][0]]+'_'+dict_nodes_label[pair_i[0][1]] + ' and '\
-                                         + dict_nodes_label[pair_i[1][0]]+'_'+dict_nodes_label[pair_i[1][1]] + '.tsv'),sep = '\t',index = True)
+        df_de_i_less.to_csv(os.path.join(file_path,'de_genes_less_'+pair_i[0][0]+'_'+pair_i[0][1] + ' and '\
+                                         + pair_i[1][0]+'_'+pair_i[1][1] + '.tsv'),sep = '\t',index = True)
         gene_list = gene_list + df_de_i_less.index[:n_genes].tolist()
 
     print('Generating leaf genes...')
@@ -4977,7 +4977,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
         os.makedirs(file_path)   
     for leaf_i in adata.uns['leaf_genes'].keys():  
         df_lg_i =  adata.uns['leaf_genes'][leaf_i]
-        df_lg_i.to_csv(os.path.join(file_path,'leaf_genes'+dict_nodes_label[leaf_i[0]]+'_'+dict_nodes_label[leaf_i[1]] + '.tsv'),sep = '\t',index = True)
+        df_lg_i.to_csv(os.path.join(file_path,'leaf_genes'+leaf_i[0]+'_'+leaf_i[1] + '.tsv'),sep = '\t',index = True)
         gene_list = gene_list + df_lg_i.index[:n_genes].tolist() 
 
     gene_list = np.unique(gene_list)
