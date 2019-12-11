@@ -276,7 +276,7 @@ To perform scATAC-seq trajectory inference analysis, the main input can be:
 
 1)a set of files including **count file**, **region file** and **sample file**. 
 
-**count file**, .tsv or .tsv.gz format. A tab-delimited triplet file. It contains three columns. The first column specifies the rows indices (the regions) for non-zero entry. The second column specifies the columns indices (the sample) for non-zero entry. The last column contains the number of reads in a given region for a particular cell. No header is necessary:
+**count file**, .tsv or .tsv.gz format. A tab-delimited triplet file. It contains three columns. The first column specifies the rows indices (the regions, 1-based indexing) for non-zero entry. The second column specifies the columns indices (the samples, 1-based indexing) for non-zero entry. The last column contains the number of reads in a given region for a particular cell. No header is necessary:
 
 |        |     |  |
 |--------|-----|--|
