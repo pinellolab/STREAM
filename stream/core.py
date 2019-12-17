@@ -549,7 +549,6 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
 def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,first_pc = False,use_precomputed=True,
                                     save_fig=False,fig_name='top_pcs.pdf',fig_path=None,fig_size=(5,5)):
     """Select top principal components.
-
     Parameters
     ----------
     adata: AnnData
@@ -575,7 +574,6 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'top_pcs.pdf')
         if save_fig is True, specify figure name.
-
     Returns
     -------
     updates `adata` with the following fields.
@@ -583,6 +581,8 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         Store #observations × n_components data matrix after pca. Number of components to keep is min(#observations,#variables)
     top_pcs: `numpy.ndarray` (`adata.obsm['top_pcs']`)
         Store #observations × n_pc data matrix used for subsequent dimension reduction.
+    top_pcs: `sklearn.decomposition.PCA` (`adata.uns['top_pcs']`)
+        Store pca object.
     pca_variance_ratio: `numpy.ndarray` (`adata.uns['pca_variance_ratio']`)
         Percentage of variance explained by each of the selected components.
     """
@@ -596,17 +596,22 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
     else:
         sklearn_pca = sklearnPCA(svd_solver='full')
         if(feature == 'var_genes'):
-            print('using most variable genes ...')
-            X_pca = sklearn_pca.fit_transform(adata.obsm['var_genes'])
-            pca_variance_ratio = sklearn_pca.explained_variance_ratio_
+            print('using top variable genes ...')
+            trans = sklearn_pca.fit(adata.obsm['var_genes'])
+            X_pca = trans.transform(adata.obsm['var_genes'])
+            #X_pca = sklearn_pca.fit_transform(adata.obsm['var_genes'])
+            pca_variance_ratio = trans.explained_variance_ratio_
             adata.obsm['pca'] = X_pca
             adata.uns['pca_variance_ratio'] = pca_variance_ratio                
         else:
             print('using all the genes ...')
-            X_pca = sklearn_pca.fit_transform(adata.X)
-            pca_variance_ratio = sklearn_pca.explained_variance_ratio_
+            trans = sklearn_pca.fit(adata.X)
+            X_pca = trans.transform(adata.X)            
+#             X_pca = sklearn_pca.fit_transform(adata.X)
+            pca_variance_ratio = trans.explained_variance_ratio_
             adata.obsm['pca'] = X_pca
-            adata.uns['pca_variance_ratio'] = pca_variance_ratio            
+            adata.uns['pca_variance_ratio'] = pca_variance_ratio  
+        adata.uns['top_pcs'] = trans
     if(first_pc):
         adata.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
     else:
@@ -627,7 +632,6 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig)
     return None
-
 
 def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_jobs = 1,
                         feature='var_genes',method = 'se',eigen_solver=None):
@@ -4781,7 +4785,7 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
     adata.uns['markers_'+ident+'_all'] = df_markers
     adata.uns['markers_'+ident] = dict_markers    
 
-def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=True):
+def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=True,first_pc=False,top_pcs_feature=None):
     """ Map new data to the inferred trajectories
     
     Parameters
@@ -4795,6 +4799,7 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         Feature used for mapping. This should be consistent with the feature used for inferring trajectories
         'var_genes': most variable genes
         'all': all genes
+        'top_pcs': top principal components
     method: `str`, optional (default: 'mlle')
         Choose from {{'mlle','umap','pca'}}
         Method used for mapping. This should be consistent with the dimension reduction method used for inferring trajectories
@@ -4803,7 +4808,13 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         'pca': Principal component analysis
     use_radius: `bool`, optional (default: True)
         If True, when searching for the neighbors for each cell in MLLE space, STREAM uses a fixed radius instead of a fixed number of cells.
-
+    first_pc: `bool`, optional (default: False)
+        If True, the first principal component will be included
+    top_pcs_feature: `str`, optional (default: None)
+        Choose from {{'var_genes'}}
+        Features used for pricipal component analysis
+        If None, all the genes will be used.
+        IF 'var_genes', the most variable genes obtained from select_variable_genes() will be used.        
     Returns
     -------  
     
@@ -4812,6 +4823,8 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         Store #observations × #var_genes data matrix used mapping.
     var_genes: `pandas.core.indexes.base.Index` (`adata_new.uns['var_genes']`)
         The selected variable gene names.
+    top_pcs: `numpy.ndarray` (`adata_new.obsm['top_pcs']`)
+        Store #observations × n_pc data matrix used for subsequent dimension reduction.
     X_dr : `numpy.ndarray` (`adata_new.obsm['X_dr']`)
         A #observations × n_components data matrix after dimension reduction.
     X_mlle : `numpy.ndarray` (`adata_new.obsm['X_mlle']`)
@@ -4823,11 +4836,29 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     """
 
     if(feature == 'var_genes'):
+        print('Top variable genes are being used for mapping...')
         adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
         adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
         input_data = adata_new.obsm['var_genes']
     if(feature == 'all'):
+        print('All genes are being used for mapping...')
         input_data = adata_new[:,adata.var.index].X
+    if(feature == 'top_pcs'):
+        print('Top principal components are being used for mapping...')
+        trans = adata.uns['top_pcs']
+        if(top_pcs_feature == 'var_genes'):
+            adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
+            adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
+            X_pca = trans.transform(adata_new.obsm['var_genes']) 
+        else:
+            X_pca = trans.transform(adata_new[:,adata.var.index].X) 
+        n_pc = adata.obsm['top_pcs'].shape[1]
+        if(first_pc):
+            adata_new.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
+        else:
+            #discard the first Principal Component
+            adata_new.obsm['top_pcs'] = X_pca[:,1:(n_pc+1)]
+        input_data = adata_new.obsm['top_pcs']
     adata_new.uns['epg'] = adata.uns['epg'].copy()
     adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy() 
     if(method == 'se'):
