@@ -4795,7 +4795,7 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     adata_new: AnnData
         Annotated data matrix for new data (to be mapped).
     feature: `str`, optional (default: 'var_genes')
-        Choose from {{'var_genes','all'}}
+        Choose from {{'var_genes','top_pcs','all'}}
         Feature used for mapping. This should be consistent with the feature used for inferring trajectories
         'var_genes': most variable genes
         'all': all genes
