@@ -1,5 +1,5 @@
 ############################################################
-# Dockerfile to build STREAM v0.4.0
+# Dockerfile to build STREAM v0.4.1
 ############################################################
 
 # Set the base image to anaconda
@@ -17,7 +17,7 @@ RUN conda config --add channels bioconda
 RUN apt-get update && apt-get install gsl-bin libgsl0-dev -y && apt-get clean
 
 #Install stream package
-RUN conda install libgfortran stream=0.4.0 tzlocal -y && conda clean --all -y
+RUN conda install libgfortran stream=0.4.1 tzlocal -y && conda clean --all -y
 RUN Rscript -e 'install.packages("stringi",repos="https://cloud.r-project.org/")'
 
 
