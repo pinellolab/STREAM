@@ -2,11 +2,24 @@
 
 [![Build Status](https://travis-ci.org/pinellolab/STREAM.svg)](https://travis-ci.org/pinellolab/STREAM)
 
-# STREAM
+# STREAM (Latest version v0.4.1)
+
+Latest News
+-----------
+> Jan 14, 2020
+
+Version 0.4.1 is now available. We added support of feature `top_pcs` for *Mapping*
+
+> Nov 26, 2019
+
+Version 0.4.0 is now available. Numerous changes have been introduced. Please check [v0.4.0](https://github.com/pinellolab/STREAM/releases/tag/v0.4.0) for details.
+
+Introduction
+------------
 
 STREAM (**S**ingle-cell **T**rajectories **R**econstruction, **E**xploration **A**nd **M**apping) is an interactive pipeline capable of disentangling and visualizing complex branching trajectories from both single-cell transcriptomic and epigenomic data.
 
-STREAM is now published in *Nature Communications*! Please cite our paper [H Chen, L Albergante, JY Hsu, CA Lareau, GL Bosco, J Guan, S Zhou, AN Gorban, DE Bauer, MJ Aryee, DM Langenau, A Zinovyev, JD Buenrostro, GC Yuan, L Pinello. Single-cell trajectories reconstruction, exploration and mapping of omics data with STREAM.](https://www.nature.com/articles/s41467-019-09670-4)  *Nature Communications*, volume 10, Article number: 1903 (2019). if you find STREAM helpful for your research.
+STREAM is now published in *Nature Communications*! Please cite our paper [Chen H, et al. Single-cell trajectories reconstruction, exploration and mapping of omics data with STREAM.](https://www.nature.com/articles/s41467-019-09670-4)  *Nature Communications*, volume 10, Article number: 1903 (2019). if you find STREAM helpful for your research.
 
 <img src="https://github.com/pinellolab/STREAM/blob/stream_python2/STREAM/static/images/Figure1.png">
 
