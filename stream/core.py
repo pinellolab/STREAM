@@ -4835,57 +4835,73 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         Store #observations × n_components data matrix after pca.
     """
 
-    if(feature == 'var_genes'):
-        print('Top variable genes are being used for mapping...')
-        adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
-        adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
-        input_data = adata_new.obsm['var_genes']
-    if(feature == 'all'):
-        print('All genes are being used for mapping...')
-        input_data = adata_new[:,adata.var.index].X
-    if(feature == 'top_pcs'):
-        print('Top principal components are being used for mapping...')
-        trans = adata.uns['top_pcs']
-        if(top_pcs_feature == 'var_genes'):
+    if(feature not in ['var_genes','top_pcs','all']):
+        raise Exception("'feature' should be chosen from 'var_genes','top_pcs','all'")
+    else:
+        if(feature == 'var_genes'):
+            print('Top variable genes are being used for mapping...')
             adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
             adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
-            X_pca = trans.transform(adata_new.obsm['var_genes']) 
-        else:
-            X_pca = trans.transform(adata_new[:,adata.var.index].X) 
-        n_pc = adata.obsm['top_pcs'].shape[1]
-        if(first_pc):
-            adata_new.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
-        else:
-            #discard the first Principal Component
-            adata_new.obsm['top_pcs'] = X_pca[:,1:(n_pc+1)]
-        input_data = adata_new.obsm['top_pcs']
+            input_data = adata_new.obsm['var_genes']
+        if(feature == 'all'):
+            print('All genes are being used for mapping...')
+            input_data = adata_new[:,adata.var.index].X
+        if(feature == 'top_pcs'):
+            print('Top principal components are being used for mapping...')
+            trans = adata.uns['top_pcs']
+            if(top_pcs_feature == 'var_genes'):
+                adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
+                adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
+                X_pca = trans.transform(adata_new.obsm['var_genes']) 
+            else:
+                X_pca = trans.transform(adata_new[:,adata.var.index].X) 
+            n_pc = adata.obsm['top_pcs'].shape[1]
+            if(first_pc):
+                adata_new.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
+            else:
+                #discard the first Principal Component
+                adata_new.obsm['top_pcs'] = X_pca[:,1:(n_pc+1)]
+            input_data = adata_new.obsm['top_pcs']
     adata_new.uns['epg'] = adata.uns['epg'].copy()
     adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy() 
-    if(method == 'se'):
-        trans = adata.uns['trans_se']
-        adata_new.obsm['X_se_mapping'] = trans.transform(input_data)
-        adata_new.obsm['X_dr'] = adata_new.obsm['X_se_mapping'].copy()
-    if(method == 'mlle'):
-        trans = adata.uns['trans_mlle']
-        if(use_radius):
-            dist_nb = trans.nbrs_.kneighbors(input_data, n_neighbors=trans.n_neighbors,return_distance=True)[0]
-            ind = trans.nbrs_.radius_neighbors(input_data, radius = dist_nb.max(),return_distance=False)    
-            new_X_mlle = np.empty((input_data.shape[0], trans.n_components))
-            for i in range(input_data.shape[0]):
-                weights = barycenter_weights_modified(input_data[i], trans.nbrs_._fit_X[ind[i]],reg=trans.reg)
-                new_X_mlle[i] = np.dot(trans.embedding_[ind[i]].T, weights) 
-            adata_new.obsm['X_mlle_mapping'] = new_X_mlle              
-        else:
-            adata_new.obsm['X_mlle_mapping'] = trans.transform(input_data)
-        adata_new.obsm['X_dr'] = adata_new.obsm['X_mlle_mapping'].copy()
-    if(method == 'umap'):
-        trans = adata.uns['trans_umap']
-        adata_new.obsm['X_umap_mapping'] = trans.transform(input_data)
-        adata_new.obsm['X_dr'] = adata_new.obsm['X_umap_mapping'].copy()
-    if(method == 'pca'):
-        trans = adata.uns['trans_pca']
-        adata_new.obsm['X_pca_mapping'] = trans.transform(input_data)
-        adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
+
+    if(method not in ['mlle','umap','pca']):
+        raise Exception("'method' should be chosen from 'mlle','umap','pca'")  
+    else:  
+        # if(method == 'se'):
+        #     trans = adata.uns['trans_se']
+        #     adata_new.obsm['X_se_mapping'] = trans.transform(input_data)
+        #     adata_new.obsm['X_dr'] = adata_new.obsm['X_se_mapping'].copy()
+        if(method == 'mlle'):
+            if('trans_mlle' in adata.uns_keys()):
+                trans = adata.uns['trans_mlle']
+                if(use_radius):
+                    dist_nb = trans.nbrs_.kneighbors(input_data, n_neighbors=trans.n_neighbors,return_distance=True)[0]
+                    ind = trans.nbrs_.radius_neighbors(input_data, radius = dist_nb.max(),return_distance=False)    
+                    new_X_mlle = np.empty((input_data.shape[0], trans.n_components))
+                    for i in range(input_data.shape[0]):
+                        weights = barycenter_weights_modified(input_data[i], trans.nbrs_._fit_X[ind[i]],reg=trans.reg)
+                        new_X_mlle[i] = np.dot(trans.embedding_[ind[i]].T, weights) 
+                    adata_new.obsm['X_mlle_mapping'] = new_X_mlle              
+                else:
+                    adata_new.obsm['X_mlle_mapping'] = trans.transform(input_data)
+                adata_new.obsm['X_dr'] = adata_new.obsm['X_mlle_mapping'].copy()
+            else:
+                raise Exception("Please run 'st.dimension_reduction()' using 'mlle' first.")  
+        if(method == 'umap'):
+            if('trans_umap' in adata.uns_keys()):
+                trans = adata.uns['trans_umap']
+                adata_new.obsm['X_umap_mapping'] = trans.transform(input_data)
+                adata_new.obsm['X_dr'] = adata_new.obsm['X_umap_mapping'].copy()
+            else:
+                raise Exception("Please run 'st.dimension_reduction()' using 'umap' first.")  
+        if(method == 'pca'):
+            if('trans_pca' in adata.uns_keys()):            
+                trans = adata.uns['trans_pca']
+                adata_new.obsm['X_pca_mapping'] = trans.transform(input_data)
+                adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
+            else:
+                raise Exception("Please run 'st.dimension_reduction()' using 'pca' first.")  
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
 

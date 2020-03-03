@@ -13,7 +13,7 @@ if sys.version_info.major != 3:
 #https://github.com/bioconda/bioconda-recipes/tree/master/recipes/stream
 
 setup(name='stream',
-      version="0.4.1",
+      version="0.4.2",
       description='Single-cell Trajectories Reconstruction, Exploration And Mapping of single-cell data',
       long_description=Path('README.md').read_text('utf-8'),
       url='https://github.com/pinellolab/stream',
