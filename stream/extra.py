@@ -21,6 +21,23 @@ def project_point_to_curve_distance(XP,p):
     dist_p_to_c = point.distance(curve)
     return dist_p_to_c    
 
+def gini(array):
+    """Calculate the Gini coefficient of a numpy array."""
+    array = array.flatten().astype(float)
+    if np.amin(array) < 0:
+        # Values cannot be negative:
+        array -= np.amin(array)
+    # Values cannot be 0:
+    array += 0.0000001
+    # Values must be sorted:
+    array = np.sort(array)
+    # Index per array element:
+    index = np.arange(1,array.shape[0]+1)
+    # Number of array elements:
+    n = array.shape[0]
+    # Gini coefficient:
+    return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
+
 def dfs_from_leaf(epg_copy,node,degrees_of_nodes,nodes_to_visit,nodes_to_merge):
     nodes_to_visit.remove(node)
     for n2 in epg_copy.neighbors(node):
@@ -206,6 +223,7 @@ def project_cells_to_epg(adata):
     adata.obs['branch_lam'] = list_x_lam
     adata.obs['branch_dist'] = list_x_dist
     return None
+
 
 def calculate_pseudotime(adata):
     flat_tree = adata.uns['flat_tree']

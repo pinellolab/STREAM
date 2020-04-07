@@ -545,6 +545,66 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
         plt.close(fig)
     return None
 
+def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
+                          save_fig=False,fig_name='gini_vs_max.pdf',fig_path=None,fig_size=(5,5)):
+
+    """Select high gini genes for rare cell types.
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    loess_frac: `float`, optional (default: 0.1)
+        Between 0 and 1. The fraction of the data used when estimating each y-value in LOWESS function.
+    percentile: `int`, optional (default: 95)
+        Between 0 and 100. Specify the percentile to select genes.Genes are ordered based on the residuals.
+    n_genes: `int`, optional (default: None)
+        Specify the number of selected genes. Genes are ordered based on the residuals.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (5,5))
+        figure size.
+    fig_path: `str`, optional (default: '')
+        if empty, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'std_vs_means.pdf')
+        if save_fig is True, specify figure name.
+    Returns
+    -------
+    updates `adata` with the following fields.
+    gini: `pandas.core.series.Series` (`adata.var['gini']`,dtype `float`)
+        Gini coefficients for all genes.
+    gini_genes: `pandas.core.indexes.base.Index` (`adata.uns['gini_genes']`)
+        The selected high gini genes.
+    """
+
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
+    if('gini' not in adata.var.columns):
+        gini_values = np.array([gini(adata[:,x].X) for x in adata.var_names])
+        adata.var['gini'] = gini_values
+    gini_values = adata.var['gini']
+    max_genes = np.max(adata.X,axis=0)
+    loess_fitted = lowess(gini_values,max_genes,return_sorted=False,frac=loess_frac)
+    residuals = gini_values - loess_fitted
+    if(n_genes is None):
+        cutoff = np.percentile(residuals,percentile)
+        id_gini_genes = np.where(residuals>cutoff)[0]
+    else:
+        id_gini_genes = np.argsort(residuals)[::-1][:n_genes] 
+    
+    adata.uns['gini_genes'] = adata.var_names[id_gini_genes]
+    print(str(len(id_gini_genes))+' gini genes are selected')
+    ###plotting
+    fig = plt.figure(figsize=fig_size)      
+    plt.scatter(max_genes, gini_values,s=5,alpha=0.2,zorder=1,c='#6baed6')
+    plt.scatter(max_genes[id_gini_genes], gini_values[id_gini_genes],s=5,alpha=0.9,zorder=2,c='#EC4E4E')
+    plt.plot(np.sort(max_genes), loess_fitted[np.argsort(max_genes)],linewidth=3,zorder=3,c='#3182bd')
+    plt.xlabel('max gene expression')
+    plt.ylabel('Gini coefficient')
+    if(save_fig):
+        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+        plt.close(fig)
+    return None
+
 
 def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,first_pc = False,use_precomputed=True,
                                     save_fig=False,fig_name='top_pcs.pdf',fig_path=None,fig_size=(5,5)):
