@@ -40,6 +40,7 @@ import pickle
 import gzip
 import shutil
 import json
+import traceback
 
 
 from rpy2.robjects.packages import importr
@@ -194,9 +195,9 @@ def add_metadata(adata,file_name,delimiter='\t',file_path=''):
     ----------
     adata: AnnData
         Annotated data matrix.
-    fig_path: `str`, optional (default: '')
+    file_path: `str`, optional (default: '')
         The file path of metadata file.
-    fig_name: `str`, optional (default: None)
+    file_name: `str`, optional (default: None)
         The file name of metadata file. 
 
     Returns
@@ -241,9 +242,9 @@ def add_cell_labels(adata,file_path='',file_name=None):
     ----------
     adata: AnnData
         Annotated data matrix.
-    fig_path: `str`, optional (default: '')
+    file_path: `str`, optional (default: '')
         The file path of cell label file.
-    fig_name: `str`, optional (default: None)
+    file_name: `str`, optional (default: None)
         The file name of cell label file. If file_name is not specified, 'unknown' is added as the label for all cells.
         
 
@@ -273,9 +274,9 @@ def add_cell_colors(adata,file_path='',file_name=None):
     ----------
     adata: AnnData
         Annotated data matrix.
-    fig_path: `str`, optional (default: '')
+    file_path: `str`, optional (default: '')
         The file path of cell label color file.
-    fig_name: `str`, optional (default: None)
+    file_name: `str`, optional (default: None)
         The file name of cell label color file. If file_name is not specified, random color are generated for each cell label.
         
     Returns
@@ -4965,7 +4966,119 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
 
-def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
+def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
+    """save stream report for single cell VR website http://www.singlecellvr.com/
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    genes: `list`, optional (default: None): 
+        A list of genes to be displayed
+    file_name: `str`, optional (default: 'stream_vr_report')
+        Ouput Zip file name.
+    
+    Returns
+    -------
+    None
+
+    """ 
+    try:
+        file_path = os.path.join(adata.uns['workdir'],file_name)
+        if(not os.path.exists(file_path)):
+                os.makedirs(file_path)
+
+        flat_tree = adata.uns['flat_tree']
+        epg = adata.uns['epg']
+        epg_node_pos = nx.get_node_attributes(epg,'pos')
+        ft_node_label = nx.get_node_attributes(flat_tree,'label')
+        ft_node_pos = nx.get_node_attributes(flat_tree,'pos')
+                
+        ## output coordinates of stream graph
+        print('Generating coordinates of stream graph ...')
+        list_curves = []
+        for edge_i in flat_tree.edges():
+            branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
+            df_coord_curve_i = pd.DataFrame(branch_i_pos)
+            dict_coord_curves = dict()
+            dict_coord_curves['branch_id'] = ft_node_label[edge_i[0]] + '_' + ft_node_label[edge_i[1]]
+            dict_coord_curves['xyz'] = [{'x':df_coord_curve_i.iloc[j,0],
+                                         'y':df_coord_curve_i.iloc[j,1],
+                                         'z':df_coord_curve_i.iloc[j,2]} for j in range(df_coord_curve_i.shape[0])]
+            list_curves.append(dict_coord_curves)
+        with open(os.path.join(file_path,'stream.json'), 'w') as f:
+            json.dump(list_curves, f)     
+            
+        ## output topology of stream graph
+        print('Generating topology of stream graph ...')
+        dict_nodes = dict()
+        list_edges = []
+        for node_i in flat_tree.nodes():
+            dict_nodes_i = dict()
+            dict_nodes_i['node_name'] = ft_node_label[node_i]
+            dict_nodes_i['xyz'] = {'x':ft_node_pos[node_i][0],
+                                   'y':ft_node_pos[node_i][1],
+                                   'z':ft_node_pos[node_i][2]}
+            dict_nodes[ft_node_label[node_i]] = dict_nodes_i
+        for edge_i in flat_tree.edges():
+            dict_edges = dict()
+            dict_edges['nodes'] = [ft_node_label[edge_i[0]],ft_node_label[edge_i[1]]]
+            dict_edges['weight'] = 1
+            list_edges.append(dict_edges)
+        with open(os.path.join(file_path,'stream_nodes.json'), 'w') as f:
+            json.dump(dict_nodes, f)
+        with open(os.path.join(file_path,'stream_edges.json'), 'w') as f:
+            json.dump(list_edges, f)
+   
+        ## output coordinates of cells
+        print('Generating coordinates of cells ...')
+        list_cells = []
+        for i in range(adata.shape[0]):
+            dict_coord_cells = dict()
+            dict_coord_cells['cell_id'] = adata.obs_names[i]
+            dict_coord_cells['x'] = adata.obsm['X_dr'][i,0]
+            dict_coord_cells['y'] = adata.obsm['X_dr'][i,1]
+            dict_coord_cells['z'] = adata.obsm['X_dr'][i,2]
+            list_cells.append(dict_coord_cells)
+        with open(os.path.join(file_path,'scatter.json'), 'w') as f:
+            json.dump(list_cells, f)    
+            
+        ## output metadata file of cells
+        print('Generating metadata file of cells ...')
+        list_metadata = []
+        for i in range(adata.shape[0]):
+            dict_metadata = dict()
+            dict_metadata['cell_id'] = adata.obs_names[i]
+            dict_metadata['label'] = adata.obs['label'].tolist()[i]
+            dict_metadata['label_color'] = adata.obs['label_color'][i]
+            list_metadata.append(dict_metadata)
+        with open(os.path.join(file_path,'metadata.json'), 'w') as f:
+            json.dump(list_metadata, f)
+
+        ## output gene expression of cells
+        if(genes is not None):
+            print('Generating gene expression of cells ...')
+            df_genes = pd.DataFrame(adata.raw.X,index=adata.raw.obs_names,columns=adata.raw.var_names)
+            cm = mpl.cm.get_cmap('viridis',512)
+            for g in genes:
+                list_genes = []
+                norm = mpl.colors.Normalize(vmin=0, vmax=max(df_genes[g]),clip=True)
+                for x in adata.obs_names:
+                    dict_genes = dict()
+                    dict_genes['cell_id'] = x
+                    dict_genes['color'] = mpl.colors.to_hex(cm(norm(df_genes.loc[x,g])))
+                    list_genes.append(dict_genes)
+                with open(os.path.join(file_path,'gene_'+g+'.json'), 'w') as f:
+                    json.dump(list_genes, f) 
+        shutil.make_archive(base_name=os.path.join(adata.uns['workdir'],file_name), format='zip',root_dir=file_path)
+        shutil.rmtree(file_path)
+    except:
+        print(traceback.format_exc())
+    else:
+        print("Finished! " + file_name + '.zip is saved at ' + adata.uns['workdir'])
+
+
+def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=None,
                     title="experiment name",
                     description="experiment description",
                     starting_node="root node",
