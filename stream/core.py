@@ -7,6 +7,8 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 from statsmodels.sandbox.stats.multicomp import multipletests
 import seaborn as sns
 import pylab as plt
+import plotly.graph_objects as go
+import plotly.express as px
 import shapely.geometry as geom
 import multiprocessing
 import os
@@ -40,8 +42,6 @@ import pickle
 import gzip
 import shutil
 import json
-import traceback
-
 
 from rpy2.robjects.packages import importr
 from rpy2.robjects import r as R
@@ -819,7 +819,7 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
     return None
 
 def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
-                             save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=(8,8),fig_legend=True,fig_legend_ncol=3):
+                             save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=(8,8),fig_legend=True,fig_legend_ncol=3, plotly=False):
     """Plot cells after dimension reduction.
 
     Parameters
@@ -844,60 +844,65 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
         if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
+    plotly: `bool`, optional (default: False)
+        if True, plotly will be used to make interactive plots
         
     Returns
     -------
     None
     
     """
+    if(n_components==None):
+        n_components = min(3,adata.obsm['X_dr'].shape[1])
+    assert (n_components in [2,3]),"n_components should be 2 or 3"
     if(fig_path is None):
         fig_path = adata.uns['workdir']
-    df_sample = adata.obs[['label','label_color']].copy()
-    df_coord = pd.DataFrame(adata.obsm['X_dr'],index=adata.obs_names)
+    df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_dr'],columns=['Dim'+str(x+1) for x in range(3)])
+    df_plot = df_plot.merge(adata.obs[['label','label_color']],left_index=True, right_index=True)
+    df_plot_shuf = df_plot.sample(frac=1,random_state=100)
     list_patches = []
-    for x in adata.uns['label_color'].keys():
+    for x in adata.obs['label'].unique():
         list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))
-    color = df_sample.sample(frac=1,random_state=100)['label_color'] 
-    coord = df_coord.sample(frac=1,random_state=100)
-    if(n_components==None):
-        n_components = min(3,df_coord.shape[1])
     if(n_components==3): 
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(coord[0], coord[1],coord[2],c=color,s=50,linewidth=0,alpha=0.8) 
-        max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min(), coord[2].max()-coord[2].min()]).max() / 1.9
-        mid_x = (coord[0].max()+coord[0].min()) * 0.5
-        mid_y = (coord[1].max()+coord[1].min()) * 0.5
-        mid_z = (coord[2].max()+coord[2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_zlim(mid_z - max_range, mid_z + max_range)
-        ax.set_xlabel('Component1',labelpad=20)
-        ax.set_ylabel('Component2',labelpad=20)
-        ax.set_zlabel('Component3',labelpad=20)
-        if(fig_legend):
-            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
-                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
-        if(save_fig):
-            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)
+        if(plotly):
+            fig = px.scatter_3d(df_plot_shuf, x="Dim1", y="Dim2", z="Dim3", color='label',
+                                opacity=0.9,width=500,height=500,color_discrete_map=adata.uns['label_color'])   
+            fig.update_traces(marker=dict(size=2))
+            fig.update_layout(legend= {'itemsizing': 'constant'}) 
+            fig.show(renderer="notebook")  
+            
+        else:
+            fig = plt.figure(figsize=fig_size)
+            ax = fig.add_subplot(111, projection='3d')
+            ax.scatter(df_plot_shuf['Dim1'], df_plot_shuf['Dim2'],df_plot_shuf['Dim3'],c=df_plot_shuf['label_color'],s=50,linewidth=0,alpha=0.8) 
+            ax.set_xlabel('Dim1',labelpad=20)
+            ax.set_ylabel('Dim2',labelpad=20)
+            ax.set_zlabel('Dim3',labelpad=20)
+            if(fig_legend):
+                ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
+                          ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+            if(save_fig):
+                plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+                plt.close(fig)
     if(n_components==2): 
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111)
-        ax.scatter(coord[comp1], coord[comp2],c=color,s=50,linewidth=0,alpha=0.8) 
-        max_range = np.array([coord[comp1].max()-coord[comp1].min(), coord[comp2].max()-coord[comp2].min()]).max() / 1.9
-        mid_x = (coord[comp1].max()+coord[comp1].min()) * 0.5
-        mid_y = (coord[comp2].max()+coord[comp2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_xlabel('Component1',labelpad=20)
-        ax.set_ylabel('Component2',labelpad=20)
-        if(fig_legend):
-            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
-                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
-        if(save_fig):
-            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)
+        if(plotly):
+            fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color='label',
+                             opacity=0.9,width=500,height=500,color_discrete_map=adata.uns['label_color'])   
+            fig.update_traces(marker=dict(size=2))
+            fig.update_layout(legend= {'itemsizing': 'constant'}) 
+            fig.show(renderer="notebook")
+        else:
+            fig = plt.figure(figsize=fig_size)
+            ax = fig.add_subplot(111)
+            ax.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],c=df_plot_shuf['label_color'],s=50,linewidth=0,alpha=0.8) 
+            ax.set_xlabel('Dim'+str(comp1+1),labelpad=20)
+            ax.set_ylabel('Dim'+str(comp2+1),labelpad=20)
+            if(fig_legend):
+                ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
+                          ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+            if(save_fig):
+                plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+                plt.close(fig)
 
 
 def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=(8,8)):  
@@ -935,18 +940,13 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save
     """
     if(fig_path is None):
         fig_path = adata.uns['workdir']
-    
+    assert (key_graph in ['epg','seed_epg','ori_epg']),"key_graph must be one of ['epg','seed_epg','ori_epg']"
     if(key_graph=='epg'):
         epg = adata.uns['epg']
         flat_tree = adata.uns['flat_tree']
-    elif(key_graph=='seed_epg'):
-        epg = adata.uns['seed_epg']
-        flat_tree = adata.uns['seed_flat_tree']        
-    elif(key_graph=='ori_epg'):
-        epg = adata.uns['ori_epg']
-        flat_tree = adata.uns['ori_flat_tree'] 
     else:
-        print("'"+key_graph+"'"+'is not supported')
+        epg = adata.uns[key_graph.split('_')[0]+'_epg']
+        flat_tree = adata.uns[key_graph.split('_')[0]+'_flat_tree']
     dict_nodes_pos = nx.get_node_attributes(epg,'pos')
     nodes_pos = np.array(list(dict_nodes_pos.values()))
     coord = pd.DataFrame(adata.obsm['X_dr'])
@@ -970,9 +970,9 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save
         ax.set_xlim(mid_x - max_range, mid_x + max_range)
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
         ax.set_zlim(mid_z - max_range, mid_z + max_range)
-        ax.set_xlabel('Component1',labelpad=20)
-        ax.set_ylabel('Component2',labelpad=20)
-        ax.set_zlabel('Component3',labelpad=20)
+        ax.set_xlabel('Dim1',labelpad=20)
+        ax.set_ylabel('Dim2',labelpad=20)
+        ax.set_zlabel('Dim3',labelpad=20)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
@@ -992,8 +992,8 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save
         mid_y = (coord[comp2].max()+coord[comp2].min()) * 0.5
         ax.set_xlim(mid_x - max_range, mid_x + max_range)
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_xlabel('Component'+str(comp1+1),labelpad=20)
-        ax.set_ylabel('Component'+str(comp2+1),labelpad=20)
+        ax.set_xlabel('Dim'+str(comp1+1),labelpad=20)
+        ax.set_ylabel('Dim'+str(comp2+1),labelpad=20)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)        
@@ -1107,9 +1107,9 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,co
         ax.set_xlim(mid_x - max_range, mid_x + max_range)
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
         ax.set_zlim(mid_z - max_range, mid_z + max_range)
-        ax.set_xlabel('Component1',labelpad=20)
-        ax.set_ylabel('Component2',labelpad=20)
-        ax.set_zlabel('Component3',labelpad=20)
+        ax.set_xlabel('Dim1',labelpad=20)
+        ax.set_ylabel('Dim2',labelpad=20)
+        ax.set_zlabel('Dim3',labelpad=20)
         if(fig_legend):
             ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
                       ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
@@ -1141,8 +1141,8 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,co
         mid_y = (coord[comp2].max()+coord[comp2].min()) * 0.5
         ax.set_xlim(mid_x - max_range, mid_x + max_range)
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_xlabel('Component'+str(comp1+1),labelpad=20)
-        ax.set_ylabel('Component'+str(comp2+1),labelpad=20)
+        ax.set_xlabel('Dim'+str(comp1+1),labelpad=20)
+        ax.set_ylabel('Dim'+str(comp2+1),labelpad=20)
         if(fig_legend):
             ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
                       ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
@@ -4995,7 +4995,6 @@ def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
         ft_node_pos = nx.get_node_attributes(flat_tree,'pos')
                 
         ## output coordinates of stream graph
-        print('Generating coordinates of stream graph ...')
         list_curves = []
         for edge_i in flat_tree.edges():
             branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
@@ -5010,7 +5009,6 @@ def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
             json.dump(list_curves, f)     
             
         ## output topology of stream graph
-        print('Generating topology of stream graph ...')
         dict_nodes = dict()
         list_edges = []
         for node_i in flat_tree.nodes():
@@ -5029,9 +5027,10 @@ def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
             json.dump(dict_nodes, f)
         with open(os.path.join(file_path,'stream_edges.json'), 'w') as f:
             json.dump(list_edges, f)
+
+        print('STREAM: graph finished!')
    
         ## output coordinates of cells
-        print('Generating coordinates of cells ...')
         list_cells = []
         for i in range(adata.shape[0]):
             dict_coord_cells = dict()
@@ -5044,7 +5043,6 @@ def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
             json.dump(list_cells, f)    
             
         ## output metadata file of cells
-        print('Generating metadata file of cells ...')
         list_metadata = []
         for i in range(adata.shape[0]):
             dict_metadata = dict()
@@ -5070,12 +5068,14 @@ def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
                     list_genes.append(dict_genes)
                 with open(os.path.join(file_path,'gene_'+g+'.json'), 'w') as f:
                     json.dump(list_genes, f) 
+        print('STREAM: cells finished!')
         shutil.make_archive(base_name=os.path.join(adata.uns['workdir'],file_name), format='zip',root_dir=file_path)
         shutil.rmtree(file_path)
     except:
-        print(traceback.format_exc())
+        print('STREAM report failed!')
+        raise
     else:
-        print("Finished! " + file_name + '.zip is saved at ' + adata.uns['workdir'])
+        print(file_name + '.zip is saved at ' + adata.uns['workdir'])
 
 
 def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=None,
