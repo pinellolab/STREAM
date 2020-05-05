@@ -3,6 +3,7 @@
 from setuptools import setup
 import sys
 from pathlib import Path
+import stream as st
 
 if sys.version_info.major != 3:
     raise RuntimeError('STREAM requires Python 3')
@@ -13,7 +14,7 @@ if sys.version_info.major != 3:
 #https://github.com/bioconda/bioconda-recipes/tree/master/recipes/stream
 
 setup(name='stream',
-      version="0.4.2",
+      version=st.__version__,
       description='Single-cell Trajectories Reconstruction, Exploration And Mapping of single-cell data',
       long_description=Path('README.md').read_text('utf-8'),
       url='https://github.com/pinellolab/stream',
