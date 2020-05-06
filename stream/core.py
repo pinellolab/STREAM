@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_string_dtype
 import anndata as ad
 import networkx as nx
 import re
