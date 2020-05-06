@@ -2170,10 +2170,10 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
                     ### remove legend title
                     axs[int(np.floor(i/fig_ncol)),i%fig_ncol].get_legend().texts[0].set_text("")
                 else:
-                    vmin = df_plot[ann].min() if vmin is None else vmin
-                    vmax = df_plot[ann].max() if vmax is None else vmax
+                    vmin_i = df_plot[ann].min() if vmin is None else vmin
+                    vmax_i = df_plot[ann].max() if vmax is None else vmax
                     sc_i = axs[int(np.floor(i/fig_ncol)),i%fig_ncol].scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
-                                 c=df_plot_shuf[ann], s=30, vmin=vmin,vmax=vmax,cmap="viridis",alpha=0.8)
+                                 c=df_plot_shuf[ann], s=30, vmin=vmin_i,vmax=vmax_i,cmap="viridis",alpha=0.8)
                     fig.colorbar(sc_i,ax=axs[int(np.floor(i/fig_ncol)),i%fig_ncol], pad=0.01, fraction=0.05, aspect=30)
                     axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_xlabel(method.upper()+'1')
                     axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_ylabel(method.upper()+'2')
