@@ -755,6 +755,8 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
 
     if(feature not in ['var_genes','top_pcs','all']):
         raise ValueError("unrecognized feature '%s'" % feature)
+    if(method not in ['mlle','se','umap','pca']):
+        raise ValueError("unrecognized method '%s'" % method)
     if(feature == 'var_genes'):
         input_data = adata.obsm['var_genes']
     if(feature == 'top_pcs'):
@@ -763,8 +765,6 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         input_data = adata.X
     print('feature ' + feature + ' is being used ...')
     print(str(n_jobs)+' cpus are being used ...')
-    if(method not in ['mlle','se','umap','pca']):
-        raise ValueError("unrecognized method '%s'" % method)
     if(nb_pct!=None):
         n_neighbors = int(np.around(input_data.shape[0]*nb_pct))
 
@@ -854,7 +854,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
     """
     if(n_components==None):
         n_components = min(3,adata.obsm['X_dr'].shape[1])
-    assert (n_components in [2,3]),"n_components should be 2 or 3"
+    if n_components not in [2,3]:
+        raise ValueError("n_components should be 2 or 3")
     if(fig_path is None):
         fig_path = adata.uns['workdir']
     df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_dr'],columns=['Dim'+str(x+1) for x in range(3)])
@@ -938,9 +939,14 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save
     None
     
     """
+    if(n_components==None):
+        n_components = min(3,adata.obsm['X_dr'].shape[1])  
+    if n_components not in [2,3]:
+        raise ValueError("n_components should be 2 or 3")
+    assert (key_graph in ['epg','seed_epg','ori_epg']),"key_graph must be one of ['epg','seed_epg','ori_epg']"
+    
     if(fig_path is None):
         fig_path = adata.uns['workdir']
-    assert (key_graph in ['epg','seed_epg','ori_epg']),"key_graph must be one of ['epg','seed_epg','ori_epg']"
     if(key_graph=='epg'):
         epg = adata.uns['epg']
         flat_tree = adata.uns['flat_tree']
@@ -2002,8 +2008,9 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig) 
 
-def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color_by='label',use_precomputed=True,
-                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(10,10),fig_legend=True,fig_legend_ncol=3):  
+def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,color_by='label',use_precomputed=True,
+                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(6,5),fig_ncol=4,fig_legend=True,fig_legend_ncol=1,
+                          wspace=0.3,hspace=0.3,vmin=None,vmax=None,plotly=False):  
 
     """ Visualize the results in 2D plane
     
@@ -2025,17 +2032,16 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
     nb_pct: `float`, optional (default: None)
         The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
     perplexity: `float`, optional (default: 30.0)
-        The perplexity used for tSNE.       
-    color_by: `str`, optional (default: 'label')
-        Choose from {{'label','branch'}}
-        Specify how to color cells.
-        'label': the cell labels (stored in adata.obs['label'])
-        'branch': the bracnh id identifed by STREAM
+        The perplexity used for tSNE. 
+    color: `list` optional (default: None)
+        Column names of observations (adata.obs.columns) or variable names(adata.var_names). A list of names to be plotted.    
+    color_by: `str`, optional (default: None)
+        Column name of observations (adata.obs.columns) or variable names(adata.var_names). Specify how to color cells.
     use_precomputed: `bool`, optional (default: True)
         If True, the visualization coordinates from previous computing will be used
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (10,10))
+    fig_size: `tuple`, optional (default: (6,5))
         figure size.
     fig_path: `str`, optional (default: None)
         if None, adata.uns['workdir'] will be used.
@@ -2045,6 +2051,14 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
+    wspace: `float`, optional (default: 0.5)
+        The amount of width reserved for space between subplots,
+    hspace: `float`, optional (default: 0.5)
+        The amount of height reserved for space between subplots
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
+    plotly: `bool`, optional (default: False)
+        if True, plotly will be used to make interactive plots
 
     Returns
     -------
@@ -2061,8 +2075,24 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         Store the tsne data matrix after merging original cells and new cells to be mapped.
 
     """
-
-
+    if(method not in ['umap','tsne']):
+        raise ValueError("unrecognized method '%s'" % method)
+    if(color_by is not None):
+        print("FutureWarning: The `color_by` argument has been deprecated and will be removed in STREAM v0.5")
+        if(color_by not in adata.obs.columns):
+            raise ValueError("unrecognized annotation '%s'" % color_by)
+    if(color is None):
+        color = ['label']
+    ###remove duplicate keys
+    color = list(dict.fromkeys(color))
+    dict_ann = dict()
+    for ann in color:
+        if(ann in adata.obs.columns):
+            dict_ann[ann] = adata.obs[ann]
+        elif(ann in adata.var_names):
+            dict_ann[ann] = adata.obs_vector(ann)
+        else:
+            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
     if(fig_path is None):
         if(adata_new==None):
             fig_path = adata.uns['workdir']
@@ -2107,34 +2137,55 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             else:
                 reducer = TSNE(n_components=2, init='pca',perplexity=perplexity, random_state=0)
                 embedding = reducer.fit_transform(input_data)
-                adata_new.uns['merged_X_vis_tsne'] = embedding            
-    fig = plt.figure(figsize=fig_size)
-    ax = fig.add_subplot(1,1,1)        
+                adata_new.uns['merged_X_vis_tsne'] = embedding
+
     if(adata_new is None):
-        df_sample = adata.obs.copy()
-        df_coord = pd.DataFrame(embedding,index=adata.obs_names)
-        if(color_by=='label'):
-            list_patches = []
-            for x in adata.uns['label_color'].keys():
-                list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))
-            color = df_sample.sample(frac=1,random_state=100)['label_color'] 
-            coord = df_coord.sample(frac=1,random_state=100)    
-        if(color_by=='branch'):
-            df_sample = adata.obs.copy()
-            df_coord = pd.DataFrame(embedding,index=adata.obs_names)
-            flat_tree = adata.uns['flat_tree']
-            list_patches = []
-            df_sample['branch_color'] = '' 
-            for edge in flat_tree.edges():
-                br_id = flat_tree.edges[edge]['id']
-                id_cells = np.where(df_sample['branch_id']==br_id)[0]
-                df_sample.loc[df_sample.index[id_cells],'branch_color'] = flat_tree.edges[edge]['color']
-                list_patches.append(Patches.Patch(color = flat_tree.edges[edge]['color'],
-                    label='branch '+flat_tree.nodes[br_id[0]]['label']+'_'+flat_tree.nodes[br_id[1]]['label']))
-            color = df_sample.sample(frac=1,random_state=100)['branch_color'] 
-            coord = df_coord.sample(frac=1,random_state=100) 
-        ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8)   
+        df_plot = pd.DataFrame(index=adata.obs.index,data = embedding,columns=[method.upper()+str(x) for x in [1,2]])
+        for ann in color:
+            df_plot[ann] = dict_ann[ann]
+        df_plot_shuf = df_plot.sample(frac=1,random_state=100)
+        if(plotly):
+            for ann in color:
+                fig = px.scatter(df_plot_shuf, x=method.upper()+'1', y=method.upper()+'2',color=ann,
+                                    opacity=0.9,width=500,height=500,color_discrete_map=adata.uns['label_color'])   
+                fig.update_traces(marker=dict(size=2))
+                fig.update_layout(legend= {'itemsizing': 'constant'}) 
+                fig.show(renderer="notebook")  
+        else:
+            if(len(color)<fig_ncol):
+                fig_ncol=len(color)
+            fig_nrow = int(np.ceil(len(color)/fig_ncol))
+            fig, axs = plt.subplots(fig_nrow,fig_ncol,squeeze=False,
+                                    figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
+            for i,ann in enumerate(color):
+                if(is_string_dtype(df_plot[ann])):
+                    sc_i=sns.scatterplot(ax=axs[int(np.floor(i/fig_ncol)),i%fig_ncol],
+                                        x=method.upper()+'1', y=method.upper()+'2', 
+                                        hue=ann,data=df_plot_shuf,
+                                        alpha=0.8,linewidth=0,
+                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].legend(bbox_to_anchor=(1, 0.5), loc='center left', borderaxespad=0.01,
+                                                                     ncol=fig_legend_ncol,frameon=False,handletextpad=0.01)
+                    ### remove legend title
+                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].get_legend().texts[0].set_text("")
+                else:
+                    vmin = df_plot[ann].min() if vmin is None else vmin
+                    vmax = df_plot[ann].max() if vmax is None else vmax
+                    sc_i = axs[int(np.floor(i/fig_ncol)),i%fig_ncol].scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
+                                 c=df_plot_shuf[ann], s=30, vmin=vmin,vmax=vmax,cmap="viridis",alpha=0.8)
+                    fig.colorbar(sc_i,ax=axs[int(np.floor(i/fig_ncol)),i%fig_ncol], pad=0.01, fraction=0.05, aspect=30)
+                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_xlabel(method.upper()+'1')
+                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_ylabel(method.upper()+'2')
+                axs[int(np.floor(i/fig_ncol)),i%fig_ncol].get_xaxis().set_ticks([])
+                axs[int(np.floor(i/fig_ncol)),i%fig_ncol].get_yaxis().set_ticks([])
+                axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_title(ann)
+            plt.subplots_adjust(hspace=hspace,wspace=wspace)
+            if(save_fig):
+                plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+                plt.close(fig) 
     else:
+        fig = plt.figure(figsize=fig_size)
+        ax = fig.add_subplot(1,1,1)  
         if(color_by=='label'):  
             df_sample = adata.obs.copy()
             df_coord = pd.DataFrame(embedding[:adata.shape[0],:],index=adata.obs_names)
@@ -2160,7 +2211,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
                     if(x not in adata.uns['label_color'].keys()):
                         list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))            
                 ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)  
-        if(color_by=='branch'):
+        if(color_by=='branch_id_alias'):
             df_sample = adata.obs.copy()
             df_coord = pd.DataFrame(embedding[:adata.shape[0],:],index=adata.obs_names)
             flat_tree = adata.uns['flat_tree']
@@ -2185,18 +2236,18 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             coord_new = df_coord_new.sample(frac=1,random_state=100)               
             ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8)           
             ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
-    if(method == 'umap'):
-        ax.set_xlabel('UMAP 1')
-        ax.set_ylabel('UMAP 2')
-    if(method == 'tsne'):
-        ax.set_xlabel('tSNE 1')
-        ax.set_ylabel('tSNE 2')
-    if(fig_legend):                    
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-                  ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
-    if(save_fig):
-        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-        plt.close(fig) 
+        if(method == 'umap'):
+            ax.set_xlabel('UMAP 1')
+            ax.set_ylabel('UMAP 2')
+        if(method == 'tsne'):
+            ax.set_xlabel('tSNE 1')
+            ax.set_ylabel('tSNE 2')
+        if(fig_legend):                    
+            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
+                    ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+        if(save_fig):
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+            plt.close(fig) 
 
 
 def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',preference=None,
@@ -3366,7 +3417,8 @@ def stream_plot_gene(adata,genes=None,percentile_expr=95,root='S0',factor_num_wi
         Tick label fontsize
     label_fontsize: `int`, optional (default: 25)
         The label fontsize of the x-axis
-
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
     Returns
     -------
     None
