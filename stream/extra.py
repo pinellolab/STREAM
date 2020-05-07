@@ -731,30 +731,3 @@ def barycenter_weights_modified(X, Z, reg=1e-3):
     w = solve(G, v, sym_pos=True)
     B = w / np.sum(w)
     return B
-
-def get_colors(adata,ann):
-    df_cell_colors = pd.DataFrame(index=adata.obs.index)
-    df_cell_colors[ann+'_color'] = ''
-
-    adata.obs[ann] = adata.obs[ann].astype('category')
-    categories = adata.obs[ann].cat.categories
-    length = len(categories)
-    # check if default matplotlib palette has enough colors
-    # mpl.style.use('default')
-    if len(mpl.rcParams['axes.prop_cycle'].by_key()['color']) >= length:
-        cc = mpl.rcParams['axes.prop_cycle']()
-        palette = [next(cc)['color'] for _ in range(length)]
-    else:
-        if length <= 20:
-            palette = palettes.default_20
-        elif length <= 28:
-            palette = palettes.default_28
-        elif length <= len(palettes.default_102):  # 103 colors
-            palette = palettes.default_102
-        else:
-            rgb_rainbow = cm.rainbow(np.linspace(0,1,length))
-            palette = [mpl.colors.rgb2hex(rgb_rainbow[i,:-1]) for i in range(length)]
-    for i,x in enumerate(categories):
-        id_cells = np.where(adata.obs[ann]==x)[0]
-        df_cell_colors.loc[df_cell_colors.index[id_cells],ann+'_color'] = palette[i]
-    return(df_cell_colors[ann+'_color'].tolist())

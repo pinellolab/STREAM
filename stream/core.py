@@ -28,7 +28,7 @@ from scipy.spatial import distance,cKDTree,KDTree
 import math
 import matplotlib as mpl
 # mpl.use('Agg')
-mpl.rc('pdf', fonttype=42)
+# mpl.rc('pdf', fonttype=42)
 import matplotlib.ticker as ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats,interpolate
@@ -55,6 +55,38 @@ from .extra import *
 from .scikit_posthocs import posthoc_conover
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+def set_figure_params(context='notebook',style='white',palette='deep',font='sans-serif',font_scale=1.1,color_codes=True,
+                      dpi=80,figsize=[6.4, 4.8],**kwargs):
+    """ Set global parameters for figures. Modified from sns.set()
+    Parameters
+    ----------
+    context : string or dict
+        Plotting context parameters, see seaborn :func:`plotting_context
+    style: `string`,optional (default: 'white')
+        Axes style parameters, see seaborn :func:`axes_style`
+    palette : string or sequence
+        Color palette, see seaborn :func:`color_palette`
+    font_scale: `float`, optional (default: 1.3)
+        Separate scaling factor to independently scale the size of the font elements.        
+    color_codes : `bool`, optional (default: True)
+        If ``True`` and ``palette`` is a seaborn palette, remap the shorthand
+        color codes (e.g. "b", "g", "r", etc.) to the colors from this palette.
+    dpi: `int`,optional (default: 80)
+        Resolution of rendered figures
+    kwargs:    
+        rc settings properties. Please see https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file
+        set_figure_params(**{'legend.handletextpad':1e-10})
+    """
+#     mpl.rcParams.update(mpl.rcParamsDefault)
+    sns.set(context=context,style=style,palette=palette,font=font,font_scale=font_scale,color_codes=color_codes,
+            rc={'figure.dpi':dpi,'figure.figsize':figsize,'image.cmap': 'viridis'})
+    for key, value in kwargs.items():
+        if key in mpl.rcParams.keys():
+            mpl.rcParams[key] = value
+        else:
+            raise Exception("unrecognized property '%s'" % key)
+
 
 def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna-seq', workdir=None,**kwargs):
     """Read gene expression matrix into anndata object.
@@ -2010,8 +2042,8 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         plt.close(fig) 
 
 def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,color_by='label',use_precomputed=True,
-                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=(6,5),fig_ncol=4,fig_legend=True,fig_legend_ncol=1,
-                          wspace=0.3,hspace=0.3,vmin=None,vmax=None,plotly=False):  
+                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=4,fig_legend=True,fig_legend_ncol=1,
+                          wspace=0.3,hspace=0.25,vmin=None,vmax=None,alpha=0.8,plotly=False):  
 
     """ Visualize the results in 2D plane
     
@@ -2052,12 +2084,14 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
-    wspace: `float`, optional (default: 0.5)
+    wspace: `float`, optional (default: 0.3)
         The amount of width reserved for space between subplots,
-    hspace: `float`, optional (default: 0.5)
+    hspace: `float`, optional (default: 0.25)
         The amount of height reserved for space between subplots
     vmin,vmax: `float`, optional (default: None)
         The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 0.8)
+        0.0 transparent through 1.0 opaque
     plotly: `bool`, optional (default: False)
         if True, plotly will be used to make interactive plots
 
@@ -2075,7 +2109,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
     merged_X_vis_tsne: `numpy.ndarray` (`adata_new.uns['merged_X_vis_tsne']`)
         Store the tsne data matrix after merging original cells and new cells to be mapped.
 
-    """
+    """    
     if(method not in ['umap','tsne']):
         raise ValueError("unrecognized method '%s'" % method)
     if(color_by is not None):
@@ -2084,6 +2118,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             raise ValueError("unrecognized annotation '%s'" % color_by)
     if(color is None):
         color = ['label']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
     ###remove duplicate keys
     color = list(dict.fromkeys(color))
     dict_ann = dict()
@@ -2139,7 +2174,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
                 reducer = TSNE(n_components=2, init='pca',perplexity=perplexity, random_state=0)
                 embedding = reducer.fit_transform(input_data)
                 adata_new.uns['merged_X_vis_tsne'] = embedding
-
+    
     if(adata_new is None):
         df_plot = pd.DataFrame(index=adata.obs.index,data = embedding,columns=[method.upper()+str(x) for x in [1,2]])
         for ann in color:
@@ -2148,38 +2183,45 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         if(plotly):
             for ann in color:
                 fig = px.scatter(df_plot_shuf, x=method.upper()+'1', y=method.upper()+'2',color=ann,
-                                    opacity=0.9,width=500,height=500,color_discrete_map=adata.uns['label_color'])   
-                fig.update_traces(marker=dict(size=2))
+                                 opacity=alpha,width=500,height=500,
+                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)   
+#                 fig.update_traces(marker=dict(size=2))
                 fig.update_layout(legend= {'itemsizing': 'constant'}) 
                 fig.show(renderer="notebook")  
         else:
             if(len(color)<fig_ncol):
                 fig_ncol=len(color)
             fig_nrow = int(np.ceil(len(color)/fig_ncol))
-            fig, axs = plt.subplots(fig_nrow,fig_ncol,squeeze=False,
-                                    figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
+#             fig = plt.subplots(squeeze=False,figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
+            fig = plt.figure(figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
+            print((fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
             for i,ann in enumerate(color):
+#                 ax_i = plt.subplot2grid((fig_nrow,fig_ncol), (int(np.floor(i/fig_ncol)), i%fig_ncol))
+                ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
                 if(is_string_dtype(df_plot[ann])):
-                    sc_i=sns.scatterplot(ax=axs[int(np.floor(i/fig_ncol)),i%fig_ncol],
+                    sc_i=sns.scatterplot(ax=ax_i,
                                         x=method.upper()+'1', y=method.upper()+'2', 
                                         hue=ann,data=df_plot_shuf,
-                                        alpha=0.8,linewidth=0,
+                                        alpha=alpha,linewidth=0,
                                         palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
-                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].legend(bbox_to_anchor=(1, 0.5), loc='center left', borderaxespad=0.01,
-                                                                     ncol=fig_legend_ncol,frameon=False,handletextpad=0.01)
+                    ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                                frameon=False,
+                                borderaxespad=0.01,
+                                handletextpad=1e-6,
+                               )
                     ### remove legend title
-                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].get_legend().texts[0].set_text("")
+                    ax_i.get_legend().texts[0].set_text("")
                 else:
                     vmin_i = df_plot[ann].min() if vmin is None else vmin
                     vmax_i = df_plot[ann].max() if vmax is None else vmax
-                    sc_i = axs[int(np.floor(i/fig_ncol)),i%fig_ncol].scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
-                                 c=df_plot_shuf[ann], s=30, vmin=vmin_i,vmax=vmax_i,cmap="viridis",alpha=0.8)
-                    fig.colorbar(sc_i,ax=axs[int(np.floor(i/fig_ncol)),i%fig_ncol], pad=0.01, fraction=0.05, aspect=30)
-                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_xlabel(method.upper()+'1')
-                    axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_ylabel(method.upper()+'2')
-                axs[int(np.floor(i/fig_ncol)),i%fig_ncol].get_xaxis().set_ticks([])
-                axs[int(np.floor(i/fig_ncol)),i%fig_ncol].get_yaxis().set_ticks([])
-                axs[int(np.floor(i/fig_ncol)),i%fig_ncol].set_title(ann)
+                    sc_i = ax_i.scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
+                                 c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                    fig.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                    ax_i.set_xlabel(method.upper()+'1')
+                    ax_i.set_ylabel(method.upper()+'2')
+                ax_i.get_xaxis().set_ticks([])
+                ax_i.get_yaxis().set_ticks([])
+                ax_i.set_title(ann)
             plt.subplots_adjust(hspace=hspace,wspace=wspace)
             if(save_fig):
                 plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
@@ -2249,7 +2291,6 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig) 
-
 
 def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',preference=None,
                    save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend=True,fig_legend_ncol=3):  
