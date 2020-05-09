@@ -57,7 +57,7 @@ from .scikit_posthocs import posthoc_conover
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def set_figure_params(context='notebook',style='white',palette='deep',font='sans-serif',font_scale=1.1,color_codes=True,
-                      dpi=80,figsize=[6.4, 4.8],**kwargs):
+                      dpi=80,dpi_save=150,figsize=[6.4, 4.8],**kwargs):
     """ Set global parameters for figures. Modified from sns.set()
     Parameters
     ----------
@@ -73,14 +73,16 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
         If ``True`` and ``palette`` is a seaborn palette, remap the shorthand
         color codes (e.g. "b", "g", "r", etc.) to the colors from this palette.
     dpi: `int`,optional (default: 80)
-        Resolution of rendered figures
+        Resolution of rendered figures.
+    dpi_save: `int`,optional (default: 150)
+        Resolution of saved figures.
     kwargs:    
         rc settings properties. Please see https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file
         set_figure_params(**{'legend.handletextpad':1e-10})
     """
 #     mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set(context=context,style=style,palette=palette,font=font,font_scale=font_scale,color_codes=color_codes,
-            rc={'figure.dpi':dpi,'figure.figsize':figsize,'image.cmap': 'viridis'})
+            rc={'figure.dpi':dpi,'savefig.dpi':dpi_save,'figure.figsize':figsize,'image.cmap': 'viridis'})
     for key, value in kwargs.items():
         if key in mpl.rcParams.keys():
             mpl.rcParams[key] = value
@@ -509,7 +511,7 @@ def remove_mt_genes(adata):
 
 
 def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_jobs = multiprocessing.cpu_count(),
-                          save_fig=False,fig_name='std_vs_means.pdf',fig_path=None,fig_size=(5,5)):
+                          save_fig=False,fig_name='std_vs_means.pdf',fig_path=None,fig_size=None):
 
     """Select the most variable genes.
 
@@ -527,7 +529,7 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
         The number of parallel jobs to run when calculating the distance from each gene to the fitted curve
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (5,5))
+    fig_size: `tuple`, optional (default: None)
         figure size.
     fig_path: `str`, optional (default: '')
         if empty, adata.uns['workdir'] will be used.
@@ -545,6 +547,7 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
 
     if(fig_path is None):
         fig_path = adata.uns['workdir']  
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_sizes
     mean_genes = np.mean(adata.X,axis=0)
     std_genes = np.std(adata.X,ddof=1,axis=0)
     loess_fitted = lowess(std_genes,mean_genes,return_sorted=False,frac=loess_frac)
@@ -580,7 +583,7 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
     return None
 
 def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
-                          save_fig=False,fig_name='gini_vs_max.pdf',fig_path=None,fig_size=(5,5)):
+                          save_fig=False,fig_name='gini_vs_max.pdf',fig_path=None,fig_size=None):
 
     """Select high gini genes for rare cell types.
     Parameters
@@ -595,7 +598,7 @@ def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
         Specify the number of selected genes. Genes are ordered based on the residuals.
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (5,5))
+    fig_size: `tuple`, optional (default: None)
         figure size.
     fig_path: `str`, optional (default: '')
         if empty, adata.uns['workdir'] will be used.
@@ -612,6 +615,7 @@ def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
 
     if(fig_path is None):
         fig_path = adata.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
     if('gini' not in adata.var.columns):
         gini_values = np.array([gini(adata[:,x].X) for x in adata.var_names])
         adata.var['gini'] = gini_values
@@ -851,8 +855,10 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         adata.obsm['X_dr'] = adata.obsm['X_pca']
     return None
 
-def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
-                             save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=(8,8),fig_legend=True,fig_legend_ncol=3, plotly=False):
+def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=None,
+                             save_fig=False,fig_name='dimension_reduction.pdf',fig_path=None,fig_size=None,fig_ncol=3,
+                             fig_legend=True,fig_legend_ncol=1,fig_legend_order = None,
+                             pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False):
     """Plot cells after dimension reduction.
 
     Parameters
@@ -875,69 +881,174 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,
         if save_fig is True, specify figure name.
     fig_legend: `bool`, optional (default: True)
         if fig_legend is True, show figure legend
-    fig_legend_ncol: `int`, optional (default: 3)
+    fig_legend_ncol: `int`, optional (default: 1)
         The number of columns that the legend has.
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 0.8)
+        0.0 transparent through 1.0 opaque
     plotly: `bool`, optional (default: False)
-        if True, plotly will be used to make interactive plots
-        
+        if True, plotly will be used to make interactive plots        
     Returns
     -------
     None
     
     """
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
+
     if(n_components==None):
         n_components = min(3,adata.obsm['X_dr'].shape[1])
     if n_components not in [2,3]:
         raise ValueError("n_components should be 2 or 3")
-    if(fig_path is None):
-        fig_path = adata.uns['workdir']
-    df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_dr'],columns=['Dim'+str(x+1) for x in range(3)])
-    df_plot = df_plot.merge(adata.obs[['label','label_color']],left_index=True, right_index=True)
-    df_plot_shuf = df_plot.sample(frac=1,random_state=100)
-    list_patches = []
-    for x in adata.obs['label'].unique():
-        list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))
-    if(n_components==3): 
-        if(plotly):
-            fig = px.scatter_3d(df_plot_shuf, x="Dim1", y="Dim2", z="Dim3", color='label',
-                                opacity=0.9,width=500,height=500,color_discrete_map=adata.uns['label_color'])   
-            fig.update_traces(marker=dict(size=2))
-            fig.update_layout(legend= {'itemsizing': 'constant'}) 
-            fig.show(renderer="notebook")  
-            
-        else:
-            fig = plt.figure(figsize=fig_size)
-            ax = fig.add_subplot(111, projection='3d')
-            ax.scatter(df_plot_shuf['Dim1'], df_plot_shuf['Dim2'],df_plot_shuf['Dim3'],c=df_plot_shuf['label_color'],s=50,linewidth=0,alpha=0.8) 
-            ax.set_xlabel('Dim1',labelpad=20)
-            ax.set_ylabel('Dim2',labelpad=20)
-            ax.set_zlabel('Dim3',labelpad=20)
-            if(fig_legend):
-                ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
-                          ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
-            if(save_fig):
-                plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-                plt.close(fig)
-    if(n_components==2): 
-        if(plotly):
-            fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color='label',
-                             opacity=0.9,width=500,height=500,color_discrete_map=adata.uns['label_color'])   
-            fig.update_traces(marker=dict(size=2))
-            fig.update_layout(legend= {'itemsizing': 'constant'}) 
-            fig.show(renderer="notebook")
-        else:
-            fig = plt.figure(figsize=fig_size)
-            ax = fig.add_subplot(111)
-            ax.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],c=df_plot_shuf['label_color'],s=50,linewidth=0,alpha=0.8) 
-            ax.set_xlabel('Dim'+str(comp1+1),labelpad=20)
-            ax.set_ylabel('Dim'+str(comp2+1),labelpad=20)
-            if(fig_legend):
-                ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.05),
-                          ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
-            if(save_fig):
-                plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-                plt.close(fig)
+    if(color is None):
+        color = ['label']
+    ###remove duplicate keys
+    color = list(dict.fromkeys(color))     
 
+    dict_ann = dict()
+    for ann in color:
+        if(ann in adata.obs.columns):
+            dict_ann[ann] = adata.obs[ann]
+        elif(ann in adata.var_names):
+            dict_ann[ann] = adata.obs_vector(ann)
+        else:
+            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+
+    df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_dr'],columns=['Dim'+str(x+1) for x in range(adata.obsm['X_dr'].shape[1])])
+    for ann in color:
+        df_plot[ann] = dict_ann[ann]
+    df_plot_shuf = df_plot.sample(frac=1,random_state=100)
+    
+    legend_order = {ann:np.unique(df_plot_shuf[ann]) for ann in color if is_string_dtype(df_plot_shuf[ann])}
+    if(fig_legend_order is not None):
+        if(not isinstance(fig_legend_order, dict)):
+            raise TypeError("`fig_legend_order` must be a dictionary")
+        for ann in fig_legend_order.keys():
+            if(ann in legend_order.keys()):
+                legend_order[ann] = fig_legend_order[ann]
+            else:
+                print("'%s' is ignored for ordering legend labels due to incorrect name or data type" % ann)
+    if(plotly):
+        for ann in color:
+            if(n_components==3): 
+                fig = px.scatter_3d(df_plot_shuf, x="Dim1", y="Dim2", z="Dim3", color=ann,
+                                    opacity=alpha,width=500,height=500,
+                                    color_continuous_scale=px.colors.sequential.Viridis,
+                                    color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
+                fig.update_traces(marker=dict(size=2))
+            else:
+                fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color=ann,
+                                 opacity=alpha,width=500,height=500,
+                                 color_continuous_scale=px.colors.sequential.Viridis,
+                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
+            fig.update_layout(legend= {'itemsizing': 'constant','traceorder':'grouped'}) 
+            fig.show(renderer="notebook")
+            
+    else:
+        if(len(color)<fig_ncol):
+            fig_ncol=len(color)
+        fig_nrow = int(np.ceil(len(color)/fig_ncol))
+        fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow))
+        for i,ann in enumerate(color):
+            if(n_components==3):
+                if(is_string_dtype(df_plot[ann])):
+                    ### export colors and legend from 2D sns.scatterplot 
+                    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+                    sc_i=sns.scatterplot(ax=ax_i,
+                                        x="Dim1", y="Dim2",
+                                        hue=ann,hue_order = legend_order[ann],
+                                        data=df_plot_shuf,
+                                        alpha=alpha,linewidth=0,
+                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)             
+                    colors_sns = sc_i.get_children()[0].get_facecolors()
+                    if(ann+'_color' not in adata.uns_keys()):
+                        colors_sns_scaled = (255*colors_sns).astype(int)
+                        adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                                   for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
+                    legend_sns,labels_sns = ax_i.get_legend_handles_labels()
+                    ax_i.remove()
+                    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1,projection='3d')
+                    ax_i.scatter(df_plot_shuf['Dim1'], df_plot_shuf['Dim2'],df_plot_shuf['Dim3'],c=colors_sns,linewidth=0,alpha=alpha)
+                    ax_i.legend(legend_sns,labels_sns,bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
+                                frameon=False,
+                                borderaxespad=0,
+                                handletextpad=0)                    
+                    
+                else:
+                    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1,projection='3d')
+                    vmin_i = df_plot[ann].min() if vmin is None else vmin
+                    vmax_i = df_plot[ann].max() if vmax is None else vmax
+                    sc_i = ax_i.scatter(df_plot_shuf["Dim1"], 
+                                        df_plot_shuf["Dim2"],
+                                        df_plot_shuf["Dim3"],
+                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,
+                                        alpha=alpha,
+                                        linewidth=0)
+                    fig.colorbar(sc_i,ax=ax_i, pad=0.1, fraction=0.05, aspect=30)
+                ax_i.set_xlabel("Dim1",labelpad=-5,rotation=-15)
+                ax_i.set_ylabel("Dim2",labelpad=0,rotation=45)
+                ax_i.set_zlabel("Dim3",labelpad=5,rotation=90)
+#                 ax_i.get_xaxis().set_ticks([])
+#                 ax_i.get_yaxis().set_ticks([])
+#                 ax_i.set_zticks([])
+                ax_i.locator_params(axis='x',nbins=4)
+                ax_i.locator_params(axis='y',nbins=4)
+                ax_i.locator_params(axis='z',nbins=4)
+                ax_i.tick_params(axis="x",pad=-4)
+                ax_i.tick_params(axis="y",pad=-1)
+                ax_i.tick_params(axis="z",pad=3.5)
+                ax_i.set_title(ann)
+            else:
+                ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+                if(is_string_dtype(df_plot[ann])):
+                    sc_i=sns.scatterplot(ax=ax_i,
+                                        x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),
+                                        hue=ann,hue_order = legend_order[ann],
+                                        data=df_plot_shuf,
+                                        alpha=alpha,linewidth=0,
+                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                    ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                                frameon=False,
+                                borderaxespad=0.01,
+                                handletextpad=1e-6,
+                                )
+                    if(ann+'_color' not in adata.uns_keys()):
+                        colors_sns = sc_i.get_children()[0].get_facecolors()
+                        colors_sns_scaled = (255*colors_sns).astype(int)
+                        adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                                   for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
+                    ### remove legend title
+                    ax_i.get_legend().texts[0].set_text("")
+                else:
+                    vmin_i = df_plot[ann].min() if vmin is None else vmin
+                    vmax_i = df_plot[ann].max() if vmax is None else vmax
+                    sc_i = ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],
+                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                    fig.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                ax_i.set_xlabel("Dim1",labelpad=2)
+                ax_i.set_ylabel("Dim2",labelpad=-6)
+#                 ax_i.get_xaxis().set_ticks([])
+#                 ax_i.get_yaxis().set_ticks([])
+#                 ax_i.set_zticks([])
+                ax_i.locator_params(axis='x',nbins=5)
+                ax_i.locator_params(axis='y',nbins=5)
+                ax_i.tick_params(axis="x",pad=-1)
+                ax_i.tick_params(axis="y",pad=-3)
+                ax_i.set_title(ann)
+#             plt.subplots_adjust(hspace=hspace,wspace=wspace)
+            plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+        if(save_fig):
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+            plt.close(fig)
 
 def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=(8,8)):  
     """Plot branches skeleton with all nodes.
@@ -2042,7 +2153,7 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         plt.close(fig) 
 
 def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,color_by='label',use_precomputed=True,
-                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=4,fig_legend=True,fig_legend_ncol=1,
+                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=3,fig_legend=True,fig_legend_ncol=1,
                           wspace=0.3,hspace=0.25,vmin=None,vmax=None,alpha=0.8,plotly=False):  
 
     """ Visualize the results in 2D plane
@@ -2110,6 +2221,13 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         Store the tsne data matrix after merging original cells and new cells to be mapped.
 
     """    
+    if(fig_path is None):
+        if(adata_new==None):
+            fig_path = adata.uns['workdir']
+        else:
+            fig_path = adata_new.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
+
     if(method not in ['umap','tsne']):
         raise ValueError("unrecognized method '%s'" % method)
     if(color_by is not None):
@@ -2118,9 +2236,9 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             raise ValueError("unrecognized annotation '%s'" % color_by)
     if(color is None):
         color = ['label']
-    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
     ###remove duplicate keys
     color = list(dict.fromkeys(color))
+
     dict_ann = dict()
     for ann in color:
         if(ann in adata.obs.columns):
@@ -2129,11 +2247,6 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             dict_ann[ann] = adata.obs_vector(ann)
         else:
             raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
-    if(fig_path is None):
-        if(adata_new==None):
-            fig_path = adata.uns['workdir']
-        else:
-            fig_path = adata_new.uns['workdir']
     input_data = adata.obsm['X_dr']
     if(adata_new != None):
         input_data = np.vstack((input_data,adata_new.obsm['X_dr']))
@@ -2194,7 +2307,6 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
             fig_nrow = int(np.ceil(len(color)/fig_ncol))
 #             fig = plt.subplots(squeeze=False,figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
             fig = plt.figure(figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
-            print((fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
             for i,ann in enumerate(color):
 #                 ax_i = plt.subplot2grid((fig_nrow,fig_ncol), (int(np.floor(i/fig_ncol)), i%fig_ncol))
                 ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
@@ -2215,7 +2327,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
                     vmin_i = df_plot[ann].min() if vmin is None else vmin
                     vmax_i = df_plot[ann].max() if vmax is None else vmax
                     sc_i = ax_i.scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
-                                 c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                                 linewidth=0,c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
                     fig.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
                     ax_i.set_xlabel(method.upper()+'1')
                     ax_i.set_ylabel(method.upper()+'2')
