@@ -511,7 +511,8 @@ def remove_mt_genes(adata):
 
 
 def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_jobs = multiprocessing.cpu_count(),
-                          save_fig=False,fig_name='std_vs_means.pdf',fig_path=None,fig_size=None):
+                          save_fig=False,fig_name='std_vs_means.pdf',fig_path=None,fig_size=(4,4),
+                          pad=1.08,w_pad=None,h_pad=None):
 
     """Select the most variable genes.
 
@@ -535,6 +536,10 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
         if empty, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'std_vs_means.pdf')
         if save_fig is True, specify figure name.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
 
     Returns
     -------
@@ -547,7 +552,7 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
 
     if(fig_path is None):
         fig_path = adata.uns['workdir']  
-    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_sizes
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
     mean_genes = np.mean(adata.X,axis=0)
     std_genes = np.std(adata.X,ddof=1,axis=0)
     loess_fitted = lowess(std_genes,mean_genes,return_sorted=False,frac=loess_frac)
@@ -577,6 +582,7 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
     plt.plot(np.sort(mean_genes), loess_fitted[np.argsort(mean_genes)],linewidth=3,zorder=3,c='#3182bd')
     plt.xlabel('mean value')
     plt.ylabel('standard deviation')
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig)
