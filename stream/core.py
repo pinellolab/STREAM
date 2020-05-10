@@ -1014,7 +1014,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                                         c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,
                                         alpha=alpha,
                                         linewidth=0)
-                    fig.colorbar(sc_i,ax=ax_i, pad=0.1, fraction=0.05, aspect=30)
+                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=30)
+                    cbar.ax.locator_params(nbins=5)
                 ax_i.set_xlabel("Dim1",labelpad=-5,rotation=-15)
                 ax_i.set_ylabel("Dim2",labelpad=0,rotation=45)
                 ax_i.set_zlabel("Dim3",labelpad=5,rotation=90)
@@ -1054,7 +1055,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     vmax_i = df_plot[ann].max() if vmax is None else vmax
                     sc_i = ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],
                                         c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
-                    fig.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                    cbar.ax.locator_params(nbins=5)
                 ax_i.set_xlabel("Dim1",labelpad=2)
                 ax_i.set_ylabel("Dim2",labelpad=-6)
 #                 ax_i.get_xaxis().set_ticks([])
@@ -2367,15 +2369,12 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
                     vmax_i = df_plot[ann].max() if vmax is None else vmax
                     sc_i = ax_i.scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
                                         c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
-                    fig.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
-                    
+                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                    cbar.ax.locator_params(nbins=5)                    
                 ax_i.set_xlabel(method.upper()+'1')
                 ax_i.set_ylabel(method.upper()+'2',labelpad=2)
                 ax_i.get_xaxis().set_ticks([])
                 ax_i.get_yaxis().set_ticks([])
-                ax_i.set_title(ann)
-                ax_i.locator_params(axis='x',nbins=5)
-                ax_i.locator_params(axis='y',nbins=5)
                 ax_i.set_title(ann)
 #             plt.subplots_adjust(hspace=hspace,wspace=wspace)
             plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
