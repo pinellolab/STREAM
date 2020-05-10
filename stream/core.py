@@ -971,7 +971,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                                  opacity=alpha,width=500,height=500,
                                  color_continuous_scale=px.colors.sequential.Viridis,
                                  color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
-            fig.update_layout(legend= {'itemsizing': 'constant','traceorder':'grouped'}) 
+            fig.update_layout(legend= {'itemsizing': 'constant'}) 
             fig.show(renderer="notebook")
             
     else:
@@ -2174,8 +2174,8 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
         plt.close(fig) 
 
 def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,color_by='label',use_precomputed=True,
-                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=3,fig_legend=True,fig_legend_ncol=1,
-                          wspace=0.3,hspace=0.25,vmin=None,vmax=None,alpha=0.8,plotly=False):  
+                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=3,fig_legend=True,fig_legend_ncol=1,fig_legend_order = None,
+                             pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False):  
 
     """ Visualize the results in 2D plane
     
@@ -2216,10 +2216,13 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         if fig_legend is True, show figure legend
     fig_legend_ncol: `int`, optional (default: 3)
         The number of columns that the legend has.
-    wspace: `float`, optional (default: 0.3)
-        The amount of width reserved for space between subplots,
-    hspace: `float`, optional (default: 0.25)
-        The amount of height reserved for space between subplots
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
     vmin,vmax: `float`, optional (default: None)
         The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
     alpha: `float`, optional (default: 0.8)
@@ -2314,48 +2317,68 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
         for ann in color:
             df_plot[ann] = dict_ann[ann]
         df_plot_shuf = df_plot.sample(frac=1,random_state=100)
+        
+        legend_order = {ann:np.unique(df_plot_shuf[ann]) for ann in color if is_string_dtype(df_plot_shuf[ann])}
+        if(fig_legend_order is not None):
+            if(not isinstance(fig_legend_order, dict)):
+                raise TypeError("`fig_legend_order` must be a dictionary")
+            for ann in fig_legend_order.keys():
+                if(ann in legend_order.keys()):
+                    legend_order[ann] = fig_legend_order[ann]
+                else:
+                    print("'%s' is ignored for ordering legend labels due to incorrect name or data type" % ann)
+
         if(plotly):
             for ann in color:
-                fig = px.scatter(df_plot_shuf, x=method.upper()+'1', y=method.upper()+'2',color=ann,
+                fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color=ann,
                                  opacity=alpha,width=500,height=500,
-                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)   
-#                 fig.update_traces(marker=dict(size=2))
+                                 color_continuous_scale=px.colors.sequential.Viridis,
+                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
                 fig.update_layout(legend= {'itemsizing': 'constant'}) 
-                fig.show(renderer="notebook")  
+                fig.show(renderer="notebook")
         else:
             if(len(color)<fig_ncol):
                 fig_ncol=len(color)
             fig_nrow = int(np.ceil(len(color)/fig_ncol))
-#             fig = plt.subplots(squeeze=False,figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
-            fig = plt.figure(figsize=(fig_size[0]*fig_ncol,fig_size[1]*fig_nrow))
+            fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow))
             for i,ann in enumerate(color):
-#                 ax_i = plt.subplot2grid((fig_nrow,fig_ncol), (int(np.floor(i/fig_ncol)), i%fig_ncol))
                 ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
                 if(is_string_dtype(df_plot[ann])):
                     sc_i=sns.scatterplot(ax=ax_i,
                                         x=method.upper()+'1', y=method.upper()+'2', 
-                                        hue=ann,data=df_plot_shuf,
+                                        hue=ann,hue_order = legend_order[ann],
+                                        data=df_plot_shuf,
                                         alpha=alpha,linewidth=0,
                                         palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
                     ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                                 frameon=False,
                                 borderaxespad=0.01,
                                 handletextpad=1e-6,
-                               )
+                                )
+                    if(ann+'_color' not in adata.uns_keys()):
+                        colors_sns = sc_i.get_children()[0].get_facecolors()
+                        colors_sns_scaled = (255*colors_sns).astype(int)
+                        adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                                   for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
                     ### remove legend title
                     ax_i.get_legend().texts[0].set_text("")
                 else:
                     vmin_i = df_plot[ann].min() if vmin is None else vmin
                     vmax_i = df_plot[ann].max() if vmax is None else vmax
                     sc_i = ax_i.scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
-                                 linewidth=0,c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
                     fig.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
-                    ax_i.set_xlabel(method.upper()+'1')
-                    ax_i.set_ylabel(method.upper()+'2')
+                    
+                ax_i.set_xlabel(method.upper()+'1')
+                ax_i.set_ylabel(method.upper()+'2',labelpad=2)
                 ax_i.get_xaxis().set_ticks([])
                 ax_i.get_yaxis().set_ticks([])
                 ax_i.set_title(ann)
-            plt.subplots_adjust(hspace=hspace,wspace=wspace)
+                ax_i.locator_params(axis='x',nbins=5)
+                ax_i.locator_params(axis='y',nbins=5)
+                ax_i.set_title(ann)
+#             plt.subplots_adjust(hspace=hspace,wspace=wspace)
+            plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
             if(save_fig):
                 plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
                 plt.close(fig) 
@@ -2423,7 +2446,7 @@ def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='uma
                     ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig) 
+            plt.close(fig)
 
 def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',preference=None,
                    save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend=True,fig_legend_ncol=3):  
