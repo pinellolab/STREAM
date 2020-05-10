@@ -57,7 +57,7 @@ from .scikit_posthocs import posthoc_conover
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def set_figure_params(context='notebook',style='white',palette='deep',font='sans-serif',font_scale=1.1,color_codes=True,
-                      dpi=80,dpi_save=150,figsize=[6.4, 4.8],**kwargs):
+                      dpi=80,dpi_save=150,figsize=[5.4, 4.8],**kwargs):
     """ Set global parameters for figures. Modified from sns.set()
     Parameters
     ----------
@@ -82,7 +82,7 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
     """
 #     mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set(context=context,style=style,palette=palette,font=font,font_scale=font_scale,color_codes=color_codes,
-            rc={'figure.dpi':dpi,'savefig.dpi':dpi_save,'figure.figsize':figsize,'image.cmap': 'viridis'})
+            rc={'figure.dpi':dpi,'savefig.dpi':dpi_save,'figure.figsize':figsize,'image.cmap': 'viridis','lines.markersize':6})
     for key, value in kwargs.items():
         if key in mpl.rcParams.keys():
             mpl.rcParams[key] = value
@@ -589,7 +589,8 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
     return None
 
 def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
-                          save_fig=False,fig_name='gini_vs_max.pdf',fig_path=None,fig_size=None):
+                          save_fig=False,fig_name='gini_vs_max.pdf',fig_path=None,fig_size=None,fig_size=(4,4),
+                          pad=1.08,w_pad=None,h_pad=None):
 
     """Select high gini genes for rare cell types.
     Parameters
@@ -608,8 +609,13 @@ def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
         figure size.
     fig_path: `str`, optional (default: '')
         if empty, adata.uns['workdir'] will be used.
-    fig_name: `str`, optional (default: 'std_vs_means.pdf')
+    fig_name: `str`, optional (default: 'gini_vs_max.pdf')
         if save_fig is True, specify figure name.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+
     Returns
     -------
     updates `adata` with the following fields.
@@ -644,6 +650,7 @@ def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
     plt.plot(np.sort(max_genes), loess_fitted[np.argsort(max_genes)],linewidth=3,zorder=3,c='#3182bd')
     plt.xlabel('max gene expression')
     plt.ylabel('Gini coefficient')
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig)
@@ -651,7 +658,8 @@ def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
 
 
 def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,first_pc = False,use_precomputed=True,
-                                    save_fig=False,fig_name='top_pcs.pdf',fig_path=None,fig_size=(5,5)):
+                                    save_fig=False,fig_name='top_pcs.pdf',fig_path=None,fig_size=(4,4),
+                                    pad=1.08,w_pad=None,h_pad=None):
     """Select top principal components.
     Parameters
     ----------
@@ -678,6 +686,11 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'top_pcs.pdf')
         if save_fig is True, specify figure name.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+
     Returns
     -------
     updates `adata` with the following fields.
@@ -692,7 +705,8 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
     """
     
     if(fig_path is None):
-        fig_path = adata.uns['workdir']    
+        fig_path = adata.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size    
     if(use_precomputed and ('pca' in adata.obsm_keys())):
         print('Importing precomputed principal components')
         X_pca = adata.obsm['pca']
@@ -732,6 +746,7 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         plt.axvline(n_pc+1,c='red',ls = '--')
     plt.xlabel('Principal Component')
     plt.ylabel('Variance Ratio')
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
         plt.close(fig)
