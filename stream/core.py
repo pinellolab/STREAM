@@ -1447,7 +1447,7 @@ def plot_branches_with_cells(adata,n_components = None,comp1=0,comp2=1,color=Non
                     cbar.ax.locator_params(nbins=5)
                 for edge_i in flat_tree.edges():
                     branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
-                    edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                    # edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
                     curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
                     ax_i.plot(curve_i[0],curve_i[1],curve_i[2],c = 'black')
                 if(show_text):
@@ -1497,7 +1497,7 @@ def plot_branches_with_cells(adata,n_components = None,comp1=0,comp2=1,color=Non
                     cbar.ax.locator_params(nbins=5)
                 for edge_i in flat_tree.edges():
                     branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
-                    edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                    # edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
                     curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
                     ax_i.plot(curve_i[comp1],curve_i[comp2],c = 'black')
                 if(show_text):
@@ -2219,16 +2219,19 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
     print('Number of branches after extending leaves: ' + str(len(dict_branches)))    
 
 
-def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_path=None,fig_name='flat_tree.pdf',fig_size=(8,8),fig_legend=True,fig_legend_ncol=3):  
+def plot_flat_tree(adata,color=None,dist_scale=1,
+                   save_fig=False,fig_name='flat_tree.pdf',fig_path=None,fig_size=None,fig_ncol=3,
+                   fig_legend=True,fig_legend_ncol=1,fig_legend_order = None,
+                   pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False,
+                   show_text=False,show_graph=False):  
     """Plot flat tree based on a modified version of the force-directed layout Fruchterman-Reingold algorithm.
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    adata_new: AnnData
-        Annotated data matrix for new data (to be mapped).
-    show_all_cells: `bool`, optional (default: False)
-        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
+    dist_scale: `float`,optional (default: 1)
+        Scaling factor to scale the distance from cells to tree branches 
+        (by default, it keeps the same distance as in original manifold)
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
     fig_size: `tuple`, optional (default: (8,8))
@@ -2254,126 +2257,134 @@ def plot_flat_tree(adata,adata_new=None,show_all_cells=True,save_fig=False,fig_p
     """
 
     if(fig_path is None):
-        if(adata_new==None):
-            fig_path = adata.uns['workdir']
-        else:
-            fig_path = adata_new.uns['workdir']
+        fig_path = adata.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
+       
+    if(color is None):
+        color = ['label']
+    ###remove duplicate keys
+    color = list(dict.fromkeys(color))     
 
+    dict_ann = dict()
+    for ann in color:
+        if(ann in adata.obs.columns):
+            dict_ann[ann] = adata.obs[ann]
+        elif(ann in adata.var_names):
+            dict_ann[ann] = adata.obs_vector(ann)
+        else:
+            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+
+    ## add the positions of flat tree's nodes
+    add_flat_tree_node_pos(adata)
     flat_tree = adata.uns['flat_tree']
-    dict_nodes_pos = nx.spring_layout(flat_tree,random_state=10)
-    bfs_root = list(flat_tree.nodes())[0]
-    bfs_edges = list(nx.bfs_edges(flat_tree, bfs_root))
-    bfs_nodes = [bfs_root] + [v for u, v in bfs_edges]
-
-    ## Update the positions of flat tree's nodes
-    dict_nodes_pos_updated = deepcopy(dict_nodes_pos)
-    flat_tree_copy = deepcopy(flat_tree)
-    flat_tree_copy.remove_node(bfs_root)
-    for i,edge_i in enumerate(bfs_edges):
-        dist_nodes = distance.euclidean(dict_nodes_pos_updated[edge_i[0]],dict_nodes_pos_updated[edge_i[1]])
-        len_edge = flat_tree.edges[edge_i]['len']
-        st_x = dict_nodes_pos_updated[edge_i[0]][0]
-        ed_x = dict_nodes_pos_updated[edge_i[1]][0]
-        st_y = dict_nodes_pos_updated[edge_i[0]][1]
-        ed_y = dict_nodes_pos_updated[edge_i[1]][1]
-        p_x = st_x + (ed_x - st_x)*(len_edge/dist_nodes)
-        p_y = st_y + (ed_y - st_y)*(len_edge/dist_nodes)
-        dict_nodes_pos_updated[edge_i[1]] = np.array([p_x,p_y])
-
-        con_components = list(nx.connected_components(flat_tree_copy))
-        #update other reachable unvisited nodes
-        for con_comp in con_components:
-            if edge_i[1] in con_comp:
-                reachable_unvisited = con_comp - {edge_i[1]}
-                flat_tree_copy.remove_node(edge_i[1])
-                break
-        for nd in reachable_unvisited:
-            nd_x = dict_nodes_pos_updated[nd][0] + p_x - ed_x
-            nd_y = dict_nodes_pos_updated[nd][1] + p_y - ed_y
-            dict_nodes_pos_updated[nd] = np.array([nd_x,nd_y])
-
-    nx.set_node_attributes(flat_tree, values=dict_nodes_pos_updated,name='pos_spring')
-
-    ## Update the positions of cells
-    cells_pos = np.empty([adata.shape[0],2])
-    list_branch_id = nx.get_edge_attributes(flat_tree,'id').values()
-    for br_id in list_branch_id:
-        s_pos = dict_nodes_pos_updated[br_id[0]] #start node position
-        e_pos = dict_nodes_pos_updated[br_id[1]] #end node position
-        dist_se = distance.euclidean(s_pos,e_pos)
-        p_x = np.array(adata.obs[adata.obs['branch_id'] == br_id]['branch_lam'].tolist())
-        dist_p = np.array(adata.obs[adata.obs['branch_id'] == br_id]['branch_dist'].tolist())
-        np.random.seed(100)
-        p_y = np.random.choice([1,-1],size=len(p_x))*dist_p
-        #rotation matrix
-        ro_angle = np.arctan2((e_pos-s_pos)[1],(e_pos-s_pos)[0])#counterclockwise angle
-        p_x_prime = s_pos[0] + p_x * math.cos(ro_angle) - p_y*math.sin(ro_angle)
-        p_y_prime = s_pos[1] + p_x * math.sin(ro_angle) + p_y*math.cos(ro_angle)
-        p_pos = np.array((p_x_prime,p_y_prime)).T
-        cells_pos[np.where(adata.obs['branch_id'] == br_id)[0],:] =[p_pos[i,:].tolist() for i in range(p_pos.shape[0])]
-    adata.obsm['X_spring'] = cells_pos
+    ## add the positions of cells on flat tre
+    add_flat_tree_cell_pos(adata,dist_scale)
     
-    if(adata_new !=None):
-        cells_pos = np.empty([adata_new.shape[0],2])
-        list_branch_id = nx.get_edge_attributes(flat_tree,'id').values()
-        for br_id in adata_new.obs['branch_id'].unique():
-            s_pos = dict_nodes_pos_updated[br_id[0]] #start node position
-            e_pos = dict_nodes_pos_updated[br_id[1]] #end node position
-            dist_se = distance.euclidean(s_pos,e_pos)
-            p_x = np.array(adata_new.obs[adata_new.obs['branch_id'] == br_id]['branch_lam'].tolist())
-            dist_p = np.array(adata_new.obs[adata_new.obs['branch_id'] == br_id]['branch_dist'].tolist())
-            np.random.seed(100)
-            p_y = np.random.choice([1,-1],size=len(p_x))*dist_p
-            #rotation matrix
-            ro_angle = np.arctan2((e_pos-s_pos)[1],(e_pos-s_pos)[0])#counterclockwise angle
-            p_x_prime = s_pos[0] + p_x * math.cos(ro_angle) - p_y*math.sin(ro_angle)
-            p_y_prime = s_pos[1] + p_x * math.sin(ro_angle) + p_y*math.cos(ro_angle)
-            p_pos = np.array((p_x_prime,p_y_prime)).T
-            cells_pos[np.where(adata_new.obs['branch_id'] == br_id)[0],:] =[p_pos[i,:].tolist() for i in range(p_pos.shape[0])]
-        adata_new.obsm['X_spring'] = cells_pos             
+    ft_node_pos = nx.get_node_attributes(flat_tree,'pos_spring')
+    ft_node_label = nx.get_node_attributes(flat_tree,'label')
+    
+    df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_spring'],columns=['FlatTree'+str(x+1) for x in range(adata.obsm['X_spring'].shape[1])])
+    for ann in color:
+        df_plot[ann] = dict_ann[ann]
+    df_plot_shuf = df_plot.sample(frac=1,random_state=100)
+    
+    legend_order = {ann:np.unique(df_plot_shuf[ann]) for ann in color if is_string_dtype(df_plot_shuf[ann])}
+    if(fig_legend_order is not None):
+        if(not isinstance(fig_legend_order, dict)):
+            raise TypeError("`fig_legend_order` must be a dictionary")
+        for ann in fig_legend_order.keys():
+            if(ann in legend_order.keys()):
+                legend_order[ann] = fig_legend_order[ann]
+            else:
+                print("'%s' is ignored for ordering legend labels due to incorrect name or data type" % ann)
+        
+    if(plotly):
+        for ann in color:
+            fig = px.scatter(df_plot_shuf, x='FlatTree1', y='FlatTree2',color=ann,
+                                 opacity=alpha,width=500,height=500,
+                                 color_continuous_scale=px.colors.sequential.Viridis,
+                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
+            if(show_graph):
+                for edge_i in flat_tree.edges():
+                    branch_i_pos = np.array([ft_node_pos[i] for i in edge_i])
+                    branch_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                    edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                    fig.add_trace(go.Scatter(x=branch_i[0], 
+                                               y=branch_i[1],
+                                               mode='lines',
+                                               line=dict(color='black', width=3),
+                                               name=edge_i_label))
+            if(show_text):
+                fig.add_trace(go.Scatter(x=np.array(list(ft_node_pos.values()))[:,0], 
+                                           y=np.array(list(ft_node_pos.values()))[:,1], 
+                                           mode='markers+text',
+#                                            mode='text',
+                                           opacity=1,
+                                           marker=dict(size=1.5*mpl.rcParams['lines.markersize'],color='#767070'),
+                                           text=[ft_node_label[x] for x in ft_node_pos.keys()],
+                                           textposition="bottom center",
+                                           name='states'),)
 
-    ##plotting
-    fig = plt.figure(figsize=fig_size)
-    ax = fig.add_subplot(1,1,1, adjustable='box', aspect=1)
-    edges = flat_tree.edges()
-    edge_color = [flat_tree[u][v]['color'] for u,v in edges]
-    nx.draw_networkx(flat_tree,
-                     pos=nx.get_node_attributes(flat_tree,'pos_spring'),
-                     labels=nx.get_node_attributes(flat_tree,'label'),
-                     edges=edges, 
-                     edge_color=edge_color, 
-                     node_color='white',alpha=1,width = 6,node_size=0,font_size=15)
-    df_sample = adata.obs[['label','label_color']].copy()
-    df_coord = pd.DataFrame(adata.obsm['X_spring'],index=adata.obs_names)
-    list_patches = []
-    for x in adata.uns['label_color'].keys():
-        list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))
-    color = df_sample.sample(frac=1,random_state=100)['label_color'] 
-    coord = df_coord.sample(frac=1,random_state=100)
-    if(adata_new !=None):
-        df_sample_new = adata_new.obs[['label','label_color']].copy()
-        df_coord_new = pd.DataFrame(adata_new.obsm['X_spring'],index=adata_new.obs_names)
-        color_new = df_sample_new.sample(frac=1,random_state=100)['label_color'] 
-        coord_new = df_coord_new.sample(frac=1,random_state=100)  
-        for x in adata_new.uns['label_color'].keys():
-            list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))
-        if(show_all_cells):
-            ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
-            ax.scatter(coord_new[0], coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
-        else:
-            ax.scatter(coord_new[0], coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8) 
+        fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500) 
+        fig.show(renderer="notebook")
     else:
-        ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
-    if(fig_legend):  
-        ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.15),
-              ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
-    if(save_fig):
-        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-        plt.close(fig) 
+        if(len(color)<fig_ncol):
+            fig_ncol=len(color)
+        fig_nrow = int(np.ceil(len(color)/fig_ncol))
+        fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow))
+        for i,ann in enumerate(color):
+            ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+            if(is_string_dtype(df_plot[ann])):
+                sc_i=sns.scatterplot(ax=ax_i,
+                                    x='FlatTree1', y='FlatTree2',
+                                    hue=ann,hue_order = legend_order[ann],
+                                    data=df_plot_shuf,
+                                    alpha=alpha,linewidth=0,
+                                    palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                            frameon=False,
+                            borderaxespad=0.01,
+                            handletextpad=1e-6,
+                            )
+                if(ann+'_color' not in adata.uns_keys()):
+                    colors_sns = sc_i.get_children()[0].get_facecolors()
+                    colors_sns_scaled = (255*colors_sns).astype(int)
+                    adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                               for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
+                ### remove legend title
+                ax_i.get_legend().texts[0].set_text("")
+            else:
+                vmin_i = df_plot[ann].min() if vmin is None else vmin
+                vmax_i = df_plot[ann].max() if vmax is None else vmax
+                sc_i = ax_i.scatter(df_plot_shuf['FlatTree1'], df_plot_shuf['FlatTree2'],
+                                    c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                cbar.ax.locator_params(nbins=5)
+            if(show_graph):
+                for edge_i in flat_tree.edges():
+                    branch_i_pos = np.array([ft_node_pos[i] for i in edge_i])
+                    branch_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                    ax_i.plot(branch_i[0],branch_i[1],c = 'black',alpha=0.8)
+            if(show_text):
+                for node_i in flat_tree.nodes():
+                    ax_i.text(ft_node_pos[node_i][0],ft_node_pos[node_i][1],ft_node_label[node_i],
+                              color='black',fontsize=0.9*mpl.rcParams['font.size'],
+                               ha='left', va='bottom')  
+            ax_i.set_xlabel("FlatTree1",labelpad=2)
+            ax_i.set_ylabel("FlatTree2",labelpad=0)
+            ax_i.locator_params(axis='x',nbins=5)
+            ax_i.locator_params(axis='y',nbins=5)
+            ax_i.tick_params(axis="x",pad=-1)
+            ax_i.tick_params(axis="y",pad=-3)
+            ax_i.set_title(ann)
+            plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+        if(save_fig):
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+            plt.close(fig)   
 
-def plot_visualization_2D(adata,adata_new=None,show_all_colors=False,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,color_by='label',use_precomputed=True,
+def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,color_by='label',use_precomputed=True,
                           save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=3,fig_legend=True,fig_legend_ncol=1,fig_legend_order = None,
-                             pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False):  
+                          pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False):  
 
     """ Visualize the results in 2D plane
     

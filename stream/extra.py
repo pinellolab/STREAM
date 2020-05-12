@@ -281,6 +281,65 @@ def construct_flat_tree(dict_branches):
     nx.set_edge_attributes(flat_tree,values=dict_branches_len,name='len')    
     return flat_tree
 
+def add_flat_tree_node_pos(adata):
+    ## add the positions of flat tree's nodes
+    flat_tree = adata.uns['flat_tree']
+    ft_node_pos = nx.spring_layout(flat_tree,random_state=10)
+    bfs_root = list(flat_tree.nodes())[0]
+    bfs_edges = list(nx.bfs_edges(flat_tree, bfs_root))
+    bfs_nodes = [bfs_root] + [v for u, v in bfs_edges]    
+    
+    ft_node_pos_updated = deepcopy(ft_node_pos)
+    flat_tree_copy = deepcopy(flat_tree)
+    flat_tree_copy.remove_node(bfs_root)
+    for i,edge_i in enumerate(bfs_edges):
+        dist_nodes = distance.euclidean(ft_node_pos_updated[edge_i[0]],ft_node_pos_updated[edge_i[1]])
+        len_edge = flat_tree.edges[edge_i]['len']
+        st_x = ft_node_pos_updated[edge_i[0]][0]
+        ed_x = ft_node_pos_updated[edge_i[1]][0]
+        st_y = ft_node_pos_updated[edge_i[0]][1]
+        ed_y = ft_node_pos_updated[edge_i[1]][1]
+        p_x = st_x + (ed_x - st_x)*(len_edge/dist_nodes)
+        p_y = st_y + (ed_y - st_y)*(len_edge/dist_nodes)
+        ft_node_pos_updated[edge_i[1]] = np.array([p_x,p_y])
+
+        con_components = list(nx.connected_components(flat_tree_copy))
+        #update other reachable unvisited nodes
+        for con_comp in con_components:
+            if edge_i[1] in con_comp:
+                reachable_unvisited = con_comp - {edge_i[1]}
+                flat_tree_copy.remove_node(edge_i[1])
+                break
+        for nd in reachable_unvisited:
+            nd_x = ft_node_pos_updated[nd][0] + p_x - ed_x
+            nd_y = ft_node_pos_updated[nd][1] + p_y - ed_y
+            ft_node_pos_updated[nd] = np.array([nd_x,nd_y])
+
+    nx.set_node_attributes(flat_tree, values=ft_node_pos_updated,name='pos_spring')
+
+def add_flat_tree_cell_pos(adata,dist_scale):
+    ## Update the positions of cells on flat tree
+    cells_pos = np.empty([adata.shape[0],2])
+    flat_tree = adata.uns['flat_tree']
+    ft_node_pos = nx.get_node_attributes(flat_tree,'pos_spring')
+    
+    list_branch_id = nx.get_edge_attributes(flat_tree,'id').values()   
+    for br_id in list_branch_id:
+        s_pos = ft_node_pos[br_id[0]] #start node position
+        e_pos = ft_node_pos[br_id[1]] #end node position
+        dist_se = distance.euclidean(s_pos,e_pos)
+        p_x = np.array(adata.obs[adata.obs['branch_id'] == br_id]['branch_lam'].tolist())
+        dist_p = dist_scale*np.array(adata.obs[adata.obs['branch_id'] == br_id]['branch_dist'].tolist())
+        np.random.seed(100)
+        p_y = np.random.choice([1,-1],size=len(p_x))*dist_p
+        #rotation matrix
+        ro_angle = np.arctan2((e_pos-s_pos)[1],(e_pos-s_pos)[0])#counterclockwise angle
+        p_x_prime = s_pos[0] + p_x * math.cos(ro_angle) - p_y*math.sin(ro_angle)
+        p_y_prime = s_pos[1] + p_x * math.sin(ro_angle) + p_y*math.cos(ro_angle)
+        p_pos = np.array((p_x_prime,p_y_prime)).T
+        cells_pos[np.where(adata.obs['branch_id'] == br_id)[0],:] =[p_pos[i,:].tolist() for i in range(p_pos.shape[0])]
+    adata.obsm['X_spring'] = cells_pos    
+
 def calculate_shift_distance(adata,root='S0',percentile=95, factor=2.0, preference=None):
     flat_tree = adata.uns['flat_tree']
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}  
@@ -446,7 +505,6 @@ def count_cell_for_each_window(adata,s_win=None):
             df_win_ncells_edge_i[cl] = pd.Series(list_n_cells_pt)
         dict_win_ncells[br_id] = df_win_ncells_edge_i    
     return dict_win_ncells
-
 
 def order_cell_label(adata,dict_win_ncells,root_node=None):
     flat_tree = adata.uns['flat_tree']
