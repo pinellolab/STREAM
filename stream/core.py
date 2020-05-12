@@ -589,7 +589,7 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
     return None
 
 def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
-                          save_fig=False,fig_name='gini_vs_max.pdf',fig_path=None,fig_size=None,fig_size=(4,4),
+                          save_fig=False,fig_name='gini_vs_max.pdf',fig_path=None,fig_size=(4,4),
                           pad=1.08,w_pad=None,h_pad=None):
 
     """Select high gini genes for rare cell types.
@@ -894,7 +894,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
         Component used for y axis.
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (8,8))
+    fig_size: `tuple`, optional (default: None)
         figure size.
     fig_path: `str`, optional (default: None)
         if None, adata.uns['workdir'] will be used.
@@ -1073,107 +1073,9 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
-def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=(8,8)):  
-    """Plot branches skeleton with all nodes.
-
-    Parameters
-    ----------
-    adata: AnnData
-        Annotated data matrix.
-    n_components: `int`, optional (default: None)
-        Number of components to be plotted.
-    comp1: `int`, optional (default: 0)
-        Component used for x axis.
-    comp2: `int`, optional (default: 1)
-        Component used for y axis.
-    key_graph: `str`, optional (default: None): 
-        Choose from {{'epg','seed_epg','ori_epg'}}
-        Specify gragh to be plotted.
-        'epg' current elastic principal graph
-        'seed_epg' seed structure used for elastic principal graph learning, which is obtained by running seed_elastic_principal_graph()
-        'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
-    save_fig: `bool`, optional (default: False)
-        if True,save the figure.
-    fig_size: `tuple`, optional (default: (8,8))
-        figure size.
-    fig_path: `str`, optional (default: None)
-        if None, adata.uns['workdir'] will be used.
-    fig_name: `str`, optional (default: 'branches.pdf')
-        if save_fig is True, specify figure name.
-
-    Returns
-    -------
-    None
-    
-    """
-    if(n_components==None):
-        n_components = min(3,adata.obsm['X_dr'].shape[1])  
-    if n_components not in [2,3]:
-        raise ValueError("n_components should be 2 or 3")
-    assert (key_graph in ['epg','seed_epg','ori_epg']),"key_graph must be one of ['epg','seed_epg','ori_epg']"
-    
-    if(fig_path is None):
-        fig_path = adata.uns['workdir']
-    if(key_graph=='epg'):
-        epg = adata.uns['epg']
-        flat_tree = adata.uns['flat_tree']
-    else:
-        epg = adata.uns[key_graph.split('_')[0]+'_epg']
-        flat_tree = adata.uns[key_graph.split('_')[0]+'_flat_tree']
-    dict_nodes_pos = nx.get_node_attributes(epg,'pos')
-    nodes_pos = np.array(list(dict_nodes_pos.values()))
-    coord = pd.DataFrame(adata.obsm['X_dr'])
-    if(n_components==None):
-        n_components = min(3,coord.shape[1])    
-    if(n_components==3): 
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111, projection='3d')
-        for edge_i in flat_tree.edges():
-            branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            branch_i_color = flat_tree.edges[edge_i]['color']
-            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=1)
-        ax.scatter(nodes_pos[:,0],nodes_pos[:,1],nodes_pos[:,2],color='gray',s=12,alpha=1,zorder=2)
-        for i in dict_nodes_pos.keys():
-            ax.text(dict_nodes_pos[i][0],dict_nodes_pos[i][1],dict_nodes_pos[i][2],i,color='black',fontsize = 10,zorder=3)
-        max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min(), coord[2].max()-coord[2].min()]).max() / 1.9
-        mid_x = (coord[0].max()+coord[0].min()) * 0.5
-        mid_y = (coord[1].max()+coord[1].min()) * 0.5
-        mid_z = (coord[2].max()+coord[2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_zlim(mid_z - max_range, mid_z + max_range)
-        ax.set_xlabel('Dim1',labelpad=20)
-        ax.set_ylabel('Dim2',labelpad=20)
-        ax.set_zlabel('Dim3',labelpad=20)
-        if(save_fig):
-            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)
-    if(n_components==2): 
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111)
-        for edge_i in flat_tree.edges():
-            branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            branch_i_color = flat_tree.edges[edge_i]['color']
-            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,comp1],branch_i_pos[:,comp2],c = branch_i_color,lw=5,zorder=1)
-        ax.scatter(nodes_pos[:,comp1],nodes_pos[:,comp2],color='gray',s=12,alpha=1,zorder=2)
-        for i in dict_nodes_pos.keys():
-            ax.text(dict_nodes_pos[i][comp1],dict_nodes_pos[i][comp2],i,color='black',fontsize = 10,zorder=3)
-        max_range = np.array([coord[comp1].max()-coord[comp1].min(), coord[comp2].max()-coord[comp2].min()]).max() / 1.9
-        mid_x = (coord[comp1].max()+coord[comp1].min()) * 0.5
-        mid_y = (coord[comp2].max()+coord[comp2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_xlabel('Dim'+str(comp1+1),labelpad=20)
-        ax.set_ylabel('Dim'+str(comp2+1),labelpad=20)
-        if(save_fig):
-            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)        
-
-
-def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,comp2=1,key_graph='epg',show_all_cells=True,
-                             save_fig=False,fig_name='branches_with_cells.pdf',fig_path=None,fig_size=(8,8),fig_legend=True,fig_legend_ncol=3):    
+def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
+                 save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=None,
+                 pad=1.08,w_pad=None,h_pad=None,plotly=False,show_text=False):    
     """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
     
     Parameters
@@ -1194,20 +1096,24 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,co
         'epg' current elastic principal graph
         'seed_epg' seed structure used for elastic principal graph learning, which is obtained by running seed_elastic_principal_graph()
         'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
-    show_all_cells: `bool`, optional (default: False)
-        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (8,8))
+    fig_size: `tuple`, optional (default: None)
         figure size.
     fig_path: `str`, optional (default: None)
         if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'branches_with_cells.pdf')
         if save_fig is True, specify figure name.
-    fig_legend: `bool`, optional (default: True)
-        if fig_legend is True, show figure legend
-    fig_legend_ncol: `int`, optional (default: 3)
-        The number of columns that the legend has.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
+    show_text: `bool`, optional (default: False)
+        If True, point labels will be shown
+    plotly: `bool`, optional (default: False)
+        If True, plotly will be used to make interactive plots        
 
     Returns
     -------
@@ -1216,112 +1122,402 @@ def plot_branches_with_cells(adata,adata_new=None,n_components = None,comp1=0,co
     """
 
     if(fig_path is None):
-        if(adata_new==None):
-            fig_path = adata.uns['workdir']
-        else:
-            fig_path = adata_new.uns['workdir']
+        fig_path = adata.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
+
+    if(n_components==None):
+        n_components = min(3,adata.obsm['X_dr'].shape[1])
+    if n_components not in [2,3]:
+        raise ValueError("n_components should be 2 or 3")
+
+    assert (key_graph in ['epg','seed_epg','ori_epg']),"key_graph must be one of ['epg','seed_epg','ori_epg']"    
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
     if(key_graph=='epg'):
         epg = adata.uns['epg']
         flat_tree = adata.uns['flat_tree']
-    elif(key_graph=='seed_epg'):
-        epg = adata.uns['seed_epg']
-        flat_tree = adata.uns['seed_flat_tree']        
-    elif(key_graph=='ori_epg'):
-        epg = adata.uns['ori_epg']
-        flat_tree = adata.uns['ori_flat_tree'] 
     else:
-        print("'"+key_graph+"'"+'is not supported')
-    dict_nodes_pos = nx.get_node_attributes(epg,'pos')
-    nodes_pos = np.array(list(dict_nodes_pos.values()))
+        epg = adata.uns[key_graph.split('_')[0]+'_epg']
+        flat_tree = adata.uns[key_graph.split('_')[0]+'_flat_tree']
+    ft_node_pos = nx.get_node_attributes(flat_tree,'pos')
+    ft_node_label = nx.get_node_attributes(flat_tree,'label')
+    epg_node_pos = nx.get_node_attributes(epg,'pos')
+        
+    if(plotly):
+        if(n_components==3): 
+            fig = go.Figure(data=go.Scatter3d())
+            for edge_i in flat_tree.edges():
+                branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
+                edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                curve_i = pd.DataFrame(branch_i_pos,columns=['x','y','z'])
+                fig.add_trace(go.Scatter3d(x=curve_i['x'], 
+                                           y=curve_i['y'], 
+                                           z=curve_i['z'],
+                                           mode='markers+lines',
+                                           marker=dict(size=3,color='black'),
+                                           line=dict(color='black', width=3),
+                                           name=edge_i_label))
+            if(show_text):
+                fig.add_trace(go.Scatter3d(x=np.array(list(epg_node_pos.values()))[:,0], 
+                                           y=np.array(list(epg_node_pos.values()))[:,1], 
+                                           z=np.array(list(epg_node_pos.values()))[:,2],
+                                           mode='text',
+                                           opacity=1,
+                                           text=[x for x in epg_node_pos.keys()],
+                                           textposition="bottom center",))
+                
+            fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500, 
+                              scene = dict(xaxis_title='Dim1',yaxis_title='Dim2',zaxis_title='Dim3')) 
+        else:
+            fig = go.Figure(data=go.Scatter())
+            for edge_i in flat_tree.edges():
+                branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])[:,[comp1,comp2]]
+                edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                curve_i = pd.DataFrame(branch_i_pos,columns=['x','y'])
+                fig.add_trace(go.Scatter(x=curve_i['x'], 
+                                         y=curve_i['y'],
+                                         mode='markers+lines',
+                                         marker=dict(size=mpl.rcParams['lines.markersize'],color='black'),                                         
+                                         line=dict(color='black', width=3),
+                                         name=edge_i_label)),
+            if(show_text):
+                fig.add_trace(go.Scatter(x=np.array(list(epg_node_pos.values()))[:,comp1], 
+                                           y=np.array(list(epg_node_pos.values()))[:,comp2], 
+                                           mode='text',
+                                           opacity=1,
+                                           text=[x for x in epg_node_pos.keys()],
+                                           textposition="bottom center"),)
+            fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500, 
+                              xaxis_title='Dim1',yaxis_title='Dim2')         
+        fig.show(renderer="notebook")
+            
+    else:
+        fig = plt.figure(figsize=(fig_size[0],fig_size[1]))
+        if(n_components==3):
+            ax_i = fig.add_subplot(1,1,1,projection='3d')
+            for edge_i in flat_tree.edges():
+                branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
+                edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                ax_i.plot(curve_i[0],curve_i[1],curve_i[2],marker='o',c = 'black',
+                          ms=0.8*mpl.rcParams['lines.markersize'])
+            if(show_text):
+                for node_i in epg.nodes():
+                    ax_i.text(epg_node_pos[node_i][0],epg_node_pos[node_i][1],epg_node_pos[node_i][2],node_i,
+                              color='black',fontsize=0.8*mpl.rcParams['font.size'],
+                               ha='left', va='bottom')                
+            ax_i.set_xlabel("Dim1",labelpad=-5,rotation=-15)
+            ax_i.set_ylabel("Dim2",labelpad=0,rotation=45)
+            ax_i.set_zlabel("Dim3",labelpad=5,rotation=90)
+            ax_i.locator_params(axis='x',nbins=4)
+            ax_i.locator_params(axis='y',nbins=4)
+            ax_i.locator_params(axis='z',nbins=4)
+            ax_i.tick_params(axis="x",pad=-4)
+            ax_i.tick_params(axis="y",pad=-1)
+            ax_i.tick_params(axis="z",pad=3.5)
+        else:  
+            ax_i = fig.add_subplot(1,1,1)
+            for edge_i in flat_tree.edges():
+                branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
+                edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                ax_i.plot(curve_i[comp1],curve_i[comp2],marker='o',c = 'black',
+                          ms=0.8*mpl.rcParams['lines.markersize'])
+            if(show_text):
+                for node_i in epg.nodes():
+                    ax_i.text(epg_node_pos[node_i][0],epg_node_pos[node_i][1],node_i,
+                              color='black',fontsize=0.8*mpl.rcParams['font.size'],
+                              ha='left', va='bottom')  
+            ax_i.set_xlabel("Dim1",labelpad=2)
+            ax_i.set_ylabel("Dim2",labelpad=-6)
+            ax_i.locator_params(axis='x',nbins=5)
+            ax_i.locator_params(axis='y',nbins=5)
+            ax_i.tick_params(axis="x",pad=-1)
+            ax_i.tick_params(axis="y",pad=-3)
+        plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+        if(save_fig):
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+            plt.close(fig)
+
+def plot_branches_with_cells(adata,n_components = None,comp1=0,comp2=1,color=None,key_graph='epg',
+                             save_fig=False,fig_name='branches_with_cells.pdf',fig_path=None,fig_size=None,fig_ncol=3,
+                             fig_legend_ncol=1,fig_legend_order = None,
+                             pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False,show_text=False):    
+    """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
     
-    dict_nodes_label = nx.get_node_attributes(flat_tree,'label')
-    branches_color = nx.get_edge_attributes(flat_tree,'color') 
-    df_sample = adata.obs[['label','label_color']].copy()
-    df_coord = pd.DataFrame(adata.obsm['X_dr'],index=adata.obs_names)
-    list_patches = []
-    for x in adata.uns['label_color'].keys():
-        list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))
-    color = df_sample.sample(frac=1,random_state=100)['label_color'] 
-    coord = df_coord.sample(frac=1,random_state=100)
-    if(adata_new !=None):
-        if(not show_all_cells):
-            list_patches = []
-        for x in adata_new.uns['label_color'].keys():
-            list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))
-        df_sample_new = adata_new.obs[['label','label_color']].copy()
-        df_coord_new = pd.DataFrame(adata_new.obsm['X_dr'],index=adata_new.obs_names)
-        color_new = df_sample_new.sample(frac=1,random_state=100)['label_color'] 
-        coord_new = df_coord_new.sample(frac=1,random_state=100)                    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    n_components: `int`, optional (default: 3)
+        Number of components to be plotted.
+    comp1: `int`, optional (default: 0)
+        Component used for x axis.
+    comp2: `int`, optional (default: 1)
+        Component used for y axis.
+    key_graph: `str`, optional (default: None): 
+        Choose from {{'epg','seed_epg','ori_epg'}}
+        Specify gragh to be plotted.
+        'epg' current elastic principal graph
+        'seed_epg' seed structure used for elastic principal graph learning, which is obtained by running seed_elastic_principal_graph()
+        'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: None)
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'branches_with_cells.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 0.8)
+        0.0 transparent through 1.0 opaque
+    show_text: `bool`, optional (default: False)
+        If True, node state label will be shown
+    plotly: `bool`, optional (default: False)
+        If True, plotly will be used to make interactive plots        
+
+    Returns
+    -------
+    None
+
+    """
+
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
+
     if(n_components==None):
-        n_components = min(3,coord.shape[1])    
-    if(n_components==3):  
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111, projection='3d')
-        if(adata_new is None):
-            ax.scatter(coord[0], coord[1],coord[2],c=color,s=50,linewidth=0,alpha=0.8) 
+        n_components = min(3,adata.obsm['X_dr'].shape[1])
+    if n_components not in [2,3]:
+        raise ValueError("n_components should be 2 or 3")
+
+    assert (key_graph in ['epg','seed_epg','ori_epg']),"key_graph must be one of ['epg','seed_epg','ori_epg']"    
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
+    if(key_graph=='epg'):
+        epg = adata.uns['epg']
+        flat_tree = adata.uns['flat_tree']
+    else:
+        epg = adata.uns[key_graph.split('_')[0]+'_epg']
+        flat_tree = adata.uns[key_graph.split('_')[0]+'_flat_tree']
+    ft_node_pos = nx.get_node_attributes(flat_tree,'pos')
+    ft_node_label = nx.get_node_attributes(flat_tree,'label')
+    epg_node_pos = nx.get_node_attributes(epg,'pos')        
+        
+    if(color is None):
+        color = ['label']
+    ###remove duplicate keys
+    color = list(dict.fromkeys(color))     
+
+    dict_ann = dict()
+    for ann in color:
+        if(ann in adata.obs.columns):
+            dict_ann[ann] = adata.obs[ann]
+        elif(ann in adata.var_names):
+            dict_ann[ann] = adata.obs_vector(ann)
         else:
-            if(show_all_cells):
-                ax.scatter(coord[0], coord[1],coord[2],c=color,s=50,linewidth=0,alpha=0.8) 
-                ax.scatter(coord_new[0], coord_new[1],coord_new[2],c=color_new,s=50,linewidth=0,alpha=0.8)
+            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+
+    df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_dr'],columns=['Dim'+str(x+1) for x in range(adata.obsm['X_dr'].shape[1])])
+    for ann in color:
+        df_plot[ann] = dict_ann[ann]
+    df_plot_shuf = df_plot.sample(frac=1,random_state=100)
+
+    legend_order = {ann:np.unique(df_plot_shuf[ann]) for ann in color if is_string_dtype(df_plot_shuf[ann])}
+    if(fig_legend_order is not None):
+        if(not isinstance(fig_legend_order, dict)):
+            raise TypeError("`fig_legend_order` must be a dictionary")
+        for ann in fig_legend_order.keys():
+            if(ann in legend_order.keys()):
+                legend_order[ann] = fig_legend_order[ann]
             else:
-                ax.scatter(coord_new[0], coord_new[1],coord_new[2],c=color_new,s=50,linewidth=0,alpha=0.8)
-        for edge_i in flat_tree.edges():
-            branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            branch_i_color = flat_tree.edges[edge_i]['color']
-            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,0],branch_i_pos[:,1],branch_i_pos[:,2],c = branch_i_color,lw=5,zorder=5)
-        for node_i in flat_tree.nodes():
-            ax.text(dict_nodes_pos[node_i][0],dict_nodes_pos[node_i][1],dict_nodes_pos[node_i][2],
-                    flat_tree.nodes[node_i]['label'],color='black',fontsize = 12,zorder=10)
-        max_range = np.array([coord[0].max()-coord[0].min(), coord[1].max()-coord[1].min(), coord[2].max()-coord[2].min()]).max() / 1.9
-        mid_x = (coord[0].max()+coord[0].min()) * 0.5
-        mid_y = (coord[1].max()+coord[1].min()) * 0.5
-        mid_z = (coord[2].max()+coord[2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_zlim(mid_z - max_range, mid_z + max_range)
-        ax.set_xlabel('Dim1',labelpad=20)
-        ax.set_ylabel('Dim2',labelpad=20)
-        ax.set_zlabel('Dim3',labelpad=20)
-        if(fig_legend):
-            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+                print("'%s' is ignored for ordering legend labels due to incorrect name or data type" % ann)
+    
+    if(plotly):
+        for ann in color:
+            if(n_components==3): 
+                fig = px.scatter_3d(df_plot_shuf, x="Dim1", y="Dim2", z="Dim3", color=ann,
+                                    opacity=alpha,
+                                    color_continuous_scale=px.colors.sequential.Viridis,
+                                    color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
+                fig.update_traces(marker=dict(size=1.2))
+                for edge_i in flat_tree.edges():
+                    branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
+                    edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                    curve_i = pd.DataFrame(branch_i_pos,columns=['x','y','z'])
+                    fig.add_trace(go.Scatter3d(x=curve_i['x'], 
+                                               y=curve_i['y'], 
+                                               z=curve_i['z'],
+                                               mode='lines',
+                                               line=dict(color='black', width=3),
+                                               name=edge_i_label))                
+                if(show_text):
+                    fig.add_trace(go.Scatter3d(x=np.array(list(ft_node_pos.values()))[:,0], 
+                                               y=np.array(list(ft_node_pos.values()))[:,1], 
+                                               z=np.array(list(ft_node_pos.values()))[:,2],
+                                               mode='markers+text',
+                                               opacity=1,
+                                               marker=dict(size=4,color='#767070'),
+                                               text=[ft_node_label[x] for x in ft_node_pos.keys()],
+                                               textposition="bottom center",
+                                               name='states'),)
+
+
+            else:
+                fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color=ann,
+                                 opacity=alpha,
+                                 color_continuous_scale=px.colors.sequential.Viridis,
+                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
+                for edge_i in flat_tree.edges():
+                    branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])[:,[comp1,comp2]]
+                    edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                    curve_i = pd.DataFrame(branch_i_pos,columns=['x','y'])
+                    fig.add_trace(go.Scatter(x=curve_i['x'], 
+                                               y=curve_i['y'],
+                                               mode='lines',
+                                               line=dict(color='black', width=3),
+                                               name=edge_i_label))
+                if(show_text):
+                    fig.add_trace(go.Scatter(x=np.array(list(ft_node_pos.values()))[:,comp1], 
+                                               y=np.array(list(ft_node_pos.values()))[:,comp2], 
+                                               mode='markers+text',
+                                               opacity=1,
+                                               marker=dict(size=1.5*mpl.rcParams['lines.markersize'],color='#767070'),
+                                               text=[ft_node_label[x] for x in ft_node_pos.keys()],
+                                               textposition="bottom center",
+                                               name='states'),)
+
+            fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500) 
+            fig.show(renderer="notebook")
+            
+    else:
+        if(len(color)<fig_ncol):
+            fig_ncol=len(color)
+        fig_nrow = int(np.ceil(len(color)/fig_ncol))
+        fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow))
+        for i,ann in enumerate(color):
+            if(n_components==3):
+                if(is_string_dtype(df_plot[ann])):
+                    ### export colors and legend from 2D sns.scatterplot 
+                    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+                    sc_i=sns.scatterplot(ax=ax_i,
+                                        x="Dim1", y="Dim2",
+                                        hue=ann,hue_order = legend_order[ann],
+                                        data=df_plot_shuf,
+                                        alpha=alpha,linewidth=0,
+                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)             
+                    colors_sns = sc_i.get_children()[0].get_facecolors()
+                    if(ann+'_color' not in adata.uns_keys()):
+                        colors_sns_scaled = (255*colors_sns).astype(int)
+                        adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                                   for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
+                    legend_sns,labels_sns = ax_i.get_legend_handles_labels()
+                    ax_i.remove()
+                    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1,projection='3d')
+                    ax_i.scatter(df_plot_shuf['Dim1'], df_plot_shuf['Dim2'],df_plot_shuf['Dim3'],c=colors_sns,linewidth=0,alpha=alpha)
+                    ax_i.legend(legend_sns,labels_sns,bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
+                                frameon=False,
+                                borderaxespad=0,
+                                handletextpad=0)                    
+                    
+                else:
+                    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1,projection='3d')
+                    vmin_i = df_plot[ann].min() if vmin is None else vmin
+                    vmax_i = df_plot[ann].max() if vmax is None else vmax
+                    sc_i = ax_i.scatter(df_plot_shuf["Dim1"], 
+                                        df_plot_shuf["Dim2"],
+                                        df_plot_shuf["Dim3"],
+                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,
+                                        alpha=alpha,
+                                        linewidth=0)
+                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=30)
+                    cbar.ax.locator_params(nbins=5)
+                for edge_i in flat_tree.edges():
+                    branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
+                    edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                    curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                    ax_i.plot(curve_i[0],curve_i[1],curve_i[2],c = 'black')
+                if(show_text):
+                    for node_i in flat_tree.nodes():
+                        ax_i.scatter(ft_node_pos[node_i][0],ft_node_pos[node_i][1],ft_node_pos[node_i][2],
+                                     color='#767070',s=1.5*(mpl.rcParams['lines.markersize']**2))                  
+                        ax_i.text(ft_node_pos[node_i][0],ft_node_pos[node_i][1],ft_node_pos[node_i][2],ft_node_label[node_i],
+                                  color='black',fontsize=0.9*mpl.rcParams['font.size'],
+                                   ha='left', va='bottom')                
+                ax_i.set_xlabel("Dim1",labelpad=-5,rotation=-15)
+                ax_i.set_ylabel("Dim2",labelpad=0,rotation=45)
+                ax_i.set_zlabel("Dim3",labelpad=5,rotation=90)
+                ax_i.locator_params(axis='x',nbins=4)
+                ax_i.locator_params(axis='y',nbins=4)
+                ax_i.locator_params(axis='z',nbins=4)
+                ax_i.tick_params(axis="x",pad=-4)
+                ax_i.tick_params(axis="y",pad=-1)
+                ax_i.tick_params(axis="z",pad=3.5)
+                ax_i.set_title(ann)
+            else:
+                ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+                if(is_string_dtype(df_plot[ann])):
+                    sc_i=sns.scatterplot(ax=ax_i,
+                                        x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),
+                                        hue=ann,hue_order = legend_order[ann],
+                                        data=df_plot_shuf,
+                                        alpha=alpha,linewidth=0,
+                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                    ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                                frameon=False,
+                                borderaxespad=0.01,
+                                handletextpad=1e-6,
+                                )
+                    if(ann+'_color' not in adata.uns_keys()):
+                        colors_sns = sc_i.get_children()[0].get_facecolors()
+                        colors_sns_scaled = (255*colors_sns).astype(int)
+                        adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                                   for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
+                    ### remove legend title
+                    ax_i.get_legend().texts[0].set_text("")
+                else:
+                    vmin_i = df_plot[ann].min() if vmin is None else vmin
+                    vmax_i = df_plot[ann].max() if vmax is None else vmax
+                    sc_i = ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],
+                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                    cbar.ax.locator_params(nbins=5)
+                for edge_i in flat_tree.edges():
+                    branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
+                    edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
+                    curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                    ax_i.plot(curve_i[comp1],curve_i[comp2],c = 'black')
+                if(show_text):
+                    for node_i in flat_tree.nodes():
+                        ax_i.scatter(ft_node_pos[node_i][comp1],ft_node_pos[node_i][comp2],
+                                     color='#767070',s=1.5*(mpl.rcParams['lines.markersize']**2))
+                        ax_i.text(ft_node_pos[node_i][0],ft_node_pos[node_i][1],ft_node_label[node_i],
+                                  color='black',fontsize=0.9*mpl.rcParams['font.size'],
+                                   ha='left', va='bottom')  
+                ax_i.set_xlabel("Dim1",labelpad=2)
+                ax_i.set_ylabel("Dim2",labelpad=-6)
+                ax_i.locator_params(axis='x',nbins=5)
+                ax_i.locator_params(axis='y',nbins=5)
+                ax_i.tick_params(axis="x",pad=-1)
+                ax_i.tick_params(axis="y",pad=-3)
+                ax_i.set_title(ann)
+            plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)
-    if(n_components==2): 
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(111)
-        if(adata_new is None):
-            ax.scatter(coord[comp1], coord[comp2],c=color,s=50,linewidth=0,alpha=0.8) 
-        else:
-            if(show_all_cells):
-                ax.scatter(coord[comp1], coord[comp2],c=color,s=50,linewidth=0,alpha=0.8) 
-                ax.scatter(coord_new[comp1], coord_new[comp2],c=color_new,s=50,linewidth=0,alpha=0.8)
-            else:
-                ax.scatter(coord_new[comp1], coord_new[comp2],c=color_new,s=50,linewidth=0,alpha=0.8)
-        for edge_i in flat_tree.edges():
-            branch_i_nodes = flat_tree.edges[edge_i]['nodes']
-            branch_i_color = flat_tree.edges[edge_i]['color']
-            branch_i_pos = np.array([dict_nodes_pos[i] for i in branch_i_nodes])
-            ax.plot(branch_i_pos[:,comp1],branch_i_pos[:,comp2],c = branch_i_color,lw=5,zorder=5)
-#         ax.scatter(nodes_pos[:,0],nodes_pos[:,1],color='gray',s=12,alpha=1,zorder=5)
-        for node_i in flat_tree.nodes():
-            ax.text(dict_nodes_pos[node_i][comp1],dict_nodes_pos[node_i][comp2],
-                    flat_tree.nodes[node_i]['label'],color='black',fontsize = 12,zorder=10)
-        max_range = np.array([coord[comp1].max()-coord[comp1].min(), coord[comp2].max()-coord[comp2].min()]).max() / 1.9
-        mid_x = (coord[comp1].max()+coord[comp1].min()) * 0.5
-        mid_y = (coord[comp2].max()+coord[comp2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_xlabel('Dim'+str(comp1+1),labelpad=20)
-        ax.set_ylabel('Dim'+str(comp2+1),labelpad=20)
-        if(fig_legend):
-            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-                      ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
-        if(save_fig):
-            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)
+            plt.close(fig) 
 
 
 def switch_to_low_dimension(adata,n_components=2):
