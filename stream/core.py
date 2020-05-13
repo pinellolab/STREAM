@@ -2380,7 +2380,7 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
             plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)   
+            plt.close(fig)            
 
 def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,color_by='label',use_precomputed=True,
                           save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=3,fig_legend=True,fig_legend_ncol=1,fig_legend_order = None,
@@ -2653,6 +2653,210 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
+
+def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preference=None,
+                   save_fig=False,fig_path=None,fig_size=(8,5),
+                   fig_legend_ncol=1,fig_legend_order = None,
+                   pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False,
+                   show_text=True,show_graph=True): 
+    """Generate stream plot at single cell level (aka, subway map plots)
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    adata_new: AnnData
+        Annotated data matrix for new data (to be mapped).
+    show_all_cells: `bool`, optional (default: False)
+        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
+    root: `str`, optional (default: 'S0'): 
+        The starting node
+    percentile_dist: `int`, optional (default: 98)
+        Percentile of cells' distances from branches (between 0 and 100) used for calculating the distances between branches of subway map.
+    factor: `float`, optional (default: 2.0)
+        The factor used to adjust the distances between branches of subway map.
+    color_by: `str`, optional (default: 'label')
+        Choose from {{'label','branch'}}
+        Specify how to color cells.
+        'label': the cell labels (stored in adata.obs['label'])
+        'branch': the bracnh id identifed by STREAM
+    preference: `list`, optional (default: None): 
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of subway plot. The higher ranks the node have, the closer to the top the branch with that node is.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_size: `tuple`, optional (default: (8,8))
+        figure size.
+    fig_path: `str`, optional (default: None)
+        if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'subway_map.pdf')
+        if save_fig is True, specify figure name.
+    fig_legend: `bool`, optional (default: True)
+        if fig_legend is True, show figure legend
+    fig_legend_ncol: `int`, optional (default: 3)
+        The number of columns that the legend has.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    X_subwaymap_root: `numpy.ndarray` (`adata.obsm['X_subwaymap_root']`)
+        Store #observations × 2 coordinates of cells in subwaymap plot.
+    subwaymap_root: `dict` (`adata.uns['subwaymap_root']`)
+        Store the coordinates of nodes ('nodes') and edges ('edges') in subwaymap plot.
+
+    updates `adata_new` with the following fields.
+    X_subwaymap_root: `numpy.ndarray` (`adata_new.obsm['X_subwaymap_root']`)
+        Store #observations × 2 coordinates of new cells in subwaymap plot.
+    """
+
+    flat_tree = adata.uns['flat_tree']
+    label_to_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}    
+    if(root not in label_to_node.keys()):
+        raise ValueError("There is no root '%s'" % root)    
+
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
+
+    if(color is None):
+        color = ['label']
+    ###remove duplicate keys
+    color = list(dict.fromkeys(color))     
+
+    dict_ann = dict()
+    for ann in color:
+        if(ann in adata.obs.columns):
+            dict_ann[ann] = adata.obs[ann]
+        elif(ann in adata.var_names):
+            dict_ann[ann] = adata.obs_vector(ann)
+        else:
+            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+    
+    flat_tree = adata.uns['flat_tree']
+    ft_node_label = nx.get_node_attributes(flat_tree,'label')
+    label_to_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}    
+    if(root not in label_to_node.keys()):
+        raise ValueError("There is no root '%s'" % root)
+
+#         file_path_S = os.path.join(fig_path,root)
+#         if(not os.path.exists(file_path_S)):
+#             os.makedirs(file_path_S)   
+            
+    add_stream_sc_pos(adata,root=root,dist_scale=dist_scale,dist_pctl=dist_pctl,preference=None)
+    stream_nodes = adata.uns['stream_'+root]['nodes']
+    stream_edges = adata.uns['stream_'+root]['edges']
+
+    df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_stream_'+root],
+                           columns=['pseudotime','dist'])
+    for ann in color:
+        df_plot[ann] = dict_ann[ann]
+    df_plot_shuf = df_plot.sample(frac=1,random_state=100)
+
+    legend_order = {ann:np.unique(df_plot_shuf[ann]) for ann in color if is_string_dtype(df_plot_shuf[ann])}
+    if(fig_legend_order is not None):
+        if(not isinstance(fig_legend_order, dict)):
+            raise TypeError("`fig_legend_order` must be a dictionary")
+        for ann in fig_legend_order.keys():
+            if(ann in legend_order.keys()):
+                legend_order[ann] = fig_legend_order[ann]
+            else:
+                print("'%s' is ignored for ordering legend labels due to incorrect name or data type" % ann)        
+
+    if(plotly):
+        for ann in color:
+            fig = px.scatter(df_plot_shuf, x='pseudotime', y='dist',color=ann,
+                                 opacity=alpha,
+                                 color_continuous_scale=px.colors.sequential.Viridis,
+                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
+            if(show_graph):
+                for edge_i in stream_edges.keys():
+                    branch_i_pos = stream_edges[edge_i]
+                    branch_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                    for ii in np.arange(start=0,stop=branch_i.shape[0],step=2):
+                        if(branch_i.iloc[ii,0]==branch_i.iloc[ii+1,0]):
+                            fig.add_trace(go.Scatter(x=branch_i.iloc[[ii,ii+1],0], 
+                                                       y=branch_i.iloc[[ii,ii+1],1],
+                                                       mode='lines',
+                                                       opacity=0.8,
+                                                       line=dict(color='#767070', width=3),
+                                                       showlegend=False))
+                        else:
+                            fig.add_trace(go.Scatter(x=branch_i.iloc[[ii,ii+1],0], 
+                                                       y=branch_i.iloc[[ii,ii+1],1],
+                                                       mode='lines',
+                                                       line=dict(color='black', width=3),
+                                                       showlegend=False))
+            if(show_text):
+                fig.add_trace(go.Scatter(x=np.array(list(stream_nodes.values()))[:,0], 
+                                           y=np.array(list(stream_nodes.values()))[:,1],
+                                           mode='text',
+                                           opacity=1,
+                                           marker=dict(size=1.5*mpl.rcParams['lines.markersize'],color='#767070'),
+                                           text=[ft_node_label[x] for x in stream_nodes.keys()],
+                                           textposition="bottom center",
+                                           name='states'),)
+            fig.update_layout(legend= {'itemsizing': 'constant'},
+                              xaxis={'showgrid': False,'zeroline': False,},
+                              yaxis={'visible':False},
+                              width=800,height=500) 
+            fig.show(renderer="notebook")            
+    else:
+        for i,ann in enumerate(color):
+            fig = plt.figure(figsize=(fig_size[0],fig_size[1]))
+            ax_i = fig.add_subplot(1,1,1)
+            if(is_string_dtype(df_plot[ann])):
+                sc_i=sns.scatterplot(ax=ax_i,
+                                    x='pseudotime', y='dist',
+                                    hue=ann,hue_order = legend_order[ann],
+                                    data=df_plot_shuf,
+                                    alpha=alpha,linewidth=0,
+                                    palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                            frameon=False,
+                            borderaxespad=0.01,
+                            handletextpad=1e-6,
+                            )
+                if(ann+'_color' not in adata.uns_keys()):
+                    colors_sns = sc_i.get_children()[0].get_facecolors()
+                    colors_sns_scaled = (255*colors_sns).astype(int)
+                    adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                               for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
+                ### remove legend title
+                ax_i.get_legend().texts[0].set_text("")
+            else:
+                vmin_i = df_plot[ann].min() if vmin is None else vmin
+                vmax_i = df_plot[ann].max() if vmax is None else vmax
+                sc_i = ax_i.scatter(df_plot_shuf['pseudotime'], df_plot_shuf['dist'],
+                                    c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                cbar.ax.locator_params(nbins=5)
+            if(show_graph):
+                for edge_i in stream_edges.keys():
+                    branch_i_pos = stream_edges[edge_i]
+                    branch_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                    for ii in np.arange(start=0,stop=branch_i.shape[0],step=2):
+                        if(branch_i.iloc[ii,0]==branch_i.iloc[ii+1,0]):
+                            ax_i.plot(branch_i.iloc[[ii,ii+1],0],branch_i.iloc[[ii,ii+1],1],
+                                      c = '#767070',alpha=0.8)
+                        else:
+                            ax_i.plot(branch_i.iloc[[ii,ii+1],0],branch_i.iloc[[ii,ii+1],1],
+                                      c = 'black',alpha=1)
+            if(show_text):
+                for node_i in flat_tree.nodes():
+                    ax_i.text(stream_nodes[node_i][0],stream_nodes[node_i][1],ft_node_label[node_i],
+                              color='black',fontsize=0.9*mpl.rcParams['font.size'],
+                               ha='left', va='bottom')  
+            ax_i.set_xlabel("pseudotime",labelpad=2)
+            ax_i.spines['left'].set_visible(False) 
+            ax_i.spines['right'].set_visible(False)
+            ax_i.spines['top'].set_visible(False) 
+            ax_i.get_yaxis().set_visible(False)
+            ax_i.locator_params(axis='x',nbins=8)
+            ax_i.tick_params(axis="x",pad=-1)
+            ax_i.set_title(ann)
+            plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+        if(save_fig):
+            plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+            plt.close(fig)   
 
 def subwaymap_plot(adata,adata_new=None,show_all_cells=True,root='S0',percentile_dist=98,factor=2.0,color_by='label',preference=None,
                    save_fig=False,fig_path=None,fig_name='subway_map.pdf',fig_size=(10,6),fig_legend=True,fig_legend_ncol=3):  
