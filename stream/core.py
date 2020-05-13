@@ -2852,6 +2852,7 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
             ax_i.get_yaxis().set_visible(False)
             ax_i.locator_params(axis='x',nbins=8)
             ax_i.tick_params(axis="x",pad=-1)
+            annots = arrowed_spines(ax_i, locations=('bottom right',))
             ax_i.set_title(ann)
             plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
         if(save_fig):
