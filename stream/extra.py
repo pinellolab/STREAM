@@ -431,8 +431,8 @@ def add_stream_sc_pos(adata,root='S0',dist_scale=1,dist_pctl=95,preference=None)
 
 def arrowed_spines(
         ax,
-        x_width_fraction=0.05,
-        x_height_fraction=0.03,
+        x_width_fraction=0.03,
+        x_height_fraction=0.02,
         lw=None,
         ohg=0.2,
         locations=('bottom right', 'left up'),

@@ -2391,11 +2391,7 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
     Parameters
     ----------
     adata: AnnData
-        Annotated data matrix.
-    adata_new: AnnData
-        Annotated data matrix for new data (to be mapped).
-    show_all_colors: `bool`, optional (default: False)
-        if show_all_colors is True and adata_new is speicified, original cells will be colored based on its color file. Otherwise, the original cells won't be distinguished and will be colored with 'grey' 
+        Annotated data matrix. 
     method: `str`, optional (default: 'umap')
         Choose from {{'umap','tsne'}}
         Method used for visualization.
@@ -2455,10 +2451,7 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
 
     """    
     if(fig_path is None):
-        if(adata_new==None):
-            fig_path = adata.uns['workdir']
-        else:
-            fig_path = adata_new.uns['workdir']
+        fig_path = adata.uns['workdir']
     fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size
 
     if(method not in ['umap','tsne']):
@@ -2481,8 +2474,6 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
         else:
             raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
     input_data = adata.obsm['X_dr']
-    if(adata_new != None):
-        input_data = np.vstack((input_data,adata_new.obsm['X_dr']))
     if(nb_pct!=None):
         n_neighbors = int(np.around(input_data.shape[0]*nb_pct)) 
     if(method == 'umap'):       
@@ -2521,135 +2512,69 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
                 embedding = reducer.fit_transform(input_data)
                 adata_new.uns['merged_X_vis_tsne'] = embedding
     
-    if(adata_new is None):
-        df_plot = pd.DataFrame(index=adata.obs.index,data = embedding,columns=[method.upper()+str(x) for x in [1,2]])
-        for ann in color:
-            df_plot[ann] = dict_ann[ann]
-        df_plot_shuf = df_plot.sample(frac=1,random_state=100)
-        
-        legend_order = {ann:np.unique(df_plot_shuf[ann]) for ann in color if is_string_dtype(df_plot_shuf[ann])}
-        if(fig_legend_order is not None):
-            if(not isinstance(fig_legend_order, dict)):
-                raise TypeError("`fig_legend_order` must be a dictionary")
-            for ann in fig_legend_order.keys():
-                if(ann in legend_order.keys()):
-                    legend_order[ann] = fig_legend_order[ann]
-                else:
-                    print("'%s' is ignored for ordering legend labels due to incorrect name or data type" % ann)
-
-        if(plotly):
-            for ann in color:
-                fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color=ann,
-                                 opacity=alpha,width=500,height=500,
-                                 color_continuous_scale=px.colors.sequential.Viridis,
-                                 color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
-                fig.update_layout(legend= {'itemsizing': 'constant'}) 
-                fig.show(renderer="notebook")
-        else:
-            if(len(color)<fig_ncol):
-                fig_ncol=len(color)
-            fig_nrow = int(np.ceil(len(color)/fig_ncol))
-            fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow))
-            for i,ann in enumerate(color):
-                ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
-                if(is_string_dtype(df_plot[ann])):
-                    sc_i=sns.scatterplot(ax=ax_i,
-                                        x=method.upper()+'1', y=method.upper()+'2', 
-                                        hue=ann,hue_order = legend_order[ann],
-                                        data=df_plot_shuf,
-                                        alpha=alpha,linewidth=0,
-                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
-                    ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
-                                frameon=False,
-                                borderaxespad=0.01,
-                                handletextpad=1e-6,
-                                )
-                    if(ann+'_color' not in adata.uns_keys()):
-                        colors_sns = sc_i.get_children()[0].get_facecolors()
-                        colors_sns_scaled = (255*colors_sns).astype(int)
-                        adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
-                                                   for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
-                    ### remove legend title
-                    ax_i.get_legend().texts[0].set_text("")
-                else:
-                    vmin_i = df_plot[ann].min() if vmin is None else vmin
-                    vmax_i = df_plot[ann].max() if vmax is None else vmax
-                    sc_i = ax_i.scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
-                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
-                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
-                    cbar.ax.locator_params(nbins=5)                    
-                ax_i.set_xlabel(method.upper()+'1')
-                ax_i.set_ylabel(method.upper()+'2',labelpad=2)
-                ax_i.get_xaxis().set_ticks([])
-                ax_i.get_yaxis().set_ticks([])
-                ax_i.set_title(ann)
-#             plt.subplots_adjust(hspace=hspace,wspace=wspace)
-            plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
-            if(save_fig):
-                plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
-                plt.close(fig) 
-    else:
-        fig = plt.figure(figsize=fig_size)
-        ax = fig.add_subplot(1,1,1)  
-        if(color_by=='label'):  
-            df_sample = adata.obs.copy()
-            df_coord = pd.DataFrame(embedding[:adata.shape[0],:],index=adata.obs_names)
-            color = df_sample.sample(frac=1,random_state=100)['label_color'] 
-            coord = df_coord.sample(frac=1,random_state=100)    
-            df_sample_new = adata_new.obs.copy()
-            df_coord_new = pd.DataFrame(embedding[adata.shape[0]:embedding.shape[0],:],index=adata_new.obs_names)
-            color_new = df_sample_new.sample(frac=1,random_state=100)['label_color'] 
-            coord_new = df_coord_new.sample(frac=1,random_state=100)         
-            if(show_all_colors):
-                list_patches = []
-                for x in adata.uns['label_color'].keys():
-                    list_patches.append(Patches.Patch(color = adata.uns['label_color'][x],label=x))            
-                ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8) 
-                for x in adata_new.uns['label_color'].keys():
-                    if(x not in adata.uns['label_color'].keys()):
-                        list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))            
-                ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
+    df_plot = pd.DataFrame(index=adata.obs.index,data = embedding,columns=[method.upper()+str(x) for x in [1,2]])
+    for ann in color:
+        df_plot[ann] = dict_ann[ann]
+    df_plot_shuf = df_plot.sample(frac=1,random_state=100)
+    
+    legend_order = {ann:np.unique(df_plot_shuf[ann]) for ann in color if is_string_dtype(df_plot_shuf[ann])}
+    if(fig_legend_order is not None):
+        if(not isinstance(fig_legend_order, dict)):
+            raise TypeError("`fig_legend_order` must be a dictionary")
+        for ann in fig_legend_order.keys():
+            if(ann in legend_order.keys()):
+                legend_order[ann] = fig_legend_order[ann]
             else:
-                ax.scatter(coord[0], coord[1],c='gray',s=50,linewidth=0,alpha=0.8) 
-                list_patches = [Patches.Patch(color = 'gray',label='trajectory_cells')]
-                for x in adata_new.uns['label_color'].keys():
-                    if(x not in adata.uns['label_color'].keys()):
-                        list_patches.append(Patches.Patch(color = adata_new.uns['label_color'][x],label=x))            
-                ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)  
-        if(color_by=='branch_id_alias'):
-            df_sample = adata.obs.copy()
-            df_coord = pd.DataFrame(embedding[:adata.shape[0],:],index=adata.obs_names)
-            flat_tree = adata.uns['flat_tree']
-            list_patches = []
-            df_sample['branch_color'] = '' 
-            for edge in flat_tree.edges():
-                br_id = flat_tree.edges[edge]['id']
-                id_cells = np.where(df_sample['branch_id']==br_id)[0]
-                df_sample.loc[df_sample.index[id_cells],'branch_color'] = flat_tree.edges[edge]['color']
-                list_patches.append(Patches.Patch(color = flat_tree.edges[edge]['color'],
-                    label='branch '+flat_tree.nodes[br_id[0]]['label']+'_'+flat_tree.nodes[br_id[1]]['label']))
-            color = df_sample.sample(frac=1,random_state=100)['branch_color'] 
-            coord = df_coord.sample(frac=1,random_state=100)   
-            df_sample_new = adata_new.obs.copy()
-            df_coord_new = pd.DataFrame(embedding[adata.shape[0]:embedding.shape[0],:],index=adata_new.obs_names)
-            df_sample_new['branch_color'] = '' 
-            for edge in flat_tree.edges():
-                br_id = flat_tree.edges[edge]['id']
-                id_cells = np.where(df_sample_new['branch_id']==br_id)[0]
-                df_sample_new.loc[df_sample_new.index[id_cells],'branch_color'] = flat_tree.edges[edge]['color']  
-            color_new = df_sample_new.sample(frac=1,random_state=100)['branch_color'] 
-            coord_new = df_coord_new.sample(frac=1,random_state=100)               
-            ax.scatter(coord[0], coord[1],c=color,s=50,linewidth=0,alpha=0.8)           
-            ax.scatter(coord_new[0],coord_new[1],c=color_new,s=50,linewidth=0,alpha=0.8)
-        if(method == 'umap'):
-            ax.set_xlabel('UMAP 1')
-            ax.set_ylabel('UMAP 2')
-        if(method == 'tsne'):
-            ax.set_xlabel('tSNE 1')
-            ax.set_ylabel('tSNE 2')
-        if(fig_legend):                    
-            ax.legend(handles = list_patches,loc='center', bbox_to_anchor=(0.5, 1.1),
-                    ncol=fig_legend_ncol, fancybox=True, shadow=True,markerscale=2.5)
+                print("'%s' is ignored for ordering legend labels due to incorrect name or data type" % ann)
+
+    if(plotly):
+        for ann in color:
+            fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color=ann,
+                                opacity=alpha,width=500,height=500,
+                                color_continuous_scale=px.colors.sequential.Viridis,
+                                color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
+            fig.update_layout(legend= {'itemsizing': 'constant'}) 
+            fig.show(renderer="notebook")
+    else:
+        if(len(color)<fig_ncol):
+            fig_ncol=len(color)
+        fig_nrow = int(np.ceil(len(color)/fig_ncol))
+        fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow))
+        for i,ann in enumerate(color):
+            ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+            if(is_string_dtype(df_plot[ann])):
+                sc_i=sns.scatterplot(ax=ax_i,
+                                    x=method.upper()+'1', y=method.upper()+'2', 
+                                    hue=ann,hue_order = legend_order[ann],
+                                    data=df_plot_shuf,
+                                    alpha=alpha,linewidth=0,
+                                    palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                            frameon=False,
+                            borderaxespad=0.01,
+                            handletextpad=1e-6,
+                            )
+                if(ann+'_color' not in adata.uns_keys()):
+                    colors_sns = sc_i.get_children()[0].get_facecolors()
+                    colors_sns_scaled = (255*colors_sns).astype(int)
+                    adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                                for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
+                ### remove legend title
+                ax_i.get_legend().texts[0].set_text("")
+            else:
+                vmin_i = df_plot[ann].min() if vmin is None else vmin
+                vmax_i = df_plot[ann].max() if vmax is None else vmax
+                sc_i = ax_i.scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
+                                    c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
+                cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                cbar.ax.locator_params(nbins=5)                    
+            ax_i.set_xlabel(method.upper()+'1')
+            ax_i.set_ylabel(method.upper()+'2',labelpad=2)
+            ax_i.get_xaxis().set_ticks([])
+            ax_i.get_yaxis().set_ticks([])
+            ax_i.set_title(ann)
+#             plt.subplots_adjust(hspace=hspace,wspace=wspace)
+        plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
         if(save_fig):
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
