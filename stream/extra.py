@@ -13,7 +13,6 @@ from sklearn.metrics.pairwise import pairwise_distances_argmin_min
 import math
 from scipy.linalg import eigh, svd, qr, solve
 from decimal import *
-from . import palettes
 
 
 def project_point_to_curve_distance(XP,p):

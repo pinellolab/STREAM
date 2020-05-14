@@ -78,11 +78,16 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
         Resolution of saved figures.
     kwargs:    
         rc settings properties. Please see https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file
-        set_figure_params(**{'legend.handletextpad':1e-10})
+        set_figure_params(**{'ax.xaxis.labelpad':20,'legend.handletextpad':1e-10,'image.cmap': 'RdBu_r'})
     """
 #     mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set(context=context,style=style,palette=palette,font=font,font_scale=font_scale,color_codes=color_codes,
-            rc={'figure.dpi':dpi,'savefig.dpi':dpi_save,'figure.figsize':figsize,'image.cmap': 'viridis','lines.markersize':6})
+            rc={'figure.dpi':dpi,
+                'savefig.dpi':dpi_save,
+                'figure.figsize':figsize,
+                'image.cmap': 'viridis',
+                'lines.markersize':6,
+                'pdf.fonttype':42,})
     for key, value in kwargs.items():
         if key in mpl.rcParams.keys():
             mpl.rcParams[key] = value
@@ -1091,6 +1096,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                                         alpha=alpha,
                                         linewidth=0)
                     cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.04, fraction=0.05, aspect=30)
+                    cbar.solids.set_edgecolor("face")
                     cbar.ax.locator_params(nbins=5)
                 if(show_graph):
                     for edge_i in flat_tree.edges():
@@ -1141,6 +1147,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     sc_i = ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],
                                         c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
                     cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                    cbar.solids.set_edgecolor("face")
                     cbar.ax.locator_params(nbins=5)
                 if(show_graph):
                     for edge_i in flat_tree.edges():
@@ -2171,6 +2178,7 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
                 sc_i = ax_i.scatter(df_plot_shuf['FlatTree1'], df_plot_shuf['FlatTree2'],
                                     c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
                 cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                cbar.solids.set_edgecolor("face")
                 cbar.ax.locator_params(nbins=5)
             if(show_graph):
                 for edge_i in flat_tree.edges():
@@ -2349,6 +2357,7 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
                 sc_i = ax_i.scatter(df_plot_shuf[method.upper()+'1'], df_plot_shuf[method.upper()+'2'],
                                     c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
                 cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                cbar.solids.set_edgecolor("face")
                 cbar.ax.locator_params(nbins=5)                    
             ax_i.set_xlabel(method.upper()+'1')
             ax_i.set_ylabel(method.upper()+'2',labelpad=2)
@@ -2526,6 +2535,7 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                 sc_i = ax_i.scatter(df_plot_shuf['pseudotime'], df_plot_shuf['dist'],
                                     c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha)
                 cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.01, fraction=0.05, aspect=40)
+                cbar.solids.set_edgecolor("face")
                 cbar.ax.locator_params(nbins=5)
             if(show_graph):
                 for edge_i in stream_edges.keys():
