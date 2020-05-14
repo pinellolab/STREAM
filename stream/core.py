@@ -10,7 +10,6 @@ import seaborn as sns
 import pylab as plt
 import plotly.graph_objects as go
 import plotly.express as px
-import shapely.geometry as geom
 import multiprocessing
 import os
 from sklearn.decomposition import PCA as sklearnPCA
@@ -20,7 +19,6 @@ from sklearn.cluster import SpectralClustering,AffinityPropagation,KMeans
 from sklearn.metrics.pairwise import pairwise_distances_argmin_min,pairwise_distances,euclidean_distances
 import matplotlib.patches as Patches
 from matplotlib.patches import Polygon
-from mpl_toolkits.mplot3d.axes3d import Axes3D
 import umap
 from copy import deepcopy
 import itertools
@@ -28,14 +26,8 @@ from scipy.spatial import distance,cKDTree,KDTree
 import math
 import matplotlib as mpl
 # mpl.use('Agg')
-# mpl.rc('pdf', fonttype=42)
-import matplotlib.ticker as ticker
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy import stats,interpolate
+from scipy import stats
 from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde,kruskal
-from scipy.interpolate import Rbf, InterpolatedUnivariateSpline,UnivariateSpline
-from scipy.signal import savgol_filter
-from scipy.linalg import eigh, svd, qr, solve
 from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
@@ -2500,7 +2492,8 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                                            marker=dict(size=1.5*mpl.rcParams['lines.markersize'],color='#767070'),
                                            text=[ft_node_label[x] for x in stream_nodes.keys()],
                                            textposition="bottom center",
-                                           name='states'),)
+                                           name='states',
+                                           showlegend=False),)
             fig.update_layout(legend= {'itemsizing': 'constant'},
                               xaxis={'showgrid': False,'zeroline': False,},
                               yaxis={'visible':False},
