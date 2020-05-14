@@ -527,7 +527,7 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
         The number of parallel jobs to run when calculating the distance from each gene to the fitted curve
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: None)
+    fig_size: `tuple`, optional (default: (4,4))
         figure size.
     fig_path: `str`, optional (default: '')
         if empty, adata.uns['workdir'] will be used.
@@ -602,7 +602,7 @@ def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
         Specify the number of selected genes. Genes are ordered based on the residuals.
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: None)
+    fig_size: `tuple`, optional (default: (4,4))
         figure size.
     fig_path: `str`, optional (default: '')
         if empty, adata.uns['workdir'] will be used.
@@ -677,7 +677,7 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         If True, the PCA results from previous computing will be used
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (5,5))
+    fig_size: `tuple`, optional (default: (4,4))
         figure size.
     fig_path: `str`, optional (default: None)
         if None, adata.uns['workdir'] will be used.
@@ -874,10 +874,12 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
     return None
 
 def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=None,key_graph='epg',
-                             save_fig=False,fig_name='branches_with_cells.pdf',fig_path=None,fig_size=None,fig_ncol=3,
-                             fig_legend_ncol=1,fig_legend_order = None,
-                             pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False,
-                             show_text=False,show_graph=False):    
+                             fig_size=None,fig_ncol=3,fig_legend_ncol=1,fig_legend_order = None,
+                             vmin=None,vmax=None,alpha=0.8,
+                             pad=1.08,w_pad=None,h_pad=None,
+                             show_text=False,show_graph=False,
+                             save_fig=False,fig_path=None,fig_name='dimension_reduction.pdf',
+                             plotly=False):    
     """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
     
     Parameters
@@ -890,40 +892,43 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
         Component used for x axis.
     comp2: `int`, optional (default: 1)
         Component used for y axis.
+    color: `list` optional (default: None)
+        Column names of observations (adata.obs.columns) or variable names(adata.var_names). A list of names to be plotted. 
     key_graph: `str`, optional (default: None): 
         Choose from {{'epg','seed_epg','ori_epg'}}
         Specify gragh to be plotted.
         'epg' current elastic principal graph
         'seed_epg' seed structure used for elastic principal graph learning, which is obtained by running seed_elastic_principal_graph()
         'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
-    save_fig: `bool`, optional (default: False)
-        if True,save the figure.
     fig_size: `tuple`, optional (default: None)
         figure size.
-    fig_path: `str`, optional (default: None)
-        if None, adata.uns['workdir'] will be used.
-    fig_name: `str`, optional (default: 'branches_with_cells.pdf')
-        if save_fig is True, specify figure name.
-    fig_legend_ncol: `int`, optional (default: 1)
-        The number of columns that the legend has.
+    fig_ncol: `int`, optional (default: 1)
+        the number of columns of the figure panel
     fig_legend_order: `dict`,optional (default: None)
         Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
         e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
-    pad: `float`, optional (default: 1.08)
-        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
-    h_pad, w_pad: `float`, optional (default: None)
-        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
     vmin,vmax: `float`, optional (default: None)
         The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
     alpha: `float`, optional (default: 0.8)
         0.0 transparent through 1.0 opaque
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
     show_text: `bool`, optional (default: False)
         If True, node state label will be shown
     show_graph: `bool`, optional (default: False)
         If True, the learnt principal graph will be shown
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'dimension_reduction.pdf')
+        if save_fig is True, specify figure name.
     plotly: `bool`, optional (default: False)
-        If True, plotly will be used to make interactive plots        
-
+        if True, plotly will be used to make interactive plots 
     Returns
     -------
     None
@@ -1166,16 +1171,17 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
             plt.close(fig) 
 
 def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
-                 save_fig=False,fig_name='branches.pdf',fig_path=None,fig_size=None,
-                 pad=1.08,w_pad=None,h_pad=None,plotly=False,show_text=False):    
-    """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
+                  fig_size=None,
+                  pad=1.08,w_pad=None,h_pad=None,
+                  show_text=False,
+                  save_fig=False,fig_path=None,fig_name='branches.pdf',
+                  plotly=False):    
+    """Plot branches. The branches contain all the nodes learnt from ElPiGraph
     
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    adata_new: AnnData
-        Annotated data matrix for new data (to be mapped).
     n_components: `int`, optional (default: 3)
         Number of components to be plotted.
     comp1: `int`, optional (default: 0)
@@ -1188,24 +1194,22 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
         'epg' current elastic principal graph
         'seed_epg' seed structure used for elastic principal graph learning, which is obtained by running seed_elastic_principal_graph()
         'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
-    save_fig: `bool`, optional (default: False)
-        if True,save the figure.
     fig_size: `tuple`, optional (default: None)
         figure size.
-    fig_path: `str`, optional (default: None)
-        if None, adata.uns['workdir'] will be used.
-    fig_name: `str`, optional (default: 'branches_with_cells.pdf')
-        if save_fig is True, specify figure name.
     pad: `float`, optional (default: 1.08)
         Padding between the figure edge and the edges of subplots, as a fraction of the font size.
     h_pad, w_pad: `float`, optional (default: None)
         Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
-    vmin,vmax: `float`, optional (default: None)
-        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
     show_text: `bool`, optional (default: False)
-        If True, point labels will be shown
+        If True, node state label will be shown
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'branches.pdf')
+        if save_fig is True, specify figure name.
     plotly: `bool`, optional (default: False)
-        If True, plotly will be used to make interactive plots        
+        if True, plotly will be used to make interactive plots       
 
     Returns
     -------
@@ -2031,30 +2035,49 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
 
 
 def plot_flat_tree(adata,color=None,dist_scale=1,
-                   save_fig=False,fig_name='flat_tree.pdf',fig_path=None,fig_size=None,fig_ncol=3,
-                   fig_legend=True,fig_legend_ncol=1,fig_legend_order = None,
-                   pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False,
-                   show_text=False,show_graph=False):  
+                   fig_size=None,fig_ncol=3,fig_legend_ncol=1,fig_legend_order = None,
+                   vmin=None,vmax=None,alpha=0.8,
+                   pad=1.08,w_pad=None,h_pad=None,
+                   show_text=False,show_graph=False,
+                   save_fig=False,fig_path=None,fig_name='flat_tree.pdf',
+                   plotly=False):  
     """Plot flat tree based on a modified version of the force-directed layout Fruchterman-Reingold algorithm.
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
+    color: `list` optional (default: None)
+        Column names of observations (adata.obs.columns) or variable names(adata.var_names). A list of names to be plotted. 
     dist_scale: `float`,optional (default: 1)
         Scaling factor to scale the distance from cells to tree branches 
         (by default, it keeps the same distance as in original manifold)
+    fig_size: `tuple`, optional (default: None)
+        figure size.
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 0.8)
+        0.0 transparent through 1.0 opaque
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    show_text: `bool`, optional (default: False)
+        If True, node state label will be shown
+    show_graph: `bool`, optional (default: False)
+        If True, the learnt principal graph will be shown
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (8,8))
-        figure size.
     fig_path: `str`, optional (default: None)
-        if None, adata.uns['workdir'] will be used.
+        if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'flat_tree.pdf')
         if save_fig is True, specify figure name.
-    fig_legend: `bool`, optional (default: True)
-        if fig_legend is True, show figure legend
-    fig_legend_ncol: `int`, optional (default: 3)
-        The number of columns that the legend has.
+    plotly: `bool`, optional (default: False)
+        if True, plotly will be used to make interactive plots.
 
     Returns
     -------
@@ -2195,8 +2218,11 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
             plt.close(fig)            
 
 def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perplexity=30.0,color=None,use_precomputed=True,
-                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',fig_size=None,fig_ncol=3,fig_legend=True,fig_legend_ncol=1,fig_legend_order = None,
-                          pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False):  
+                          fig_size=None,fig_ncol=3,fig_legend_ncol=1,fig_legend_order = None,
+                          vmin=None,vmax=None,alpha=0.8,
+                          pad=1.08,w_pad=None,h_pad=None,
+                          save_fig=False,fig_path=None,fig_name='visualization_2D.pdf',
+                          plotly=False):
 
     """ Visualize the results in 2D plane
     
@@ -2217,33 +2243,29 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
         The perplexity used for tSNE. 
     color: `list` optional (default: None)
         Column names of observations (adata.obs.columns) or variable names(adata.var_names). A list of names to be plotted.    
-    color_by: `str`, optional (default: None)
-        Column name of observations (adata.obs.columns) or variable names(adata.var_names). Specify how to color cells.
     use_precomputed: `bool`, optional (default: True)
         If True, the visualization coordinates from previous computing will be used
-    save_fig: `bool`, optional (default: False)
-        if True,save the figure.
-    fig_size: `tuple`, optional (default: (6,5))
+    fig_size: `tuple`, optional (default: None)
         figure size.
-    fig_path: `str`, optional (default: None)
-        if None, adata.uns['workdir'] will be used.
-    fig_name: `str`, optional (default: 'visualization_2D.pdf')
-        if save_fig is True, specify figure name.
-    fig_legend: `bool`, optional (default: True)
-        if fig_legend is True, show figure legend
-    fig_legend_ncol: `int`, optional (default: 3)
-        The number of columns that the legend has.
     fig_legend_order: `dict`,optional (default: None)
         Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
         e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
-    pad: `float`, optional (default: 1.08)
-        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
-    h_pad, w_pad: `float`, optional (default: None)
-        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
     vmin,vmax: `float`, optional (default: None)
         The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
     alpha: `float`, optional (default: 0.8)
         0.0 transparent through 1.0 opaque
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'visualization_2D.pdf')
+        if save_fig is True, specify figure name.
     plotly: `bool`, optional (default: False)
         if True, plotly will be used to make interactive plots
 
@@ -2363,57 +2385,65 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
             plt.close(fig)
 
 def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preference=None,
-                   save_fig=False,fig_path=None,fig_size=(7.5,5),
-                   fig_legend_ncol=1,fig_legend_order = None,
-                   pad=1.08,w_pad=None,h_pad=None,vmin=None,vmax=None,alpha=0.8,plotly=False,
-                   show_text=True,show_graph=True): 
+                   fig_size=(7,4.5),fig_legend_ncol=1,fig_legend_order = None,
+                   vmin=None,vmax=None,alpha=0.8,
+                   pad=1.08,w_pad=None,h_pad=None,
+                   show_text=True,show_graph=True,
+                   save_fig=False,fig_path=None,fig_format='pdf',
+                   plotly=False): 
     """Generate stream plot at single cell level (aka, subway map plots)
     
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    adata_new: AnnData
-        Annotated data matrix for new data (to be mapped).
-    show_all_cells: `bool`, optional (default: False)
-        if show_all_cells is True and adata_new is speicified, both original cells and mapped cells will be shown
     root: `str`, optional (default: 'S0'): 
         The starting node
-    percentile_dist: `int`, optional (default: 98)
-        Percentile of cells' distances from branches (between 0 and 100) used for calculating the distances between branches of subway map.
-    factor: `float`, optional (default: 2.0)
-        The factor used to adjust the distances between branches of subway map.
-    color_by: `str`, optional (default: 'label')
-        Choose from {{'label','branch'}}
-        Specify how to color cells.
-        'label': the cell labels (stored in adata.obs['label'])
-        'branch': the bracnh id identifed by STREAM
+    color: `list` optional (default: None)
+        Column names of observations (adata.obs.columns) or variable names(adata.var_names). A list of names to be plotted. 
+    dist_scale: `float`,optional (default: 1)
+        Scaling factor to scale the distance from cells to tree branches 
+        (by default, it keeps the same distance as in original manifold)
+    dist_pctl: `int`, optional (default: 95)
+        Percentile of cells' distances from branches (between 0 and 100) used for calculating the distances between branches.
     preference: `list`, optional (default: None): 
-        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of subway plot. The higher ranks the node have, the closer to the top the branch with that node is.
+        The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. 
+        The higher ranks the node have, the closer to the top the branch with that node is.
+    fig_size: `tuple`, optional (default: (7,4.5))
+        figure size.
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 0.8)
+        0.0 transparent through 1.0 opaque
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    show_text: `bool`, optional (default: False)
+        If True, node state label will be shown
+    show_graph: `bool`, optional (default: False)
+        If True, the learnt principal graph will be shown
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_size: `tuple`, optional (default: (8,8))
-        figure size.
     fig_path: `str`, optional (default: None)
-        if None, adata.uns['workdir'] will be used.
-    fig_name: `str`, optional (default: 'subway_map.pdf')
-        if save_fig is True, specify figure name.
-    fig_legend: `bool`, optional (default: True)
-        if fig_legend is True, show figure legend
-    fig_legend_ncol: `int`, optional (default: 3)
-        The number of columns that the legend has.
+        if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
+    fig_format: `str`, optional (default: 'pdf')
+        if save_fig is True, specify figure format.
+    plotly: `bool`, optional (default: False)
+        if True, plotly will be used to make interactive plots
 
     Returns
     -------
     updates `adata` with the following fields.
-    X_subwaymap_root: `numpy.ndarray` (`adata.obsm['X_subwaymap_root']`)
+    X_stream_root: `numpy.ndarray` (`adata.obsm['X_stream_root']`)
         Store #observations × 2 coordinates of cells in subwaymap plot.
-    subwaymap_root: `dict` (`adata.uns['subwaymap_root']`)
+    stream_root: `dict` (`adata.uns['stream_root']`)
         Store the coordinates of nodes ('nodes') and edges ('edges') in subwaymap plot.
-
-    updates `adata_new` with the following fields.
-    X_subwaymap_root: `numpy.ndarray` (`adata_new.obsm['X_subwaymap_root']`)
-        Store #observations × 2 coordinates of new cells in subwaymap plot.
     """
 
     if(fig_path is None):
@@ -2560,14 +2590,14 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
             file_path_S = os.path.join(fig_path,root)
             if(not os.path.exists(file_path_S)):
                 os.makedirs(file_path_S) 
-            plt.savefig(os.path.join(file_path_S,fig_name), pad_inches=1,bbox_inches='tight')
-            plt.close(fig)  
+            plt.savefig(os.path.join(file_path_S,'stream_sc_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
+            plt.close(fig)
 
 def plot_stream(adata,root='S0',color = None,preference=None,
                 factor_num_win=10,factor_min_win=2.0,factor_width=2.5,factor_nrow=200,factor_ncol=400,
                 log_scale = False,factor_zoomin=100.0,
-                fig_size=(7,5),fig_legend_order=None,fig_legend_ncol=1,
-                vmin=None,vmax=None,alpha=0.8,
+                fig_size=(7,4.5),fig_legend_order=None,fig_legend_ncol=1,
+                vmin=None,vmax=None,
                 pad=1.08,w_pad=None,h_pad=None,
                 save_fig=False,fig_path=None,fig_format='pdf'):  
     """Generate stream plot at density level
@@ -2597,25 +2627,25 @@ def plot_stream(adata,root='S0',color = None,preference=None,
         If True,the number of cells (the width) is logarithmized when drawing stream plot.
     factor_zoomin: `float`, optional (default: 100.0)
         If log_scale is True, the factor used to zoom in the thin branches
-    fig_size: `tuple`, optional (default: (8,8))
+    fig_size: `tuple`, optional (default: (7,4.5))
         figure size.
     fig_legend_order: `dict`,optional (default: None)
         Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
         e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
     fig_legend_ncol: `int`, optional (default: 1)
         The number of columns that the legend has.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
     pad: `float`, optional (default: 1.08)
         Padding between the figure edge and the edges of subplots, as a fraction of the font size.
     h_pad, w_pad: `float`, optional (default: None)
         Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
-    vmin,vmax: `float`, optional (default: None)
-        The min and max values are used to normalize continuous values. If None, the respective min and max of continuous values is used.
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
-    fig_format: `str`, optional (default: 'pdf')
-        if save_fig is True, specify figure format.
     fig_path: `str`, optional (default: None)
         if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
+    fig_format: `str`, optional (default: 'pdf')
+        if save_fig is True, specify figure format.
 
     Returns
     -------
@@ -2757,7 +2787,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,
             file_path_S = os.path.join(fig_path,root)
             if(not os.path.exists(file_path_S)):
                 os.makedirs(file_path_S) 
-            plt.savefig(os.path.join(file_path_S,'stream_plot_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
+            plt.savefig(os.path.join(file_path_S,'stream_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
 def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
