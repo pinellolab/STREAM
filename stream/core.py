@@ -3595,14 +3595,16 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
 
-def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
+def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_report'):
     """save stream report for single cell VR website http://www.singlecellvr.com/
     
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    genes: `list`, optional (default: None): 
+    ann_list: `list`, optional (default: None): 
+        A list of cell annotation keys. If None, only 'label' will be used.     
+    gene_list: `list`, optional (default: None): 
         A list of genes to be displayed
     file_name: `str`, optional (default: 'stream_vr_report')
         Ouput Zip file name.
@@ -3612,6 +3614,25 @@ def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
     None
 
     """ 
+    assert (adata.obsm['X_dr'].shape[1]>=3),\
+    '''The embedding space should have at least three dimensions. 
+    please set `n_component = 3` in `st.dimension_reduction()'''
+    
+    if(ann_list is None):
+        ann_list = ['label']
+    ###remove duplicate keys
+    ann_list = list(dict.fromkeys(ann_list)) 
+    for ann in ann_list:
+        if(ann not in adata.obs.columns):
+            raise ValueError('could not find %s in `adata.var_names`'  % (ann))
+            
+    if(gene_list is not None):
+        ###remove duplicate keys
+        gene_list = list(dict.fromkeys(gene_list)) 
+        for gene in gene_list:
+            if(gene not in adata.var_names):
+                raise ValueError('could not find %s in `adata.var_names`'  % (gene))
+                
     try:
         file_path = os.path.join(adata.uns['workdir'],file_name)
         if(not os.path.exists(file_path)):
@@ -3670,24 +3691,29 @@ def save_vr_report(adata,genes=None,file_name='stream_vr_report'):
             list_cells.append(dict_coord_cells)
         with open(os.path.join(file_path,'scatter.json'), 'w') as f:
             json.dump(list_cells, f)    
-            
+ 
         ## output metadata file of cells
         list_metadata = []
+        
+        dict_colors = dict()
+        for ann in ann_list:
+            dict_colors[ann] = get_colors(adata,ann)
         for i in range(adata.shape[0]):
             dict_metadata = dict()
             dict_metadata['cell_id'] = adata.obs_names[i]
-            dict_metadata['label'] = adata.obs['label'].tolist()[i]
-            dict_metadata['label_color'] = adata.obs['label_color'][i]
+            for ann in ann_list:
+                dict_metadata[ann] = adata.obs[ann].tolist()[i]
+                dict_metadata[ann+'_color'] = dict_colors[ann][i]
             list_metadata.append(dict_metadata)
         with open(os.path.join(file_path,'metadata.json'), 'w') as f:
             json.dump(list_metadata, f)
 
         ## output gene expression of cells
-        if(genes is not None):
+        if(gene_list is not None):
             print('Generating gene expression of cells ...')
-            df_genes = pd.DataFrame(adata.raw.X,index=adata.raw.obs_names,columns=adata.raw.var_names)
-            cm = mpl.cm.get_cmap('viridis',512)
-            for g in genes:
+            df_genes = pd.DataFrame(adata.X,index=adata.obs_names,columns=adata.var_names)
+            cm = mpl.cm.get_cmap()
+            for g in gene_list:
                 list_genes = []
                 norm = mpl.colors.Normalize(vmin=0, vmax=max(df_genes[g]),clip=True)
                 for x in adata.obs_names:
