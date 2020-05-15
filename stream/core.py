@@ -3741,6 +3741,8 @@ def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_repor
                 with open(os.path.join(file_path,'gene_'+g+'.json'), 'w') as f:
                     json.dump(list_genes, f) 
         print('STREAM: cells finished!')
+        with open(os.path.join(file_path,'index.json'), 'w') as f:
+            json.dump({ "tool": 'STREAM' }, f)        
         shutil.make_archive(base_name=os.path.join(adata.uns['workdir'],file_name), format='zip',root_dir=file_path)
         shutil.rmtree(file_path)
     except:
