@@ -1067,7 +1067,10 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                                         hue=ann,hue_order = legend_order[ann],
                                         data=df_plot_shuf,
                                         alpha=alpha,linewidth=0,
-                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)             
+                                        palette= adata.uns[ann+'_color'] \
+                                                if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                                else None
+                                        )             
                     colors_sns = sc_i.get_children()[0].get_facecolors()
                     if(ann+'_color' not in adata.uns_keys()):
                         colors_sns_scaled = (255*colors_sns).astype(int)
@@ -1125,7 +1128,10 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                                         hue=ann,hue_order = legend_order[ann],
                                         data=df_plot_shuf,
                                         alpha=alpha,linewidth=0,
-                                        palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                                        palette= adata.uns[ann+'_color'] \
+                                                if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                                else None
+                                        )
                     ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                                 frameon=False,
                                 borderaxespad=0.01,
@@ -1490,7 +1496,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
             epg_nodes_pos = init_nodes_pos     
         else:
             print("'"+clustering+"'" + ' is not supported')
-        adata.obs[clustering] = list(map(str, cluster_labels))
+        adata.obs[clustering] = ['cluster '+str(x) for x in cluster_labels]
     else:
         epg_nodes_pos = init_nodes_pos
         print('Setting initial nodes...')
@@ -2177,7 +2183,9 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
                                     hue=ann,hue_order = legend_order[ann],
                                     data=df_plot_shuf,
                                     alpha=alpha,linewidth=0,
-                                    palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                                    palette= adata.uns[ann+'_color'] \
+                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                            else None)
                 ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
                             borderaxespad=0.01,
@@ -2355,7 +2363,10 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
                                     hue=ann,hue_order = legend_order[ann],
                                     data=df_plot_shuf,
                                     alpha=alpha,linewidth=0,
-                                    palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                                    palette= adata.uns[ann+'_color'] \
+                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                            else None
+                                    )
                 ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
                             borderaxespad=0.01,
@@ -2542,7 +2553,10 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                                     hue=ann,hue_order = legend_order[ann],
                                     data=df_plot_shuf,
                                     alpha=alpha,linewidth=0,
-                                    palette= adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else None)
+                                    palette= adata.uns[ann+'_color'] \
+                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                            else None                                    
+                                    )
                 ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
                             borderaxespad=0.01,
