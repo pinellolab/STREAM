@@ -1434,7 +1434,9 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
     updates `adata` with the following fields.
 
     adata.obs: `pandas.core.frame.DataFrame` (`adata.obs`)
-        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.        
+        Update adata.obs with adding the columns of current root_node_pseudotime and removing the previous ones.  
+    clustering: `pandas.core.series.Series` (`adata.obs['clustering']`,dtype `str`)
+        Array of dim (number of samples) that stores the clustering labels ('0', '1', …) for each cell.      
     epg : `networkx.classes.graph.Graph` (`adata.uns['epg']`)
         Elastic principal graph structure. It contains node attributes ('pos')
     flat_tree : `networkx.classes.graph.Graph` (`adata.uns['flat_tree']`)
@@ -1488,6 +1490,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
             epg_nodes_pos = init_nodes_pos     
         else:
             print("'"+clustering+"'" + ' is not supported')
+        adata.obs[clustering] = list(map(str, cluster_labels))
     else:
         epg_nodes_pos = init_nodes_pos
         print('Setting initial nodes...')
