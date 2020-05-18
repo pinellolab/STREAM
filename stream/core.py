@@ -3672,7 +3672,7 @@ def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_repor
                                          'y':df_coord_curve_i.iloc[j,1],
                                          'z':df_coord_curve_i.iloc[j,2]} for j in range(df_coord_curve_i.shape[0])]
             list_curves.append(dict_coord_curves)
-        with open(os.path.join(file_path,'stream.json'), 'w') as f:
+        with open(os.path.join(file_path,'graph_paths.json'), 'w') as f:
             json.dump(list_curves, f)     
             
         ## output topology of stream graph
@@ -3690,9 +3690,9 @@ def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_repor
             dict_edges['nodes'] = [ft_node_label[edge_i[0]],ft_node_label[edge_i[1]]]
             dict_edges['weight'] = 1
             list_edges.append(dict_edges)
-        with open(os.path.join(file_path,'stream_nodes.json'), 'w') as f:
+        with open(os.path.join(file_path,'graph_nodes.json'), 'w') as f:
             json.dump(dict_nodes, f)
-        with open(os.path.join(file_path,'stream_edges.json'), 'w') as f:
+        with open(os.path.join(file_path,'graph_edges.json'), 'w') as f:
             json.dump(list_edges, f)
 
         print('STREAM: graph finished!')
