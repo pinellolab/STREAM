@@ -3633,7 +3633,7 @@ def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_repor
     """ 
     assert (adata.obsm['X_dr'].shape[1]>=3),\
     '''The embedding space should have at least three dimensions. 
-    please set `n_component = 3` in `st.dimension_reduction()'''
+    please set `n_component = 3` in `st.dimension_reduction()`'''
     
     if(ann_list is None):
         ann_list = ['label']
