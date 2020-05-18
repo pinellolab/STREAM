@@ -2224,11 +2224,16 @@ def barycenter_weights_modified(X, Z, reg=1e-3):
     return B
 
 def get_colors(adata,ann):
-    assert (ann+'_color' in adata.uns_keys()), ann+'_color does not exist. please run plotting function first'
-    dict_color = adata.uns[ann+'_color']
     df_cell_colors = pd.DataFrame(index=adata.obs.index)
-    df_cell_colors[ann+'_color'] = ''
-    for x in dict_color.keys():
-        id_cells = np.where(adata.obs[ann]==x)[0]
-        df_cell_colors.loc[df_cell_colors.index[id_cells],ann+'_color'] = dict_color[x]
+    if(is_numeric_dtype(adata.obs[ann])):
+        cm = mpl.cm.get_cmap()
+        norm = mpl.colors.Normalize(vmin=0, vmax=max(adata.obs[ann]),clip=True)
+        df_cell_colors[ann+'_color'] = [mpl.colors.to_hex(cm(norm(x))) for x in adata.obs[ann]]
+    else:
+        assert (ann+'_color' in adata.uns_keys()), ann+'_color does not exist. please run plotting function first'
+        dict_color = adata.uns[ann+'_color']
+        df_cell_colors[ann+'_color'] = ''
+        for x in dict_color.keys():
+            id_cells = np.where(adata.obs[ann]==x)[0]
+            df_cell_colors.loc[df_cell_colors.index[id_cells],ann+'_color'] = dict_color[x]
     return(df_cell_colors[ann+'_color'].tolist())
