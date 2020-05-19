@@ -86,6 +86,31 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
         else:
             raise Exception("unrecognized property '%s'" % key)
 
+def set_workdir(adata,workdir=None):
+    """Set working directory.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.           
+    workdir: `float`, optional (default: None)
+        Working directory. If it's not specified, a folder named 'stream_result' will be created under the current directory
+    **kwargs: additional arguments to `Anndata` reading functions
+   
+    Returns
+    -------
+    updates `adata` with the following fields and create a new working directory if it doesn't existing.
+    workdir: `str` (`adata.uns['workdir']`,dtype `str`)
+        Working directory.  
+    """       
+    if(workdir==None):
+        workdir = os.path.join(os.getcwd(), 'stream_result')
+        print("Using default working directory.")
+    if(not os.path.exists(workdir)):
+        os.makedirs(workdir)
+    adata.uns['workdir'] = workdir
+    print('Saving results in: %s' % workdir)
+
 
 def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna-seq', workdir=None,**kwargs):
     """Read gene expression matrix into anndata object.
@@ -149,14 +174,13 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna
         else:
             print('file format ' + file_format + ' is not supported')
             return
-        adata.uns['experiment'] = experiment        
-    if(workdir==None):
-        workdir = os.path.join(os.getcwd(), 'stream_result')
-        print("Using default working directory.")
-    if(not os.path.exists(workdir)):
-        os.makedirs(workdir)
-    adata.uns['workdir'] = workdir
-    print('Saving results in: %s' % workdir)
+        adata.uns['experiment'] = experiment
+                
+    if('workdir' not in adata.uns_keys()):
+        set_workdir(adata,workdir=workdir)
+    else:
+        print("Working directory is already specified as '%s' " % adata.uns['workdir'])
+        print("To change working directory, please run set_workdir(adata,workdir=new_directory)")
     return adata
 
 def write(adata,file_name=None,file_path='',file_format='pkl'):
@@ -194,31 +218,6 @@ def write(adata,file_name=None,file_path='',file_format='pkl'):
     else:
         print('file format ' + file_format + ' is not supported')
         return
-
-def set_workdir(adata,workdir=None):
-    """Set working directory.
-    
-    Parameters
-    ----------
-    adata: AnnData
-        Annotated data matrix.           
-    workdir: `float`, optional (default: None)
-        Working directory. If it's not specified, a folder named 'stream_result' will be created under the current directory
-    **kwargs: additional arguments to `Anndata` reading functions
-   
-    Returns
-    -------
-    updates `adata` with the following fields and create a new working directory if it doesn't existing.
-    workdir: `str` (`adata.uns['workdir']`,dtype `str`)
-        Working directory.  
-    """       
-    if(workdir==None):
-        workdir = os.path.join(os.getcwd(), 'stream_result')
-        print("Using default working directory.")
-    if(not os.path.exists(workdir)):
-        os.makedirs(workdir)
-    adata.uns['workdir'] = workdir
-    print('Saving results in: %s' % workdir)
 
 def add_metadata(adata,file_name,delimiter='\t',file_path=''):
     """Add metadata.
@@ -3542,73 +3541,69 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         Store #observations × n_components data matrix after pca.
     """
 
-    if(feature not in ['var_genes','top_pcs','all']):
-        raise Exception("'feature' should be chosen from 'var_genes','top_pcs','all'")
-    else:
-        if(feature == 'var_genes'):
-            print('Top variable genes are being used for mapping...')
+    assert (feature in ['var_genes','top_pcs','all']),"feature must be one of ['var_genes','top_pcs','all']"
+    assert (method in ['mlle','umap','pca']),"feature must be one of ['mlle','umap','pca']"
+    if(feature == 'var_genes'):
+        print('Top variable genes are being used for mapping...')
+        adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
+        adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
+        input_data = adata_new.obsm['var_genes']
+    if(feature == 'all'):
+        print('All genes are being used for mapping...')
+        input_data = adata_new[:,adata.var.index].X
+    if(feature == 'top_pcs'):
+        print('Top principal components are being used for mapping...')
+        trans = adata.uns['top_pcs']
+        if(top_pcs_feature == 'var_genes'):
             adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
             adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
-            input_data = adata_new.obsm['var_genes']
-        if(feature == 'all'):
-            print('All genes are being used for mapping...')
-            input_data = adata_new[:,adata.var.index].X
-        if(feature == 'top_pcs'):
-            print('Top principal components are being used for mapping...')
-            trans = adata.uns['top_pcs']
-            if(top_pcs_feature == 'var_genes'):
-                adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
-                adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
-                X_pca = trans.transform(adata_new.obsm['var_genes']) 
-            else:
-                X_pca = trans.transform(adata_new[:,adata.var.index].X) 
-            n_pc = adata.obsm['top_pcs'].shape[1]
-            if(first_pc):
-                adata_new.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
-            else:
-                #discard the first Principal Component
-                adata_new.obsm['top_pcs'] = X_pca[:,1:(n_pc+1)]
-            input_data = adata_new.obsm['top_pcs']
+            X_pca = trans.transform(adata_new.obsm['var_genes']) 
+        else:
+            X_pca = trans.transform(adata_new[:,adata.var.index].X) 
+        n_pc = adata.obsm['top_pcs'].shape[1]
+        if(first_pc):
+            adata_new.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
+        else:
+            #discard the first Principal Component
+            adata_new.obsm['top_pcs'] = X_pca[:,1:(n_pc+1)]
+        input_data = adata_new.obsm['top_pcs']
     adata_new.uns['epg'] = adata.uns['epg'].copy()
     adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy() 
 
-    if(method not in ['mlle','umap','pca']):
-        raise Exception("'method' should be chosen from 'mlle','umap','pca'")  
-    else:  
-        # if(method == 'se'):
-        #     trans = adata.uns['trans_se']
-        #     adata_new.obsm['X_se_mapping'] = trans.transform(input_data)
-        #     adata_new.obsm['X_dr'] = adata_new.obsm['X_se_mapping'].copy()
-        if(method == 'mlle'):
-            if('trans_mlle' in adata.uns_keys()):
-                trans = adata.uns['trans_mlle']
-                if(use_radius):
-                    dist_nb = trans.nbrs_.kneighbors(input_data, n_neighbors=trans.n_neighbors,return_distance=True)[0]
-                    ind = trans.nbrs_.radius_neighbors(input_data, radius = dist_nb.max(),return_distance=False)    
-                    new_X_mlle = np.empty((input_data.shape[0], trans.n_components))
-                    for i in range(input_data.shape[0]):
-                        weights = barycenter_weights_modified(input_data[i], trans.nbrs_._fit_X[ind[i]],reg=trans.reg)
-                        new_X_mlle[i] = np.dot(trans.embedding_[ind[i]].T, weights) 
-                    adata_new.obsm['X_mlle_mapping'] = new_X_mlle              
-                else:
-                    adata_new.obsm['X_mlle_mapping'] = trans.transform(input_data)
-                adata_new.obsm['X_dr'] = adata_new.obsm['X_mlle_mapping'].copy()
+    # if(method == 'se'):
+    #     trans = adata.uns['trans_se']
+    #     adata_new.obsm['X_se_mapping'] = trans.transform(input_data)
+    #     adata_new.obsm['X_dr'] = adata_new.obsm['X_se_mapping'].copy()
+    if(method == 'mlle'):
+        if('trans_mlle' in adata.uns_keys()):
+            trans = adata.uns['trans_mlle']
+            if(use_radius):
+                dist_nb = trans.nbrs_.kneighbors(input_data, n_neighbors=trans.n_neighbors,return_distance=True)[0]
+                ind = trans.nbrs_.radius_neighbors(input_data, radius = dist_nb.max(),return_distance=False)    
+                new_X_mlle = np.empty((input_data.shape[0], trans.n_components))
+                for i in range(input_data.shape[0]):
+                    weights = barycenter_weights_modified(input_data[i], trans.nbrs_._fit_X[ind[i]],reg=trans.reg)
+                    new_X_mlle[i] = np.dot(trans.embedding_[ind[i]].T, weights) 
+                adata_new.obsm['X_mlle_mapping'] = new_X_mlle              
             else:
-                raise Exception("Please run 'st.dimension_reduction()' using 'mlle' first.")  
-        if(method == 'umap'):
-            if('trans_umap' in adata.uns_keys()):
-                trans = adata.uns['trans_umap']
-                adata_new.obsm['X_umap_mapping'] = trans.transform(input_data)
-                adata_new.obsm['X_dr'] = adata_new.obsm['X_umap_mapping'].copy()
-            else:
-                raise Exception("Please run 'st.dimension_reduction()' using 'umap' first.")  
-        if(method == 'pca'):
-            if('trans_pca' in adata.uns_keys()):            
-                trans = adata.uns['trans_pca']
-                adata_new.obsm['X_pca_mapping'] = trans.transform(input_data)
-                adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
-            else:
-                raise Exception("Please run 'st.dimension_reduction()' using 'pca' first.")  
+                adata_new.obsm['X_mlle_mapping'] = trans.transform(input_data)
+            adata_new.obsm['X_dr'] = adata_new.obsm['X_mlle_mapping'].copy()
+        else:
+            raise Exception("Please run 'st.dimension_reduction()' using 'mlle' first.")  
+    if(method == 'umap'):
+        if('trans_umap' in adata.uns_keys()):
+            trans = adata.uns['trans_umap']
+            adata_new.obsm['X_umap_mapping'] = trans.transform(input_data)
+            adata_new.obsm['X_dr'] = adata_new.obsm['X_umap_mapping'].copy()
+        else:
+            raise Exception("Please run 'st.dimension_reduction()' using 'umap' first.")  
+    if(method == 'pca'):
+        if('trans_pca' in adata.uns_keys()):            
+            trans = adata.uns['trans_pca']
+            adata_new.obsm['X_pca_mapping'] = trans.transform(input_data)
+            adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
+        else:
+            raise Exception("Please run 'st.dimension_reduction()' using 'pca' first.")  
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
 
