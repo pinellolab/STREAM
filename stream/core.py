@@ -130,10 +130,10 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna
             return         
         if(file_format in ['tsv','txt','tab','data']):
             adata = ad.read_text(_fp(file_name),delimiter=delimiter,**kwargs).T
-            adata.raw = adata        
+            # adata.raw = adata        
         elif(file_format == 'csv'):
             adata = ad.read_csv(_fp(file_name),delimiter=delimiter,**kwargs).T
-            adata.raw = adata
+            # adata.raw = adata
         elif(file_format == 'mtx'):
             adata = ad.read_mtx(_fp(file_name),**kwargs).T 
             adata.X = np.array(adata.X.todense())
@@ -143,7 +143,7 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',experiment='rna
             adata.var['gene_ids'] = genes[0].values
             print(_fp(os.path.join(os.path.dirname(file_name),'barcodes.tsv')))
             adata.obs_names = pd.read_csv(_fp(os.path.join(os.path.dirname(file_name),'barcodes.tsv')), header=None)[0]
-            adata.raw = adata
+            # adata.raw = adata
         elif(file_format == 'h5ad'):
             adata = ad.read_h5ad(_fp(file_name),**kwargs)
         else:
@@ -2857,9 +2857,9 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         input_genes_expressed = df_scaled_gene_expr.columns.tolist()
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                             data = adata.raw.X,
-                             columns=adata.raw.var_names.tolist())
-        input_genes = adata.raw.var_names.tolist()
+                             data = adata.X,
+                             columns=adata.var_names.tolist())
+        input_genes = adata.var_names.tolist()
         #exclude genes that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
         # print('Minimum number of cells expressing genes: '+ str(min_num_cells))
@@ -3035,9 +3035,9 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
         input_genes_expressed = df_scaled_gene_expr.columns.tolist()        
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                             data = adata.raw.X,
-                             columns=adata.raw.var_names.tolist())
-        input_genes = adata.raw.var_names.tolist()
+                             data = adata.X,
+                             columns=adata.var_names.tolist())
+        input_genes = adata.var_names.tolist()
         #exclude genes that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
         print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
@@ -3313,9 +3313,9 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
         input_genes_expressed = df_scaled_gene_expr.columns.tolist()
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                             data = adata.raw.X,
-                             columns=adata.raw.var_names.tolist())
-        input_genes = adata.raw.var_names.tolist()
+                             data = adata.X,
+                             columns=adata.var_names.tolist())
+        input_genes = adata.var_names.tolist()
         #exclude genes that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
         print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
@@ -3429,9 +3429,9 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
     if ident not in adata.obs.columns:
         raise ValueError(ident + ' does not exist in adata.obs')
     df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                         data = adata.raw.X,
-                         columns=adata.raw.var_names.tolist())
-    input_genes = adata.raw.var_names.tolist()
+                         data = adata.X,
+                         columns=adat.var_names.tolist())
+    input_genes = adata.var_names.tolist()
 
     if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
         print('Importing precomputed scaled gene expression matrix ...')
