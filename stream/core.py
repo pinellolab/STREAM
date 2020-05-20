@@ -138,7 +138,7 @@ def read(file_name,file_path='',file_format=None,delimiter='\t',workdir=None, fi
     AnnData object
     """       
     if(file_format is None):
-        file_format = get_extension(filename)
+        file_format = get_extension(file_name)
     assert (file_format in ['tsv','txt','tab','data','csv','mtx','h5ad','pkl','pklz']),"file_format must be one of ['tsv','txt','tab','data','csv','mtx','h5ad','pkl','pklz']"
     _fp = lambda f:  os.path.join(file_path,f)     
     if(file_format in ['tsv','txt','tab','data']):
