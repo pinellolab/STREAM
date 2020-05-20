@@ -112,7 +112,7 @@ def set_workdir(adata,workdir=None):
     print('Saving results in: %s' % workdir)
 
 
-def read(file_name,file_path='',file_format='tsv',delimiter='\t',workdir=None, file_sample='barcodes.tsv',file_feature='genes.tsv',**kwargs):
+def read(file_name,file_path='',file_format=None,delimiter='\t',workdir=None, file_sample='barcodes.tsv',file_feature='genes.tsv',**kwargs):
     """Read gene expression matrix into anndata object.
     
     Parameters
@@ -121,8 +121,8 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',workdir=None, f
         Input data file name.
     file_path: `str`, optional (default: '')
         File path. 
-    file_format: `str`, optional (default: 'tsv')
-        File format. currently supported file formats: 'tsv','txt','tab','data','csv','mtx','h5ad','pklz','pkl'
+    file_format: `str`, optional (default: None)
+        File format. currently supported file formats: 'tsv','txt','tab','data','csv','mtx','h5ad','pklz','pkl'. If None, file_format will be inferred from the file extension.
     delimiter: `str`, optional (default: '\t')
         Delimiter to use.    
     workdir: `float`, optional (default: None)
@@ -137,6 +137,8 @@ def read(file_name,file_path='',file_format='tsv',delimiter='\t',workdir=None, f
     -------
     AnnData object
     """       
+    if(file_format is None):
+        file_format = get_extension(filename)
     assert (file_format in ['tsv','txt','tab','data','csv','mtx','h5ad','pkl','pklz']),"file_format must be one of ['tsv','txt','tab','data','csv','mtx','h5ad','pkl','pklz']"
     _fp = lambda f:  os.path.join(file_path,f)     
     if(file_format in ['tsv','txt','tab','data']):

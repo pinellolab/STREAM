@@ -17,6 +17,11 @@ from sklearn.metrics.pairwise import pairwise_distances_argmin_min
 import math
 from decimal import *
 
+def get_extension(filename):
+    fn,ext = os.path.splitext(filename)
+    while(ext[1:] in ['gz','bz2','zip','xz']):
+        fn,ext = os.path.splitext(fn)
+    return ext[1:]
 
 def project_point_to_curve_distance(XP,p):
     curve = geom.LineString(XP)
