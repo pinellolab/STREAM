@@ -17,14 +17,15 @@ from sklearn import preprocessing
 from sklearn.manifold import LocallyLinearEmbedding,TSNE, SpectralEmbedding
 from sklearn.cluster import SpectralClustering,AffinityPropagation,KMeans
 from sklearn.metrics.pairwise import pairwise_distances_argmin_min,pairwise_distances,euclidean_distances
+import matplotlib as mpl
 import matplotlib.patches as Patches
 from matplotlib.patches import Polygon
+from mpl_toolkits.mplot3d import Axes3D
 import umap
 from copy import deepcopy
 import itertools
 from scipy.spatial import distance,cKDTree,KDTree
 import math
-import matplotlib as mpl
 # mpl.use('Agg')
 from scipy import stats
 from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde,kruskal
