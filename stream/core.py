@@ -576,6 +576,8 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
     plt.plot(np.sort(mean_genes), loess_fitted[np.argsort(mean_genes)],linewidth=3,zorder=3,c='#3182bd')
     plt.xlabel('mean value')
     plt.ylabel('standard deviation')
+    plt.locator_params(axis='x',nbins=5)
+    plt.locator_params(axis='y',nbins=5)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
@@ -644,6 +646,8 @@ def select_gini_genes(adata,loess_frac=0.1,percentile=95,n_genes = None,
     plt.plot(np.sort(max_genes), loess_fitted[np.argsort(max_genes)],linewidth=3,zorder=3,c='#3182bd')
     plt.xlabel('max gene expression')
     plt.ylabel('Gini coefficient')
+    plt.locator_params(axis='x',nbins=5)
+    plt.locator_params(axis='y',nbins=5)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
@@ -740,6 +744,8 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         plt.axvline(n_pc+1,c='red',ls = '--')
     plt.xlabel('Principal Component')
     plt.ylabel('Variance Ratio')
+    plt.locator_params(axis='x',nbins=5)
+    plt.locator_params(axis='y',nbins=5)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
@@ -939,7 +945,10 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
     if(n_components==None):
         n_components = min(3,adata.obsm['X_dr'].shape[1])
     if n_components not in [2,3]:
-        raise ValueError("n_components should be 2 or 3")     
+        raise ValueError("n_components should be 2 or 3")    
+    if(n_components>adata.obsm['X_dr'].shape[1]):
+        print("`n_components` is greater than the available dimension. It is corrected to %s" %adata.obsm['X_dr'].shape[1])
+        n_components = adata.obsm['X_dr'].shape[1] 
         
     if(color is None):
         color = ['label']
