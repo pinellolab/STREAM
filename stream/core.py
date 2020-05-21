@@ -3763,7 +3763,7 @@ def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_repor
     else:
         print(file_name + '.zip is saved at ' + adata.uns['workdir'])
 
-def save_web_report(adata,n_genes=5,file_name='stream_report',preference=None,
+def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=None,
                     title="experiment name",
                     description="experiment description",
                     starting_node="root node",
