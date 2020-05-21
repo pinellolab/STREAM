@@ -876,7 +876,7 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         adata.obsm['X_dr'] = adata.obsm['X_pca']
     return None
 
-def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=None,key_graph='epg',
+def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,color=None,key_graph='epg',
                              fig_size=None,fig_ncol=3,fig_legend_ncol=1,fig_legend_order = None,
                              vmin=None,vmax=None,alpha=0.8,
                              pad=1.08,w_pad=None,h_pad=None,
@@ -895,6 +895,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
         Component used for x axis.
     comp2: `int`, optional (default: 1)
         Component used for y axis.
+    comp3: `int`, optional (default: 2)
+        Component used for z axis. (only valid when n_components=3)
     color: `list` optional (default: None)
         Column names of observations (adata.obs.columns) or variable names(adata.var_names). A list of names to be plotted. 
     key_graph: `str`, optional (default: None): 
@@ -998,7 +1000,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
     if(plotly):
         for ann in color:
             if(n_components==3): 
-                fig = px.scatter_3d(df_plot_shuf, x="Dim1", y="Dim2", z="Dim3", color=ann,
+                fig = px.scatter_3d(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1), z='Dim'+str(comp3+1),color=ann,
                                     opacity=alpha,
                                     color_continuous_scale=px.colors.sequential.Viridis,
                                     color_discrete_map=adata.uns[ann+'_color'] if ann+'_color' in adata.uns_keys() else {})
@@ -1008,17 +1010,17 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                         branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
                         edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
                         curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
-                        fig.add_trace(go.Scatter3d(x=curve_i[0], 
-                                                   y=curve_i[1], 
-                                                   z=curve_i[2],
+                        fig.add_trace(go.Scatter3d(x=curve_i[comp1], 
+                                                   y=curve_i[comp2], 
+                                                   z=curve_i[comp3],
                                                    mode='lines',
                                                    line=dict(color='black', width=3),
                                                    name=edge_i_label,
                                                    showlegend=True if is_string_dtype(df_plot[ann]) else False))                
                 if(show_text):
-                    fig.add_trace(go.Scatter3d(x=np.array(list(ft_node_pos.values()))[:,0], 
-                                               y=np.array(list(ft_node_pos.values()))[:,1], 
-                                               z=np.array(list(ft_node_pos.values()))[:,2],
+                    fig.add_trace(go.Scatter3d(x=np.array(list(ft_node_pos.values()))[:,comp1], 
+                                               y=np.array(list(ft_node_pos.values()))[:,comp2], 
+                                               z=np.array(list(ft_node_pos.values()))[:,comp3],
                                                mode='markers+text',
                                                opacity=1,
                                                marker=dict(size=4,color='#767070'),
@@ -1038,8 +1040,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                         branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])[:,[comp1,comp2]]
                         edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
                         curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
-                        fig.add_trace(go.Scatter(x=curve_i[0], 
-                                                   y=curve_i[1],
+                        fig.add_trace(go.Scatter(x=curve_i[comp1], 
+                                                   y=curve_i[comp2],
                                                    mode='lines',
                                                    line=dict(color='black', width=3),
                                                    name=edge_i_label,
@@ -1085,7 +1087,9 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     legend_sns,labels_sns = ax_i.get_legend_handles_labels()
                     ax_i.remove()
                     ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1,projection='3d')
-                    ax_i.scatter(df_plot_shuf['Dim1'], df_plot_shuf['Dim2'],df_plot_shuf['Dim3'],c=colors_sns,linewidth=0,alpha=alpha)
+                    ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],df_plot_shuf['Dim'+str(comp3+1)],
+                                 c=colors_sns,alpha=alpha,linewidth=0,
+                                 zorder=-1)
                     ax_i.legend(legend_sns,labels_sns,bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
                                 frameon=False,
                                 borderaxespad=0,
@@ -1095,12 +1099,11 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1,projection='3d')
                     vmin_i = df_plot[ann].min() if vmin is None else vmin
                     vmax_i = df_plot[ann].max() if vmax is None else vmax
-                    sc_i = ax_i.scatter(df_plot_shuf["Dim1"], 
-                                        df_plot_shuf["Dim2"],
-                                        df_plot_shuf["Dim3"],
-                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,
-                                        alpha=alpha,
-                                        linewidth=0)
+                    sc_i = ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], 
+                                        df_plot_shuf['Dim'+str(comp2+1)],
+                                        df_plot_shuf['Dim'+str(comp3+1)],
+                                        c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha,linewidth=0,
+                                        zorder=-1)
                     cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.04, fraction=0.05, aspect=30)
                     cbar.solids.set_edgecolor("face")
                     cbar.ax.locator_params(nbins=5)
@@ -1108,17 +1111,19 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     for edge_i in flat_tree.edges():
                         branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
                         curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
-                        ax_i.plot(curve_i[0],curve_i[1],curve_i[2],c = 'black')
+                        ax_i.plot(curve_i[comp1],curve_i[comp2],curve_i[comp3],c = 'black',zorder=5)
                 if(show_text):
                     for node_i in flat_tree.nodes():
-                        ax_i.scatter(ft_node_pos[node_i][0],ft_node_pos[node_i][1],ft_node_pos[node_i][2],
-                                     color='#767070',s=1.5*(mpl.rcParams['lines.markersize']**2))                  
-                        ax_i.text(ft_node_pos[node_i][0],ft_node_pos[node_i][1],ft_node_pos[node_i][2],ft_node_label[node_i],
+                        ax_i.scatter(ft_node_pos[node_i][comp1],ft_node_pos[node_i][comp2],ft_node_pos[node_i][comp3],
+                                     color='#767070',s=1.5*(mpl.rcParams['lines.markersize']**2),zorder=10)                  
+                        ax_i.text(ft_node_pos[node_i][comp1],ft_node_pos[node_i][comp2],ft_node_pos[node_i][comp3],
+                                  ft_node_label[node_i],
                                   color='black',fontsize=0.9*mpl.rcParams['font.size'],
-                                   ha='left', va='bottom')                
-                ax_i.set_xlabel("Dim1",labelpad=-5,rotation=-15)
-                ax_i.set_ylabel("Dim2",labelpad=0,rotation=45)
-                ax_i.set_zlabel("Dim3",labelpad=5,rotation=90)
+                                  ha='left', va='bottom',
+                                  zorder=10)                
+                ax_i.set_xlabel('Dim'+str(comp1+1),labelpad=-5,rotation=-15)
+                ax_i.set_ylabel('Dim'+str(comp2+1),labelpad=0,rotation=45)
+                ax_i.set_zlabel('Dim'+str(comp3+1),labelpad=5,rotation=90)
                 ax_i.locator_params(axis='x',nbins=4)
                 ax_i.locator_params(axis='y',nbins=4)
                 ax_i.locator_params(axis='z',nbins=4)
@@ -1167,11 +1172,11 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     for node_i in flat_tree.nodes():
                         ax_i.scatter(ft_node_pos[node_i][comp1],ft_node_pos[node_i][comp2],
                                      color='#767070',s=1.5*(mpl.rcParams['lines.markersize']**2))
-                        ax_i.text(ft_node_pos[node_i][0],ft_node_pos[node_i][1],ft_node_label[node_i],
+                        ax_i.text(ft_node_pos[node_i][comp1],ft_node_pos[node_i][comp2],ft_node_label[node_i],
                                   color='black',fontsize=0.9*mpl.rcParams['font.size'],
                                    ha='left', va='bottom')  
-                ax_i.set_xlabel("Dim1",labelpad=2)
-                ax_i.set_ylabel("Dim2",labelpad=-6)
+                ax_i.set_xlabel('Dim'+str(comp1+1),labelpad=2)
+                ax_i.set_ylabel('Dim'+str(comp2+1),labelpad=-6)
                 ax_i.locator_params(axis='x',nbins=5)
                 ax_i.locator_params(axis='y',nbins=5)
                 ax_i.tick_params(axis="x",pad=-1)
@@ -1182,7 +1187,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
             plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
             plt.close(fig) 
 
-def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
+def plot_branches(adata,n_components = None,comp1=0,comp2=1,comp3=2,key_graph='epg',
                   fig_size=None,
                   pad=1.08,w_pad=None,h_pad=None,
                   show_text=False,
@@ -1200,6 +1205,8 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
         Component used for x axis.
     comp2: `int`, optional (default: 1)
         Component used for y axis.
+    comp3: `int`, optional (default: 2)
+        Component used for z axis. (only valid when n_components=3)
     key_graph: `str`, optional (default: None): 
         Choose from {{'epg','seed_epg','ori_epg'}}
         Specify gragh to be plotted.
@@ -1257,33 +1264,33 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
             for edge_i in flat_tree.edges():
                 branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
                 edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
-                curve_i = pd.DataFrame(branch_i_pos,columns=['x','y','z'])
-                fig.add_trace(go.Scatter3d(x=curve_i['x'], 
-                                           y=curve_i['y'], 
-                                           z=curve_i['z'],
+                curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
+                fig.add_trace(go.Scatter3d(x=curve_i[comp1], 
+                                           y=curve_i[comp2], 
+                                           z=curve_i[comp3],
                                            mode='markers+lines',
                                            marker=dict(size=3,color='black'),
                                            line=dict(color='black', width=3),
                                            name=edge_i_label))
             if(show_text):
-                fig.add_trace(go.Scatter3d(x=np.array(list(epg_node_pos.values()))[:,0], 
-                                           y=np.array(list(epg_node_pos.values()))[:,1], 
-                                           z=np.array(list(epg_node_pos.values()))[:,2],
+                fig.add_trace(go.Scatter3d(x=np.array(list(epg_node_pos.values()))[:,comp1], 
+                                           y=np.array(list(epg_node_pos.values()))[:,comp2], 
+                                           z=np.array(list(epg_node_pos.values()))[:,comp3],
                                            mode='text',
                                            opacity=1,
                                            text=[x for x in epg_node_pos.keys()],
                                            textposition="bottom center",))
                 
             fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500, 
-                              scene = dict(xaxis_title='Dim1',yaxis_title='Dim2',zaxis_title='Dim3')) 
+                              scene = dict(xaxis_title='Dim'+str(comp1+1),yaxis_title='Dim'+str(comp2+1),zaxis_title='Dim'+str(comp3+1))) 
         else:
             fig = go.Figure(data=go.Scatter())
             for edge_i in flat_tree.edges():
                 branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])[:,[comp1,comp2]]
                 edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
-                curve_i = pd.DataFrame(branch_i_pos,columns=['x','y'])
-                fig.add_trace(go.Scatter(x=curve_i['x'], 
-                                         y=curve_i['y'],
+                curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
+                fig.add_trace(go.Scatter(x=curve_i[comp1], 
+                                         y=curve_i[comp2],
                                          mode='markers+lines',
                                          marker=dict(size=mpl.rcParams['lines.markersize'],color='black'),                                         
                                          line=dict(color='black', width=3),
@@ -1296,7 +1303,7 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
                                            text=[x for x in epg_node_pos.keys()],
                                            textposition="bottom center"),)
             fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500, 
-                              xaxis_title='Dim1',yaxis_title='Dim2')         
+                              xaxis_title='Dim'+str(comp1+1),yaxis_title='Dim'+str(comp2+1))         
         fig.show(renderer="notebook")
             
     else:
@@ -1307,16 +1314,17 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
                 branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
                 edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
                 curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
-                ax_i.plot(curve_i[0],curve_i[1],curve_i[2],marker='o',c = 'black',
+                ax_i.plot(curve_i[comp1],curve_i[comp2],curve_i[comp3],marker='o',c = 'black',
                           ms=0.8*mpl.rcParams['lines.markersize'])
             if(show_text):
                 for node_i in epg.nodes():
-                    ax_i.text(epg_node_pos[node_i][0],epg_node_pos[node_i][1],epg_node_pos[node_i][2],node_i,
+                    ax_i.text(epg_node_pos[node_i][comp1],epg_node_pos[node_i][comp2],epg_node_pos[node_i][comp3],node_i,
                               color='black',fontsize=0.8*mpl.rcParams['font.size'],
-                               ha='left', va='bottom')                
-            ax_i.set_xlabel("Dim1",labelpad=-5,rotation=-15)
-            ax_i.set_ylabel("Dim2",labelpad=0,rotation=45)
-            ax_i.set_zlabel("Dim3",labelpad=5,rotation=90)
+                              ha='left', va='bottom',
+                              zorder=10)                
+            ax_i.set_xlabel('Dim'+str(comp1+1),labelpad=-5,rotation=-15)
+            ax_i.set_ylabel('Dim'+str(comp2+1),labelpad=0,rotation=45)
+            ax_i.set_zlabel('Dim'+str(comp3+1),labelpad=5,rotation=90)
             ax_i.locator_params(axis='x',nbins=4)
             ax_i.locator_params(axis='y',nbins=4)
             ax_i.locator_params(axis='z',nbins=4)
@@ -1333,11 +1341,11 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,key_graph='epg',
                           ms=0.8*mpl.rcParams['lines.markersize'])
             if(show_text):
                 for node_i in epg.nodes():
-                    ax_i.text(epg_node_pos[node_i][0],epg_node_pos[node_i][1],node_i,
+                    ax_i.text(epg_node_pos[node_i][comp1],epg_node_pos[node_i][comp2],node_i,
                               color='black',fontsize=0.8*mpl.rcParams['font.size'],
                               ha='left', va='bottom')  
-            ax_i.set_xlabel("Dim1",labelpad=2)
-            ax_i.set_ylabel("Dim2",labelpad=-6)
+            ax_i.set_xlabel('Dim'+str(comp1+1),labelpad=2)
+            ax_i.set_ylabel('Dim'+str(comp2+1),labelpad=-6)
             ax_i.locator_params(axis='x',nbins=5)
             ax_i.locator_params(axis='y',nbins=5)
             ax_i.tick_params(axis="x",pad=-1)
