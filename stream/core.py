@@ -1007,10 +1007,10 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     for edge_i in flat_tree.edges():
                         branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
                         edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
-                        curve_i = pd.DataFrame(branch_i_pos,columns=['x','y','z'])
-                        fig.add_trace(go.Scatter3d(x=curve_i['x'], 
-                                                   y=curve_i['y'], 
-                                                   z=curve_i['z'],
+                        curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
+                        fig.add_trace(go.Scatter3d(x=curve_i[0], 
+                                                   y=curve_i[1], 
+                                                   z=curve_i[2],
                                                    mode='lines',
                                                    line=dict(color='black', width=3),
                                                    name=edge_i_label,
@@ -1037,9 +1037,9 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                     for edge_i in flat_tree.edges():
                         branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])[:,[comp1,comp2]]
                         edge_i_label = flat_tree.nodes[edge_i[0]]['label'] +'_'+flat_tree.nodes[edge_i[1]]['label']
-                        curve_i = pd.DataFrame(branch_i_pos,columns=['x','y'])
-                        fig.add_trace(go.Scatter(x=curve_i['x'], 
-                                                   y=curve_i['y'],
+                        curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
+                        fig.add_trace(go.Scatter(x=curve_i[0], 
+                                                   y=curve_i[1],
                                                    mode='lines',
                                                    line=dict(color='black', width=3),
                                                    name=edge_i_label,
@@ -1107,7 +1107,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                 if(show_graph):
                     for edge_i in flat_tree.edges():
                         branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
-                        curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                        curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
                         ax_i.plot(curve_i[0],curve_i[1],curve_i[2],c = 'black')
                 if(show_text):
                     for node_i in flat_tree.nodes():
@@ -1161,7 +1161,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,color=Non
                 if(show_graph):
                     for edge_i in flat_tree.edges():
                         branch_i_pos = np.array([epg_node_pos[i] for i in flat_tree.edges[edge_i]['nodes']])
-                        curve_i = pd.DataFrame(branch_i_pos,columns=range(branch_i_pos.shape[1]))
+                        curve_i = pd.DataFrame(branch_i_pos,columns=np.arange(branch_i_pos.shape[1]))
                         ax_i.plot(curve_i[comp1],curve_i[comp2],c = 'black')
                 if(show_text):
                     for node_i in flat_tree.nodes():
