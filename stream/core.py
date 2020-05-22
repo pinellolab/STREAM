@@ -80,6 +80,9 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
                 'figure.figsize':figsize,
                 'image.cmap': 'viridis',
                 'lines.markersize':6,
+                'legend.columnspacing':0,
+                'legend.borderaxespad':0,
+                'legend.handletextpad':0,
                 'pdf.fonttype':42,})
     for key, value in kwargs.items():
         if key in mpl.rcParams.keys():
@@ -1090,10 +1093,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                     ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],df_plot_shuf['Dim'+str(comp3+1)],
                                  c=colors_sns,alpha=alpha,linewidth=0,
                                  zorder=-1)
-                    ax_i.legend(legend_sns,labels_sns,bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
-                                frameon=False,
-                                borderaxespad=0,
-                                handletextpad=0)                    
+                    ax_i.legend(legend_sns[1:],labels_sns[1:],bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
+                                frameon=False,)                    
                     
                 else:
                     ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1,projection='3d')
@@ -1144,10 +1145,10 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                                 if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
                                                 else None
                                         )
-                    ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                    legend_handles, legend_labels = ax_i.get_legend_handles_labels()
+                    ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                                bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                                 frameon=False,
-                                borderaxespad=0.01,
-                                handletextpad=1e-6,
                                 )
                     if(ann+'_color' not in adata.uns_keys()):
                         colors_sns = sc_i.get_children()[0].get_facecolors()
@@ -1155,7 +1156,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                         adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
                                                    for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
                     ### remove legend title
-                    ax_i.get_legend().texts[0].set_text("")
+                    # ax_i.get_legend().texts[0].set_text("")
                 else:
                     vmin_i = df_plot[ann].min() if vmin is None else vmin
                     vmax_i = df_plot[ann].max() if vmax is None else vmax
@@ -1484,7 +1485,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
         print('Clustering...')
         if(clustering=='ap'):
             print('Affinity propagation ...')
-            ap = AffinityPropagation(damping=damping,preference=np.percentile(-euclidean_distances(input_data,squared=True),pref_perc)).fit(input_data)
+            ap = AffinityPropagation(damping=damping,random_state=42,preference=np.percentile(-euclidean_distances(input_data,squared=True),pref_perc)).fit(input_data)
             # ap = AffinityPropagation(damping=damping).fit(input_data)
             if(ap.cluster_centers_.shape[0]>max_n_clusters):
                 print('The number of clusters is ' + str(ap.cluster_centers_.shape[0]))
@@ -2201,10 +2202,10 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
                                     palette= adata.uns[ann+'_color'] \
                                             if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
                                             else None)
-                ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                legend_handles, legend_labels = ax_i.get_legend_handles_labels()
+                ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                            bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
-                            borderaxespad=0.01,
-                            handletextpad=1e-6,
                             )
                 if(ann+'_color' not in adata.uns_keys()):
                     colors_sns = sc_i.get_children()[0].get_facecolors()
@@ -2212,7 +2213,7 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
                     adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
                                                for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
                 ### remove legend title
-                ax_i.get_legend().texts[0].set_text("")
+                # ax_i.get_legend().texts[0].set_text("")
             else:
                 vmin_i = df_plot[ann].min() if vmin is None else vmin
                 vmax_i = df_plot[ann].max() if vmax is None else vmax
@@ -2382,10 +2383,10 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
                                             if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
                                             else None
                                     )
-                ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                legend_handles, legend_labels = ax_i.get_legend_handles_labels()
+                ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                            bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
-                            borderaxespad=0.01,
-                            handletextpad=1e-6,
                             )
                 if(ann+'_color' not in adata.uns_keys()):
                     colors_sns = sc_i.get_children()[0].get_facecolors()
@@ -2393,7 +2394,7 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
                     adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
                                                 for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
                 ### remove legend title
-                ax_i.get_legend().texts[0].set_text("")
+                # ax_i.get_legend().texts[0].set_text("")
             else:
                 vmin_i = df_plot[ann].min() if vmin is None else vmin
                 vmax_i = df_plot[ann].max() if vmax is None else vmax
@@ -2572,10 +2573,10 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                                             if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
                                             else None                                    
                                     )
-                ax_i.legend(bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
+                legend_handles, legend_labels = ax_i.get_legend_handles_labels()
+                ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                            bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
-                            borderaxespad=0.01,
-                            handletextpad=1e-6,
                             )
                 if(ann+'_color' not in adata.uns_keys()):
                     colors_sns = sc_i.get_children()[0].get_facecolors()
@@ -2583,7 +2584,7 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                     adata.uns[ann+'_color'] = {df_plot_shuf[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
                                                for i in np.unique(df_plot_shuf[ann],return_index=True)[1]}
                 ### remove legend title
-                ax_i.get_legend().texts[0].set_text("")
+                # ax_i.get_legend().texts[0].set_text("")
             else:
                 vmin_i = df_plot[ann].min() if vmin is None else vmin
                 vmax_i = df_plot[ann].max() if vmax is None else vmax
@@ -2776,9 +2777,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,
                 polygon = Polygon(verts_cell,closed=True,color=dict_palette[ann_i],alpha=0.8,lw=0)
                 ax.add_patch(polygon)
             ax.legend(legend_labels,bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
-                        frameon=False,
-                        borderaxespad=0,
-                        handletextpad=0.5)        
+                        frameon=False,)        
         else:
             verts = dict_plot['numeric'][0] 
             extent = dict_plot['numeric'][1]
@@ -3530,11 +3529,12 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         'umap': Uniform Manifold Approximation and Projection
         'pca': Principal component analysis
     use_radius: `bool`, optional (default: True)
-        If True, when searching for the neighbors for each cell in MLLE space, STREAM uses a fixed radius instead of a fixed number of cells.
+        Only valid when `method = 'mlle'`. If True, when searching for the neighbors for each cell in MLLE space, STREAM uses a fixed radius instead of a fixed number of cells.
     first_pc: `bool`, optional (default: False)
-        If True, the first principal component will be included
+        Only valid when `feature='top_pcs'` If True, the first principal component will be included
     top_pcs_feature: `str`, optional (default: None)
         Choose from {{'var_genes'}}
+        Only valid when `feature='top_pcs'`.
         Features used for pricipal component analysis
         If None, all the genes will be used.
         IF 'var_genes', the most variable genes obtained from select_variable_genes() will be used.        
@@ -3558,6 +3558,8 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         Store #observations × n_components data matrix after pca.
     """
 
+    feature = feature.lower()
+    method = method.lower()
     assert (feature in ['var_genes','top_pcs','all']),"feature must be one of ['var_genes','top_pcs','all']"
     assert (method in ['mlle','umap','pca']),"feature must be one of ['mlle','umap','pca']"
     if(feature == 'var_genes'):
