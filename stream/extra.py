@@ -2236,7 +2236,19 @@ def get_colors(adata,ann):
         norm = mpl.colors.Normalize(vmin=0, vmax=max(adata.obs[ann]),clip=True)
         df_cell_colors[ann+'_color'] = [mpl.colors.to_hex(cm(norm(x))) for x in adata.obs[ann]]
     else:
-        assert (ann+'_color' in adata.uns_keys()), ann+'_color does not exist. please run plotting function first'
+        if(ann+'_color' not in adata.uns_keys()):  
+            ### a hacky way to generate colors from seaborn
+            tmp = pd.DataFrame(index=adata.obs_names,
+                   data=np.random.rand(adata.shape[0], 2))
+            tmp[ann] = adata.obs[ann]
+            fig = plt.figure()
+            ax_i = fig.add_subplot(1,1,1)
+            sc_i=sns.scatterplot(ax=ax_i,x=0, y=1,hue=ann,data=tmp,linewidth=0)             
+            colors_sns = sc_i.get_children()[0].get_facecolors()
+            colors_sns_scaled = (255*colors_sns).astype(int)
+            ax_i.remove()
+            adata.uns[ann+'_color'] = {tmp[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                       for i in np.unique(tmp[ann],return_index=True)[1]}            
         dict_color = adata.uns[ann+'_color']
         df_cell_colors[ann+'_color'] = ''
         for x in dict_color.keys():

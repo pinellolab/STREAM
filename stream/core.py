@@ -334,12 +334,12 @@ def add_cell_colors(adata,file_path='',file_name=None):
         else:
             list_colors = sns.color_palette("hls",n_colors=len(labels_unique)).as_hex()
             adata.uns['label_color'] = {x:list_colors[i] for i,x in enumerate(labels_unique)}
-    df_cell_colors = adata.obs.copy()
-    df_cell_colors['label_color'] = ''
-    for x in labels_unique:
-        id_cells = np.where(adata.obs['label']==x)[0]
-        df_cell_colors.loc[df_cell_colors.index[id_cells],'label_color'] = adata.uns['label_color'][x]
-    adata.obs['label_color'] = df_cell_colors['label_color']
+    # df_cell_colors = adata.obs.copy()
+    # df_cell_colors['label_color'] = ''
+    # for x in labels_unique:
+    #     id_cells = np.where(adata.obs['label']==x)[0]
+    #     df_cell_colors.loc[df_cell_colors.index[id_cells],'label_color'] = adata.uns['label_color'][x]
+    # adata.obs['label_color'] = df_cell_colors['label_color']
     return None
 
 # def add_cell_colors(adata,file_path = None,file_name=None,key_label='label',key_color = 'label_color'):
@@ -378,7 +378,13 @@ def filter_genes(adata,min_num_cells = 5,min_pct_cells = None,min_count = None, 
         Expression cutoff. If greater than expr_cutoff,the gene is considered 'expressed'
     Returns
     -------
-    updates `adata` with a subset of genes that pass the filtering.      
+    updates `adata` with a subset of genes that pass the filtering.   
+    updates `adata` with the following fields.
+    n_counts: `pandas.Series` (`adata.var['n_counts']`,dtype `int`)
+       The number of read count each gene has.
+    n_cells: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
+       The number of cells in which each gene is expressed.   
+
     """
 
     n_counts = np.sum(adata.X,axis=0)
@@ -422,6 +428,11 @@ def filter_cells(adata,min_num_genes = 10,min_pct_genes = None,min_count=None,ex
     Returns
     -------
     updates `adata` with a subset of cells that pass the filtering.      
+    updates `adata` with the following fields.
+    n_counts: `pandas.Series` (`adata.obs['n_counts']`,dtype `int`)
+       The number of read count each cell has.
+    n_genes: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
+       The number of genes expressed in each cell.
     """
 
     n_counts = np.sum(adata.X,axis=1)
@@ -967,7 +978,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
         elif(ann in adata.var_names):
             dict_ann[ann] = adata.obs_vector(ann)
         else:
-            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+            raise ValueError("could not find '%s' in `adata.obs.columns` and `adata.var_names`"  % (ann))
 
     df_plot = pd.DataFrame(index=adata.obs.index,data = adata.obsm['X_dr'],columns=['Dim'+str(x+1) for x in range(adata.obsm['X_dr'].shape[1])])
     for ann in color:
@@ -1079,7 +1090,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                         data=df_plot_shuf,
                                         alpha=alpha,linewidth=0,
                                         palette= adata.uns[ann+'_color'] \
-                                                if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                                if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) >= set(np.unique(df_plot_shuf[ann]))) \
                                                 else None
                                         )             
                     colors_sns = sc_i.get_children()[0].get_facecolors()
@@ -1142,7 +1153,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                         data=df_plot_shuf,
                                         alpha=alpha,linewidth=0,
                                         palette= adata.uns[ann+'_color'] \
-                                                if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                                if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) >= set(np.unique(df_plot_shuf[ann]))) \
                                                 else None
                                         )
                     legend_handles, legend_labels = ax_i.get_legend_handles_labels()
@@ -2109,10 +2120,6 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
     updates `adata` with the following fields.
     X_spring: `numpy.ndarray` (`adata.obsm['X_spring']`)
         Store #observations × 2 coordinates of cells in flat tree.
-
-    updates `adata_new` with the following fields.
-    X_spring: `numpy.ndarray` (`adata_new.obsm['X_spring']`)
-        Store #observations × 2 coordinates of new cells in flat tree.
     """
 
     if(fig_path is None):
@@ -2131,7 +2138,7 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
         elif(ann in adata.var_names):
             dict_ann[ann] = adata.obs_vector(ann)
         else:
-            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+            raise ValueError("could not find '%s' in `adata.obs.columns` and `adata.var_names`"  % (ann))
 
     ## add the positions of flat tree's nodes
     add_flat_tree_node_pos(adata)
@@ -2200,7 +2207,7 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
                                     data=df_plot_shuf,
                                     alpha=alpha,linewidth=0,
                                     palette= adata.uns[ann+'_color'] \
-                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) >= set(np.unique(df_plot_shuf[ann]))) \
                                             else None)
                 legend_handles, legend_labels = ax_i.get_legend_handles_labels()
                 ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
@@ -2322,7 +2329,7 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
         elif(ann in adata.var_names):
             dict_ann[ann] = adata.obs_vector(ann)
         else:
-            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+            raise ValueError("could not find '%s' in `adata.obs.columns` and `adata.var_names`"  % (ann))
     input_data = adata.obsm['X_dr']
     if(nb_pct!=None):
         n_neighbors = int(np.around(input_data.shape[0]*nb_pct)) 
@@ -2380,7 +2387,7 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
                                     data=df_plot_shuf,
                                     alpha=alpha,linewidth=0,
                                     palette= adata.uns[ann+'_color'] \
-                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) >= set(np.unique(df_plot_shuf[ann]))) \
                                             else None
                                     )
                 legend_handles, legend_labels = ax_i.get_legend_handles_labels()
@@ -2492,7 +2499,7 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
         elif(ann in adata.var_names):
             dict_ann[ann] = adata.obs_vector(ann)
         else:
-            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+            raise ValueError("could not find '%s' in `adata.obs.columns` and `adata.var_names`"  % (ann))
     
     flat_tree = adata.uns['flat_tree']
     ft_node_label = nx.get_node_attributes(flat_tree,'label')
@@ -2570,7 +2577,7 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                                     data=df_plot_shuf,
                                     alpha=alpha,linewidth=0,
                                     palette= adata.uns[ann+'_color'] \
-                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) == set(np.unique(df_plot_shuf[ann]))) \
+                                            if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) >= set(np.unique(df_plot_shuf[ann]))) \
                                             else None                                    
                                     )
                 legend_handles, legend_labels = ax_i.get_legend_handles_labels()
@@ -2703,7 +2710,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,
         elif(ann in adata.var_names):
             dict_ann[ann] = adata.obs_vector(ann)
         else:
-            raise ValueError('could not find %s in `adata.obs.columns` and `adata.var_names`'  % (ann))
+            raise ValueError("could not find '%s' in `adata.obs.columns` and `adata.var_names`"  % (ann))
     
     flat_tree = adata.uns['flat_tree']
     ft_node_label = nx.get_node_attributes(flat_tree,'label')
@@ -2749,11 +2756,11 @@ def plot_stream(adata,root='S0',color = None,preference=None,
         if(is_string_dtype(dict_ann[ann])):
             if(ann+'_color' not in adata.uns_keys()):
                 ### a hacky way to generate colors from seaborn
-                df_tmp = pd.DataFrame(index=adata.obs.index,data =adata.obsm['X_dr'],
-                       columns=np.arange(adata.obsm['X_dr'].shape[1]))
-                df_tmp[ann] = dict_ann[ann]
+                tmp = pd.DataFrame(index=adata.obs_names,
+                                   data=np.random.rand(adata.shape[0], 2))
+                tmp[ann] = dict_ann[ann]
                 fig = plt.figure(figsize=fig_size)
-                sc_i=sns.scatterplot(x=0,y=1,hue=ann,data=df_tmp,linewidth=0)
+                sc_i=sns.scatterplot(x=0,y=1,hue=ann,data=tmp,linewidth=0)
                 colors_sns = sc_i.get_children()[0].get_facecolors()
                 plt.close(fig)
                 colors_sns_scaled = (255*colors_sns).astype(int)
@@ -3442,7 +3449,7 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
         os.makedirs(file_path)  
         
     if ident not in adata.obs.columns:
-        raise ValueError(ident + ' does not exist in adata.obs')
+        raise ValueError("'%s' does not exist in `adata.obs`" %(ident))
     df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                          data = adata.X,
                          columns=adat.var_names.tolist())
@@ -3507,14 +3514,14 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
     adata.uns['markers_'+ident+'_all'] = df_markers
     adata.uns['markers_'+ident] = dict_markers    
 
-def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=True,first_pc=False,top_pcs_feature=None):
+def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle',use_radius=True,first_pc=False,top_pcs_feature=None):
     """ Map new data to the inferred trajectories
     
     Parameters
     ----------
-    adata: AnnData
+    adata_ref: reference AnnData
         Annotated data matrix.
-    adata_new: AnnData
+    adata_new: new AnnData
         Annotated data matrix for new data (to be mapped).
     feature: `str`, optional (default: 'var_genes')
         Choose from {{'var_genes','top_pcs','all'}}
@@ -3541,6 +3548,11 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     Returns
     -------  
     
+    Combined AnnData object
+    updates `adata` with the following fields.
+    batch: `pandas.Series` (`adata.obs['batch']`,dtype `str`)
+        The annotation of each cell. It consists of 'ref' for reference cells and 'new' for the cells to map    
+
     updates `adata_new` with the following fields.(depending on the `feature` or `method`)
     var_genes: `numpy.ndarray` (`adata_new.obsm['var_genes']`)
         Store #observations × #var_genes data matrix used mapping.
@@ -3556,6 +3568,7 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         Store #observations × n_components data matrix after umap.
     X_pca : `numpy.ndarray` (`adata_new.obsm['X_pca']`)
         Store #observations × n_components data matrix after pca.
+
     """
 
     feature = feature.lower()
@@ -3564,38 +3577,49 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
     assert (method in ['mlle','umap','pca']),"feature must be one of ['mlle','umap','pca']"
     if(feature == 'var_genes'):
         print('Top variable genes are being used for mapping...')
-        adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
+        if('var_genes' not in adata_ref.uns_keys()):
+            raise ValueError("variable genes are not selected yet in `adata_ref`")
+        for x in adata_ref.uns['var_genes']:
+            if(x not in adata_new.var_names):
+                raise ValueError("variable gene '%s' does not exist in `adata_new.var_names`"  % (x))
+        adata_new.uns['var_genes'] = adata_ref.uns['var_genes'].copy()
         adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
         input_data = adata_new.obsm['var_genes']
     if(feature == 'all'):
         print('All genes are being used for mapping...')
-        input_data = adata_new[:,adata.var.index].X
+        if(not set(adata_ref.var_names) <= set(adata_new.var_names)):
+            raise ValueError("`adata_new.var_names` does not contain all the genes in `adata_ref.var_names`")
+        input_data = adata_new[:,adata_ref.var.index].X
     if(feature == 'top_pcs'):
         print('Top principal components are being used for mapping...')
-        trans = adata.uns['top_pcs']
+        if('top_pcs' not in adata_ref.uns_keys()):
+            raise ValueError("top principal components are not selected yet in `adata_ref`")
+        trans = adata_ref.uns['top_pcs']
         if(top_pcs_feature == 'var_genes'):
-            adata_new.uns['var_genes'] = adata.uns['var_genes'].copy()
+            if('var_genes' not in adata_ref.uns_keys()):
+                raise ValueError("variable genes are not selected yet in `adata_ref`")
+            adata_new.uns['var_genes'] = adata_ref.uns['var_genes'].copy()
             adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
             X_pca = trans.transform(adata_new.obsm['var_genes']) 
         else:
-            X_pca = trans.transform(adata_new[:,adata.var.index].X) 
-        n_pc = adata.obsm['top_pcs'].shape[1]
+            X_pca = trans.transform(adata_new[:,adata_ref.var.index].X) 
+        n_pc = adata_ref.obsm['top_pcs'].shape[1]
         if(first_pc):
             adata_new.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
         else:
             #discard the first Principal Component
             adata_new.obsm['top_pcs'] = X_pca[:,1:(n_pc+1)]
         input_data = adata_new.obsm['top_pcs']
-    adata_new.uns['epg'] = adata.uns['epg'].copy()
-    adata_new.uns['flat_tree'] = adata.uns['flat_tree'].copy() 
+    adata_new.uns['epg'] = adata_ref.uns['epg'].copy()
+    adata_new.uns['flat_tree'] = adata_ref.uns['flat_tree'].copy() 
 
     # if(method == 'se'):
-    #     trans = adata.uns['trans_se']
+    #     trans = adata_ref.uns['trans_se']
     #     adata_new.obsm['X_se_mapping'] = trans.transform(input_data)
     #     adata_new.obsm['X_dr'] = adata_new.obsm['X_se_mapping'].copy()
     if(method == 'mlle'):
-        if('trans_mlle' in adata.uns_keys()):
-            trans = adata.uns['trans_mlle']
+        if('trans_mlle' in adata_ref.uns_keys()):
+            trans = adata_ref.uns['trans_mlle']
             if(use_radius):
                 dist_nb = trans.nbrs_.kneighbors(input_data, n_neighbors=trans.n_neighbors,return_distance=True)[0]
                 ind = trans.nbrs_.radius_neighbors(input_data, radius = dist_nb.max(),return_distance=False)    
@@ -3610,21 +3634,29 @@ def map_new_data(adata,adata_new,feature='var_genes',method='mlle',use_radius=Tr
         else:
             raise Exception("Please run 'st.dimension_reduction()' using 'mlle' first.")  
     if(method == 'umap'):
-        if('trans_umap' in adata.uns_keys()):
-            trans = adata.uns['trans_umap']
+        if('trans_umap' in adata_ref.uns_keys()):
+            trans = adata_ref.uns['trans_umap']
             adata_new.obsm['X_umap_mapping'] = trans.transform(input_data)
             adata_new.obsm['X_dr'] = adata_new.obsm['X_umap_mapping'].copy()
         else:
             raise Exception("Please run 'st.dimension_reduction()' using 'umap' first.")  
     if(method == 'pca'):
-        if('trans_pca' in adata.uns_keys()):            
-            trans = adata.uns['trans_pca']
+        if('trans_pca' in adata_ref.uns_keys()):            
+            trans = adata_ref.uns['trans_pca']
             adata_new.obsm['X_pca_mapping'] = trans.transform(input_data)
             adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
         else:
             raise Exception("Please run 'st.dimension_reduction()' using 'pca' first.")  
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
+    adata_combined = adata.concatenate(adata_new,batch_categories=['ref','new'])
+    for key in adata.uns_keys():
+        if key in ['workdir', 'var_genes', 'epg', 'flat_tree']:
+            adata_combined.uns[key] = adata_ref.uns[key]
+        if(key.split('_')[-1]=='color'):
+            if(key in adata_new.uns_keys()):
+                adata_combined.uns[key] = {**adata_ref.uns[key],**adata_new.uns[key]}
+    return(adata_combined)
 
 def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_report'):
     """save stream report for single cell VR website http://www.singlecellvr.com/
@@ -3655,14 +3687,14 @@ def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_repor
     ann_list = list(dict.fromkeys(ann_list)) 
     for ann in ann_list:
         if(ann not in adata.obs.columns):
-            raise ValueError('could not find %s in `adata.var_names`'  % (ann))
+            raise ValueError("could not find '%s' in `adata.var_names`"  % (ann))
             
     if(gene_list is not None):
         ###remove duplicate keys
         gene_list = list(dict.fromkeys(gene_list)) 
         for gene in gene_list:
             if(gene not in adata.var_names):
-                raise ValueError('could not find %s in `adata.var_names`'  % (gene))
+                raise ValueError("could not find '%s' in `adata.var_names`"  % (gene))
                 
     try:
         file_path = os.path.join(adata.uns['workdir'],file_name)
