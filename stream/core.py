@@ -410,17 +410,65 @@ def filter_genes(adata,min_num_cells = 5,min_pct_cells = None,min_count = None, 
     return None
 
 
-def filter_cells(adata,min_num_genes = 10,min_pct_genes = None,min_count=None,expr_cutoff = 1):
+def filter_features(adata,min_num_cells = None,min_pct_cells = None,min_count = None, expr_cutoff = 1):
+    """Filter out features based on different metrics.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    min_num_cells: `int`, optional (default: None)
+        Minimum number of cells expressing one feature
+    min_pct_cells: `float`, optional (default: None)
+        Minimum percentage of cells expressing one feature
+    min_count: `int`, optional (default: None)
+        Minimum number of read count for one feature
+    expr_cutoff: `float`, optional (default: 1)
+        Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
+    Returns
+    -------
+    updates `adata` with a subset of features that pass the filtering.   
+    updates `adata` with the following fields.
+    n_counts: `pandas.Series` (`adata.var['n_counts']`,dtype `int`)
+       The number of read count each feature has.
+    n_cells: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
+       The number of cells in which each feature is expressed.   
+
+    """
+
+    n_counts = np.sum(adata.X,axis=0)
+    adata.var['n_counts'] = n_counts
+    n_cells = np.sum(adata.X>=expr_cutoff,axis=0)
+    adata.var['n_cells'] = n_cells 
+    if(sum(list(map(lambda x: x is None,[min_num_cells,min_pct_cells,min_count])))==3):
+        print('No filtering')
+    else:
+        feature_subset = np.ones(len(adata.var_names),dtype=bool)
+        if(min_num_cells!=None):
+            print('Filter features based on min_num_cells')
+            feature_subset = (n_cells>min_num_cells) & feature_subset
+        if(min_pct_cells!=None):
+            print('Filter features based on min_pct_cells')
+            feature_subset = (n_cells>adata.shape[0]*min_pct_cells) & feature_subset
+        if(min_count!=None):
+            print('Filter features based on min_count')
+            feature_subset = (n_counts>min_count) & feature_subset 
+        adata._inplace_subset_var(feature_subset)
+        print('After filtering out low-expressed features: ')
+        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' features')
+    return None
+
+def filter_cells(adata,min_num_features = None,min_pct_features = None,min_count=None,expr_cutoff = 1):
     """Filter out cells based on different metrics.
 
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    min_num_genes: `int`, optional (default: None)
-        Minimum number of genes expressed
-    min_pct_genes: `float`, optional (default: None)
-        Minimum percentage of genes expressed
+    min_num_features: `int`, optional (default: None)
+        Minimum number of features expressed
+    min_pct_features: `float`, optional (default: None)
+        Minimum percentage of features expressed
     min_count: `int`, optional (default: None)
         Minimum number of read count for one cell
     expr_cutoff: `float`, optional (default: 1)
@@ -431,30 +479,30 @@ def filter_cells(adata,min_num_genes = 10,min_pct_genes = None,min_count=None,ex
     updates `adata` with the following fields.
     n_counts: `pandas.Series` (`adata.obs['n_counts']`,dtype `int`)
        The number of read count each cell has.
-    n_genes: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
-       The number of genes expressed in each cell.
+    n_features: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
+       The number of features expressed in each cell.
     """
 
     n_counts = np.sum(adata.X,axis=1)
     adata.obs['n_counts'] = n_counts
-    n_genes = np.sum(adata.X>=expr_cutoff,axis=1)
-    adata.obs['n_genes'] = n_genes
-    if(sum(list(map(lambda x: x is None,[min_num_genes,min_pct_genes,min_count])))==3):
+    n_features = np.sum(adata.X>=expr_cutoff,axis=1)
+    adata.obs['n_features'] = n_features
+    if(sum(list(map(lambda x: x is None,[min_num_features,min_pct_features,min_count])))==3):
         print('No filtering')    
     else:
         cell_subset = np.ones(len(adata.obs_names),dtype=bool)
-        if(min_num_genes!=None):
-            print('filter cells based on min_num_genes')
-            cell_subset = (n_genes>=min_num_genes) & cell_subset
-        if(min_pct_genes!=None):
-            print('filter cells based on min_pct_genes')
-            cell_subset = (n_genes>=adata.shape[0]*min_pct_genes) & cell_subset
+        if(min_num_features!=None):
+            print('filter cells based on min_num_features')
+            cell_subset = (n_features>=min_num_features) & cell_subset
+        if(min_pct_features!=None):
+            print('filter cells based on min_pct_features')
+            cell_subset = (n_features>=adata.shape[0]*min_pct_features) & cell_subset
         if(min_count!=None):
             print('filter cells based on min_count')
             cell_subset = (n_counts>=min_count) & cell_subset 
         adata._inplace_subset_obs(cell_subset)
         print('after filtering out low-expressed cells: ')
-        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' genes')
+        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' features')
     return None
 
 
@@ -513,6 +561,8 @@ def normalize(adata,method='lib_size'):
     X: `numpy.ndarray` (`adata.X`)
         Store #observations × #var_genes normalized data matrix.
     """
+    if(method not in ['lib_size','tf_idf']):
+        raise ValueError("unrecognized method '%s'" % method)
     if(method == 'lib_size'):
         adata.X = (np.divide(adata.X.T,adata.X.sum(axis=1)).T)*1e6
     if(method) == 'tf_idf'
