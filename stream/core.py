@@ -50,7 +50,7 @@ from .scikit_posthocs import posthoc_conover
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def set_figure_params(context='notebook',style='white',palette='deep',font='sans-serif',font_scale=1.1,color_codes=True,
-                      dpi=80,dpi_save=150,figsize=[5.4, 4.8],**kwargs):
+                      dpi=80,dpi_save=150,figsize=[5.4, 4.8],rc=None):
     """ Set global parameters for figures. Modified from sns.set()
     Parameters
     ----------
@@ -69,9 +69,9 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
         Resolution of rendered figures.
     dpi_save: `int`,optional (default: 150)
         Resolution of saved figures.
-    kwargs:    
-        rc settings properties. Please see https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file
-        set_figure_params(**{'ax.xaxis.labelpad':20,'legend.handletextpad':1e-10,'image.cmap': 'RdBu_r'})
+    rc: `dict`,optional (default: None)
+        rc settings properties. Parameter mappings to override the values in the preset style.
+        Please see https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file
     """
 #     mpl.rcParams.update(mpl.rcParamsDefault)
     sns.set(context=context,style=style,palette=palette,font=font,font_scale=font_scale,color_codes=color_codes,
@@ -84,11 +84,13 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
                 'legend.borderaxespad':0.1,
                 'legend.handletextpad':0.1,
                 'pdf.fonttype':42,})
-    for key, value in kwargs.items():
-        if key in mpl.rcParams.keys():
-            mpl.rcParams[key] = value
-        else:
-            raise Exception("unrecognized property '%s'" % key)
+    if(rc is not None):
+        assert isinstance(rc,dict),"rc must be dict"  
+        for key, value in rc.items():
+            if key in mpl.rcParams.keys():
+                mpl.rcParams[key] = value
+            else:
+                raise Exception("unrecognized property '%s'" % key)
 
 def set_workdir(adata,workdir=None):
     """Set working directory.
