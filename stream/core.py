@@ -399,7 +399,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     """    
     
     assay = assay.lower()
-    assert 'assay' in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
+    assert assay in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
 
     n_counts = np.sum(adata.X,axis=0).astype(int)
     adata.var['n_counts'] = n_counts
@@ -532,7 +532,11 @@ def plot_qc(adata,
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
 
 
-def filter_features(adata,min_n_cells = None,min_pct_cells = None,min_n_counts = None, expr_cutoff = 1,assay=None):
+def filter_features(adata,
+                    min_n_cells = None, max_n_cells=None,
+                    min_pct_cells = None, max_pct_cells=None,
+                    min_n_counts = None, max_n_counts=None,
+                    expr_cutoff = 1,assay=None):
     """Filter out features based on different metrics.
 
     Parameters
@@ -567,7 +571,7 @@ def filter_features(adata,min_n_cells = None,min_pct_cells = None,min_n_counts =
         else:
             raise Exception("Please either run 'st.cal_qc()' or specify the parameter`assay`")
     assay = assay.lower()
-    assert 'assay' in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
+    assert assay in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
     
     if(assay=='rna'):
         feature = 'genes'
@@ -590,25 +594,39 @@ def filter_features(adata,min_n_cells = None,min_pct_cells = None,min_n_counts =
         pct_cells = n_cells/adata.shape[0]
         adata.var['pct_cells'] = pct_cells
         
-    if(sum(list(map(lambda x: x is None,[min_n_cells,min_pct_cells,min_n_counts])))==3):
+    if(sum(list(map(lambda x: x is None,[min_n_cells,min_pct_cells,min_n_counts,
+                                         max_n_cells,max_pct_cells,max_n_counts,])))==6):
         print('No filtering')
     else:
         feature_subset = np.ones(len(adata.var_names),dtype=bool)
         if(min_n_cells!=None):
             print('Filter '+feature+' based on min_n_cells')
             feature_subset = (n_cells>=min_n_cells) & feature_subset
+        if(max_n_cells!=None):
+            print('Filter '+feature+' based on max_n_cells')
+            feature_subset = (n_cells<=max_n_cells) & feature_subset
         if(min_pct_cells!=None):
             print('Filter '+feature+' based on min_pct_cells')
             feature_subset = (pct_cells>=min_pct_cells) & feature_subset
-        if(min_count!=None):
+        if(max_pct_cells!=None):
+            print('Filter '+feature+' based on max_pct_cells')
+            feature_subset = (pct_cells<=max_pct_cells) & feature_subset
+        if(min_n_counts!=None):
             print('Filter '+feature+' based on min_n_counts')
-            feature_subset = (n_counts>min_n_counts) & feature_subset 
+            feature_subset = (n_counts>=min_n_counts) & feature_subset 
+        if(max_n_counts!=None):
+            print('Filter '+feature+' based on max_n_counts')
+            feature_subset = (n_counts<=max_n_counts) & feature_subset 
         adata._inplace_subset_var(feature_subset)
         print('After filtering out low-expressed '+feature+': ')
         print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' '+feature)
     return None
 
-def filter_cells(adata,min_n_features = None,min_pct_features = None,min_n_counts=None,expr_cutoff = 1,assay=None):
+def filter_cells(adata,
+                 min_n_features = None, max_n_features = None,
+                 min_pct_features = None, max_pct_features = None,
+                 min_n_counts=None, max_n_counts = None,
+                 expr_cutoff = 1,assay=None):
     """Filter out cells based on different metrics.
 
     Parameters
@@ -646,7 +664,7 @@ def filter_cells(adata,min_n_features = None,min_pct_features = None,min_n_count
         else:
             raise Exception("Please either run 'st.cal_qc()' or specify the parameter`assay`")
     assay = assay.lower()
-    assert 'assay' in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
+    assert assay in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
             
     if('n_counts' in adata.obs_names):
         n_counts = adata.obs['n_counts']
@@ -665,7 +683,7 @@ def filter_cells(adata,min_n_features = None,min_pct_features = None,min_n_count
             pct_features = n_features/adata.shape[1]
             adata.obs['pct_genes'] = pct_features
         feature = 'genes'
-    if(assay == 'atac')
+    if(assay == 'atac'):
         if('n_peaks' in adata.obs_names):
             n_features = adata.obs['n_peaks']
         else:
@@ -678,19 +696,29 @@ def filter_cells(adata,min_n_features = None,min_pct_features = None,min_n_count
             adata.obs['pct_peaks'] = pct_features
         feature = 'peaks'            
 
-    if(sum(list(map(lambda x: x is None,[min_n_features,min_pct_features,min_n_counts])))==3):
+    if(sum(list(map(lambda x: x is None,[min_n_features,min_pct_features,min_n_counts,
+                                         max_n_features,max_pct_features,max_n_counts,])))==6):
         print('No filtering')    
     else:
         cell_subset = np.ones(len(adata.obs_names),dtype=bool)
         if(min_n_features!=None):
             print('filter cells based on min_n_features')
             cell_subset = (n_features>=min_n_features) & cell_subset
+        if(max_n_features!=None):
+            print('filter cells based on max_n_features')
+            cell_subset = (n_features<=max_n_features) & cell_subset
         if(min_pct_features!=None):
             print('filter cells based on min_pct_features')
             cell_subset = (pct_features>=min_pct_features) & cell_subset
+        if(max_pct_features!=None):
+            print('filter cells based on max_pct_features')
+            cell_subset = (pct_features<=max_pct_features) & cell_subset
         if(min_n_counts!=None):
             print('filter cells based on min_n_counts')
             cell_subset = (n_counts>=min_n_counts) & cell_subset 
+        if(max_n_counts!=None):
+            print('filter cells based on max_n_counts')
+            cell_subset = (n_counts<=max_n_counts) & cell_subset 
         adata._inplace_subset_obs(cell_subset)
         print('after filtering out low-quality cells: ')
         print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' '+feature)
