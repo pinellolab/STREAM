@@ -48,6 +48,14 @@ def gini(array):
     # Gini coefficient:
     return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
 
+def cal_tf_idf(mat):
+    mat = coo_matrix(mat)
+    tf = coo_matrix(mat/(mat.sum(axis=0)))
+    idf = np.array(np.log(1 + mat.shape[1] / mat.sum(axis=1))).flatten()
+    tf_idf = np.dot(diags(idf),tf)
+    tf_idf = tf_idf.toarray()
+    return tf_idf
+
 def dfs_from_leaf(epg_copy,node,degrees_of_nodes,nodes_to_visit,nodes_to_merge):
     nodes_to_visit.remove(node)
     for n2 in epg_copy.neighbors(node):

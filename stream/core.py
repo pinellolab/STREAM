@@ -80,9 +80,9 @@ def set_figure_params(context='notebook',style='white',palette='deep',font='sans
                 'figure.figsize':figsize,
                 'image.cmap': 'viridis',
                 'lines.markersize':6,
-                'legend.columnspacing':0,
-                'legend.borderaxespad':0,
-                'legend.handletextpad':0,
+                'legend.columnspacing':0.1,
+                'legend.borderaxespad':0.1,
+                'legend.handletextpad':0.1,
                 'pdf.fonttype':42,})
     for key, value in kwargs.items():
         if key in mpl.rcParams.keys():
@@ -389,7 +389,7 @@ def filter_genes(adata,min_num_cells = 5,min_pct_cells = None,min_count = None, 
 
     n_counts = np.sum(adata.X,axis=0)
     adata.var['n_counts'] = n_counts
-    n_cells = np.sum(adata.X>expr_cutoff,axis=0)
+    n_cells = np.sum(adata.X>=expr_cutoff,axis=0)
     adata.var['n_cells'] = n_cells 
     if(sum(list(map(lambda x: x is None,[min_num_cells,min_pct_cells,min_count])))==3):
         print('No filtering')
@@ -495,6 +495,28 @@ def normalize_per_cell(adata):
     """
     adata.X = (np.divide(adata.X.T,adata.X.sum(axis=1)).T)*1e6
 
+def normalize(adata,method='lib_size'):
+    """Normalize count matrix.
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    method: `str`, optional (default: 'lib_size')
+        Choose from {{'lib_size','tf_idf'}}
+        Method used for dimension reduction.
+        'lib_size': Total-count normalize (library-size correct)
+        'tf_idf': TF-IDF (term frequency–inverse document frequency) transformation
+    Returns
+    -------
+    updates `adata` with the following fields.
+    X: `numpy.ndarray` (`adata.X`)
+        Store #observations × #var_genes normalized data matrix.
+    """
+    if(method == 'lib_size'):
+        adata.X = (np.divide(adata.X.T,adata.X.sum(axis=1)).T)*1e6
+    if(method) == 'tf_idf'
+        adata.X = cal_tf_idf(adata.X)
 
 def remove_mt_genes(adata):
     """remove mitochondrial genes.
@@ -2754,7 +2776,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,
         
     for ann in color:  
         if(is_string_dtype(dict_ann[ann])):
-            if(ann+'_color' not in adata.uns_keys()):
+            if(not ((ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) >= set(np.unique(dict_ann[ann]))))):
                 ### a hacky way to generate colors from seaborn
                 tmp = pd.DataFrame(index=adata.obs_names,
                                    data=np.random.rand(adata.shape[0], 2))
@@ -2764,8 +2786,8 @@ def plot_stream(adata,root='S0',color = None,preference=None,
                 colors_sns = sc_i.get_children()[0].get_facecolors()
                 plt.close(fig)
                 colors_sns_scaled = (255*colors_sns).astype(int)
-                adata.uns[ann+'_color'] = {df_tmp[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
-                                           for i in np.unique(df_tmp[ann],return_index=True)[1]}
+                adata.uns[ann+'_color'] = {tmp[ann][i]:'#%02x%02x%02x' % (colors_sns_scaled[i][0], colors_sns_scaled[i][1], colors_sns_scaled[i][2])
+                                           for i in np.unique(tmp[ann],return_index=True)[1]}
             dict_palette = adata.uns[ann+'_color']
 
             verts = dict_plot['string'][0][ann]
@@ -2783,8 +2805,10 @@ def plot_stream(adata,root='S0',color = None,preference=None,
                 verts_cell = verts[ann_i]
                 polygon = Polygon(verts_cell,closed=True,color=dict_palette[ann_i],alpha=0.8,lw=0)
                 ax.add_patch(polygon)
-            ax.legend(legend_labels,bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
-                        frameon=False,)        
+            ax.legend(legend_labels,bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,frameon=False,  
+                      columnspacing=0.4,
+                      borderaxespad=0.2,
+                      handletextpad=0.3,)        
         else:
             verts = dict_plot['numeric'][0] 
             extent = dict_plot['numeric'][1]
@@ -3548,7 +3572,7 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
     Returns
     -------  
     
-    Combined AnnData object
+    Combined AnnData object. Only the shared obs_keys and var_keys will be preserved
     updates `adata` with the following fields.
     batch: `pandas.Series` (`adata.obs['batch']`,dtype `str`)
         The annotation of each cell. It consists of 'ref' for reference cells and 'new' for the cells to map    
@@ -3649,7 +3673,11 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
             raise Exception("Please run 'st.dimension_reduction()' using 'pca' first.")  
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
-    adata_combined = adata.concatenate(adata_new,batch_categories=['ref','new'])
+    adata_combined = adata_ref.concatenate(adata_new,batch_categories=['ref','new'])
+    shared_obs_key = [x for x in adata_new.obs_keys() if x in adata.obs_keys()]
+    shared_var_key = [x for x in adata_new.var_keys() if x in adata.var_keys()]
+    adata_combined.obs = adata_combined.obs[shared_obs_key]
+    adata_combined.var = adata_combined.var[shared_var_key]
     for key in adata.uns_keys():
         if key in ['workdir', 'var_genes', 'epg', 'flat_tree']:
             adata_combined.uns[key] = adata_ref.uns[key]
