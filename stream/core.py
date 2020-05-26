@@ -374,6 +374,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
         Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
     assay: `str`, optional (default: 'rna')
             Choose from {{'rna','atac'}},case insensitive
+
     Returns
     -------
     updates `adata` with the following fields.
@@ -381,18 +382,25 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
        The number of read count each gene has.
     n_cells: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
        The number of cells in which each gene is expressed.
+    pct_cells: `pandas.Series` (`adata.var['pct_cells']`,dtype `float`)
+       The percentage of cells in which each gene is expressed.
     n_counts: `pandas.Series` (`adata.obs['n_counts']`,dtype `int`)
        The number of read count each cell has.
     n_genes: `pandas.Series` (`adata.obs['n_genes']`,dtype `int`)
        The number of genes expressed in each cell.
+    pct_genes: `pandas.Series` (`adata.obs['pct_genes']`,dtype `float`)
+       The percentage of genes expressed in each cell.
     n_peaks: `pandas.Series` (`adata.obs['n_peaks']`,dtype `int`)
        The number of peaks expressed in each cell.
+    pct_peaks: `pandas.Series` (`adata.obs['pct_peaks']`,dtype `int`)
+       The percentage of peaks expressed in each cell.
     pct_mt: `pandas.Series` (`adata.obs['pct_mt']`,dtype `float`)
        the percentage of counts in mitochondrial genes
     """    
     
     assay = assay.lower()
-    
+    assert 'assay' in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
+
     n_counts = np.sum(adata.X,axis=0).astype(int)
     adata.var['n_counts'] = n_counts
     n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
@@ -450,6 +458,7 @@ def plot_qc(adata,
         if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
     fig_name: `str`, optional (default: 'qc.pdf')
         if save_fig is True, specify figure name.
+
     Returns
     -------
     None
@@ -523,150 +532,169 @@ def plot_qc(adata,
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
 
 
-def filter_genes(adata,min_num_cells = 5,min_pct_cells = None,min_count = None, expr_cutoff = 1):
-    """Filter out genes based on different metrics.
-
-    Parameters
-    ----------
-    adata: AnnData
-        Annotated data matrix.
-    min_num_cells: `int`, optional (default: None)
-        Minimum number of cells expressing one gene
-    min_pct_cells: `float`, optional (default: None)
-        Minimum percentage of cells expressing one gene
-    min_count: `int`, optional (default: None)
-        Minimum number of read count for one gene
-    expr_cutoff: `float`, optional (default: 1)
-        Expression cutoff. If greater than expr_cutoff,the gene is considered 'expressed'
-    Returns
-    -------
-    updates `adata` with a subset of genes that pass the filtering.   
-    updates `adata` with the following fields.
-    n_counts: `pandas.Series` (`adata.var['n_counts']`,dtype `int`)
-       The number of read count each gene has.
-    n_cells: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
-       The number of cells in which each gene is expressed.   
-
-    """
-
-    n_counts = np.sum(adata.X,axis=0)
-    adata.var['n_counts'] = n_counts
-    n_cells = np.sum(adata.X>=expr_cutoff,axis=0)
-    adata.var['n_cells'] = n_cells 
-    if(sum(list(map(lambda x: x is None,[min_num_cells,min_pct_cells,min_count])))==3):
-        print('No filtering')
-    else:
-        gene_subset = np.ones(len(adata.var_names),dtype=bool)
-        if(min_num_cells!=None):
-            print('Filter genes based on min_num_cells')
-            gene_subset = (n_cells>min_num_cells) & gene_subset
-        if(min_pct_cells!=None):
-            print('Filter genes based on min_pct_cells')
-            gene_subset = (n_cells>adata.shape[0]*min_pct_cells) & gene_subset
-        if(min_count!=None):
-            print('Filter genes based on min_count')
-            gene_subset = (n_counts>min_count) & gene_subset 
-        adata._inplace_subset_var(gene_subset)
-        print('After filtering out low-expressed genes: ')
-        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' genes')
-    return None
-
-
-def filter_features(adata,min_num_cells = None,min_pct_cells = None,min_count = None, expr_cutoff = 1):
+def filter_features(adata,min_n_cells = None,min_pct_cells = None,min_n_counts = None, expr_cutoff = 1,assay=None):
     """Filter out features based on different metrics.
 
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    min_num_cells: `int`, optional (default: None)
+    min_n_cells: `int`, optional (default: None)
         Minimum number of cells expressing one feature
     min_pct_cells: `float`, optional (default: None)
         Minimum percentage of cells expressing one feature
-    min_count: `int`, optional (default: None)
+    min_n_counts: `int`, optional (default: None)
         Minimum number of read count for one feature
     expr_cutoff: `float`, optional (default: 1)
         Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
+    assay: `str`, optional (default: 'rna')
+            Choose from {{'rna','atac'}},case insensitive
+            
     Returns
     -------
     updates `adata` with a subset of features that pass the filtering.   
-    updates `adata` with the following fields.
+    updates `adata` with the following fields if cal_qc() was not performed.
     n_counts: `pandas.Series` (`adata.var['n_counts']`,dtype `int`)
-       The number of read count each feature has.
+       The number of read count each gene has.
     n_cells: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
-       The number of cells in which each feature is expressed.   
-
+       The number of cells in which each gene is expressed.
+    pct_cells: `pandas.Series` (`adata.var['pct_cells']`,dtype `float`)
+       The percentage of cells in which each gene is expressed.
     """
-
-    n_counts = np.sum(adata.X,axis=0)
-    adata.var['n_counts'] = n_counts
-    n_cells = np.sum(adata.X>=expr_cutoff,axis=0)
-    adata.var['n_cells'] = n_cells 
-    if(sum(list(map(lambda x: x is None,[min_num_cells,min_pct_cells,min_count])))==3):
+    if(assay is None):
+        if('assay' in adata.uns_keys()):
+            assay = adata.uns['assay']
+        else:
+            raise Exception("Please either run 'st.cal_qc()' or specify the parameter`assay`")
+    assay = assay.lower()
+    assert 'assay' in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
+    
+    if(assay=='rna'):
+        feature = 'genes'
+    if(assay=='atac'):
+        feature = 'peaks'
+    
+    if('n_counts' in adata.var_names):
+        n_counts = adata.var['n_counts']
+    else:
+        n_counts = np.sum(adata.X,axis=0).astype(int)
+        adata.var['n_counts'] = n_counts
+    if('n_cells' in adata.var_names):
+        n_cells = adata.var['n_cells']
+    else:
+        n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
+        adata.var['n_cells'] = n_cells   
+    if('pct_cells' in adata.var_names): 
+        pct_cells = adata.var['pct_cells']
+    else:
+        pct_cells = n_cells/adata.shape[0]
+        adata.var['pct_cells'] = pct_cells
+        
+    if(sum(list(map(lambda x: x is None,[min_n_cells,min_pct_cells,min_n_counts])))==3):
         print('No filtering')
     else:
         feature_subset = np.ones(len(adata.var_names),dtype=bool)
-        if(min_num_cells!=None):
-            print('Filter features based on min_num_cells')
-            feature_subset = (n_cells>min_num_cells) & feature_subset
+        if(min_n_cells!=None):
+            print('Filter '+feature+' based on min_n_cells')
+            feature_subset = (n_cells>=min_n_cells) & feature_subset
         if(min_pct_cells!=None):
-            print('Filter features based on min_pct_cells')
-            feature_subset = (n_cells>adata.shape[0]*min_pct_cells) & feature_subset
+            print('Filter '+feature+' based on min_pct_cells')
+            feature_subset = (pct_cells>=min_pct_cells) & feature_subset
         if(min_count!=None):
-            print('Filter features based on min_count')
-            feature_subset = (n_counts>min_count) & feature_subset 
+            print('Filter '+feature+' based on min_n_counts')
+            feature_subset = (n_counts>min_n_counts) & feature_subset 
         adata._inplace_subset_var(feature_subset)
-        print('After filtering out low-expressed features: ')
-        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' features')
+        print('After filtering out low-expressed '+feature+': ')
+        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' '+feature)
     return None
 
-def filter_cells(adata,min_num_features = None,min_pct_features = None,min_count=None,expr_cutoff = 1):
+def filter_cells(adata,min_n_features = None,min_pct_features = None,min_n_counts=None,expr_cutoff = 1,assay=None):
     """Filter out cells based on different metrics.
 
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    min_num_features: `int`, optional (default: None)
+    min_n_features: `int`, optional (default: None)
         Minimum number of features expressed
     min_pct_features: `float`, optional (default: None)
         Minimum percentage of features expressed
-    min_count: `int`, optional (default: None)
+    min_n_counts: `int`, optional (default: None)
         Minimum number of read count for one cell
     expr_cutoff: `float`, optional (default: 1)
         Expression cutoff. If greater than expr_cutoff,the gene is considered 'expressed'
+    assay: `str`, optional (default: 'rna')
+            Choose from {{'rna','atac'}},case insensitive    
     Returns
     -------
     updates `adata` with a subset of cells that pass the filtering.      
-    updates `adata` with the following fields.
+    updates `adata` with the following fields if cal_qc() was not performed.
     n_counts: `pandas.Series` (`adata.obs['n_counts']`,dtype `int`)
        The number of read count each cell has.
-    n_features: `pandas.Series` (`adata.obs['n_features']`,dtype `int`)
-       The number of features expressed in each cell.
+    n_genes: `pandas.Series` (`adata.obs['n_genes']`,dtype `int`)
+       The number of genes expressed in each cell.
+    pct_genes: `pandas.Series` (`adata.obs['pct_genes']`,dtype `float`)
+       The percentage of genes expressed in each cell.
+    n_peaks: `pandas.Series` (`adata.obs['n_peaks']`,dtype `int`)
+       The number of peaks expressed in each cell.
+    pct_peaks: `pandas.Series` (`adata.obs['pct_peaks']`,dtype `int`)
+       The percentage of peaks expressed in each cell.
     """
+    if(assay is None):
+        if('assay' in adata.uns_keys()):
+            assay = adata.uns['assay']
+        else:
+            raise Exception("Please either run 'st.cal_qc()' or specify the parameter`assay`")
+    assay = assay.lower()
+    assert 'assay' in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
+            
+    if('n_counts' in adata.obs_names):
+        n_counts = adata.obs['n_counts']
+    else:
+        n_counts = np.sum(adata.X,axis=1).astype(int)
+        adata.obs['n_counts'] = n_counts
+    if(assay == 'rna'):
+        if('n_genes' in adata.obs_names):
+            n_features = adata.obs['n_genes']
+        else:
+            n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
+            adata.obs['n_genes'] = n_features       
+        if('pct_genes' in adata.obs_names):
+            pct_features = adata.obs['pct_genes']
+        else:
+            pct_features = n_features/adata.shape[1]
+            adata.obs['pct_genes'] = pct_features
+        feature = 'genes'
+    if(assay == 'atac')
+        if('n_peaks' in adata.obs_names):
+            n_features = adata.obs['n_peaks']
+        else:
+            n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
+            adata.obs['n_peaks'] = n_features       
+        if('pct_peaks' in adata.obs_names):
+            pct_features = adata.obs['pct_peaks']
+        else:
+            pct_features = n_features/adata.shape[1]
+            adata.obs['pct_peaks'] = pct_features
+        feature = 'peaks'            
 
-    n_counts = np.sum(adata.X,axis=1)
-    adata.obs['n_counts'] = n_counts
-    n_features = np.sum(adata.X>=expr_cutoff,axis=1)
-    adata.obs['n_features'] = n_features
-    if(sum(list(map(lambda x: x is None,[min_num_features,min_pct_features,min_count])))==3):
+    if(sum(list(map(lambda x: x is None,[min_n_features,min_pct_features,min_n_counts])))==3):
         print('No filtering')    
     else:
         cell_subset = np.ones(len(adata.obs_names),dtype=bool)
-        if(min_num_features!=None):
-            print('filter cells based on min_num_features')
-            cell_subset = (n_features>=min_num_features) & cell_subset
+        if(min_n_features!=None):
+            print('filter cells based on min_n_features')
+            cell_subset = (n_features>=min_n_features) & cell_subset
         if(min_pct_features!=None):
             print('filter cells based on min_pct_features')
-            cell_subset = (n_features>=adata.shape[0]*min_pct_features) & cell_subset
-        if(min_count!=None):
-            print('filter cells based on min_count')
-            cell_subset = (n_counts>=min_count) & cell_subset 
+            cell_subset = (pct_features>=min_pct_features) & cell_subset
+        if(min_n_counts!=None):
+            print('filter cells based on min_n_counts')
+            cell_subset = (n_counts>=min_n_counts) & cell_subset 
         adata._inplace_subset_obs(cell_subset)
-        print('after filtering out low-expressed cells: ')
-        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' features')
+        print('after filtering out low-quality cells: ')
+        print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' '+feature)
     return None
-
 
 def log_transform(adata,base=2):
     """Logarithmize gene expression.
