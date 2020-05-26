@@ -363,6 +363,146 @@ def add_cell_colors(adata,file_path='',file_name=None):
 #     return None
 
 
+def cal_qc(adata,expr_cutoff=1,assay='rna'):
+    """Calculate quality control metrics.
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    expr_cutoff: `float`, optional (default: 1)
+        Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
+    assay: `str`, optional (default: 'rna')
+            Choose from {{'rna','atac'}},case insensitive
+    Returns
+    -------
+    updates `adata` with the following fields.
+    n_counts: `pandas.Series` (`adata.var['n_counts']`,dtype `int`)
+       The number of read count each gene has.
+    n_cells: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
+       The number of cells in which each gene is expressed.
+    n_counts: `pandas.Series` (`adata.obs['n_counts']`,dtype `int`)
+       The number of read count each cell has.
+    n_genes: `pandas.Series` (`adata.obs['n_genes']`,dtype `int`)
+       The number of genes expressed in each cell.
+    n_peaks: `pandas.Series` (`adata.obs['n_peaks']`,dtype `int`)
+       The number of peaks expressed in each cell.
+    pct_mt: `pandas.Series` (`adata.obs['pct_mt']`,dtype `float`)
+       the percentage of counts in mitochondrial genes
+    """    
+    
+    assay = assay.lower()
+    
+    n_counts = np.sum(adata.X,axis=0).astype(int)
+    adata.var['n_counts'] = n_counts
+    n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
+    adata.var['n_cells'] = n_cells 
+
+    n_counts = np.sum(adata.X,axis=1).astype(int)
+    adata.obs['n_counts'] = n_counts
+    n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
+    if(assay=='atac'):
+        adata.obs['n_peaks'] = n_features   
+    if(assay=='rna'):
+        adata.obs['n_genes'] = n_features
+        r = re.compile("^MT-",flags=re.IGNORECASE)
+        mt_genes = list(filter(r.match, adata.var_names))
+        if(len(mt_genes)>0):
+            n_counts_mt = np.sum(adata[:,mt_genes].X,axis=1)
+            adata.obs['pct_mt'] = np.float(n_counts_mt)/n_counts
+        else:
+            adata.obs['pct_mt'] = 0
+    adata.uns['assay'] = assay
+
+def plot_qc(adata,
+            fig_size=(4,4),fig_ncol=5,jitter=0.4,
+            pad=1.08,w_pad=None,h_pad=None,
+            save_fig=False,fig_path=None,fig_name='qc.pdf',):
+    
+    """Plot QC metrics
+    
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    fig_size: `tuple`, optional (default: (4,4))
+        figure size.
+    fig_ncol: `int`, optional (default: 5)
+        the number of columns of the figure panel
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots, as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots, as a fraction of the font size. Defaults to pad.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        if save_fig is True, specify figure path. if None, adata.uns['workdir'] will be used.
+    fig_name: `str`, optional (default: 'qc.pdf')
+        if save_fig is True, specify figure name.
+    Returns
+    -------
+    None
+
+    """    
+    
+    assert 'assay' in adata.uns_keys(),'please run `cal_qc(adata)` first'
+    if(adata.uns['assay']=='rna'):
+        n_subplots = 5
+        ann_list = ['n_counts','n_genes','pct_mt']
+    if(adata.uns['assay']=='atac'):
+        n_subplots = 4
+        ann_list = ['n_counts','n_peaks']
+
+    fig_ncol = min(fig_ncol,n_subplots)
+    fig_nrow = int(np.ceil(5/fig_ncol))
+    fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow*1.05))
+    for i,ann in enumerate(ann_list):
+        ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+        ax_i = sns.violinplot(y=ann,data=adata.obs,inner=None)
+        ax_i = sns.stripplot(y=ann,data=adata.obs,
+                             color='black',jitter=jitter,s=mpl.rcParams['lines.markersize']*0.3)  
+        ax_i.set_title(ann)
+        ax_i.set_ylabel('')
+        ax_i.locator_params(axis='y',nbins=5)
+        ax_i.tick_params(axis="y",pad=-2)
+        ax_i.spines['right'].set_visible(False)
+        ax_i.spines['top'].set_visible(False)
+    
+    i=i+1
+    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+    ax_i = sns.distplot(np.log10(adata.var['n_counts']));
+    if(adata.uns['assay']=='rna'):
+        ax_i.set_title('No. of cells each gene is expressed in');
+    if(adata.uns['assay']=='atac'):
+        ax_i.set_title('No. of cells each peak is observed in');
+    ax_i.set_xlabel('log10(#cells)');
+    ax_i.set_ylabel('')
+    ax_i.locator_params(axis='x',nbins=5)
+    ax_i.locator_params(axis='y',nbins=5)
+    ax_i.tick_params(axis="y",pad=-2)
+    ax_i.tick_params(axis="x",pad=-2)
+    ax_i.spines['right'].set_visible(False)
+    ax_i.spines['top'].set_visible(False)
+    
+    i=i+1
+    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+    ax_i = sns.distplot(np.log10(adata.obs['n_counts']));
+    if(adata.uns['assay']=='rna'):
+        ax_i.set_xlabel('log10(#genes)');
+        ax_i.set_title('No. of genes each cell uses');
+    if(adata.uns['assay']=='atac'):
+        ax_i.set_xlabel('log10(#peaks)');
+        ax_i.set_title('No. of peaks each cell uses');
+    ax_i.set_ylabel('')
+    ax_i.locator_params(axis='x',nbins=5)
+    ax_i.locator_params(axis='y',nbins=5)
+    ax_i.tick_params(axis="y",pad=-2)
+    ax_i.tick_params(axis="x",pad=-2)
+    ax_i.spines['right'].set_visible(False)
+    ax_i.spines['top'].set_visible(False)
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+
+
 def filter_genes(adata,min_num_cells = 5,min_pct_cells = None,min_count = None, expr_cutoff = 1):
     """Filter out genes based on different metrics.
 
@@ -481,7 +621,7 @@ def filter_cells(adata,min_num_features = None,min_pct_features = None,min_count
     updates `adata` with the following fields.
     n_counts: `pandas.Series` (`adata.obs['n_counts']`,dtype `int`)
        The number of read count each cell has.
-    n_features: `pandas.Series` (`adata.var['n_cells']`,dtype `int`)
+    n_features: `pandas.Series` (`adata.obs['n_features']`,dtype `int`)
        The number of features expressed in each cell.
     """
 
@@ -567,7 +707,7 @@ def normalize(adata,method='lib_size'):
         raise ValueError("unrecognized method '%s'" % method)
     if(method == 'lib_size'):
         adata.X = (np.divide(adata.X.T,adata.X.sum(axis=1)).T)*1e6
-    if(method) == 'tf_idf'
+    if(method == 'tf_idf'):
         adata.X = cal_tf_idf(adata.X)
 
 def remove_mt_genes(adata):
@@ -971,7 +1111,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                              show_text=False,show_graph=False,
                              save_fig=False,fig_path=None,fig_name='dimension_reduction.pdf',
                              plotly=False):    
-    """Plot branches along with cells. The branches only contain leaf nodes and branching nodes
+    """Plot the manifold where the graph is learned
     
     Parameters
     ----------
@@ -995,7 +1135,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
         'ori_epg' original elastic principal graph, which is obtained by running elastic_principal_graph()
     fig_size: `tuple`, optional (default: None)
         figure size.
-    fig_ncol: `int`, optional (default: 1)
+    fig_ncol: `int`, optional (default: 3)
         the number of columns of the figure panel
     fig_legend_order: `dict`,optional (default: None)
         Specified order for the appearance of the annotation keys.Only valid for ategorical variable  
