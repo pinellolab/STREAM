@@ -397,14 +397,17 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     adata.var['n_counts'] = n_counts
     n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
     adata.var['n_cells'] = n_cells 
+    adata.var['pct_cells'] = n_cells/adata.shape[0]
 
     n_counts = np.sum(adata.X,axis=1).astype(int)
     adata.obs['n_counts'] = n_counts
     n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
     if(assay=='atac'):
-        adata.obs['n_peaks'] = n_features   
+        adata.obs['n_peaks'] = n_features  
+        adata.obs['pct_peaks'] = n_features/adata.shape[1]
     if(assay=='rna'):
         adata.obs['n_genes'] = n_features
+        adata.obs['pct_genes'] = n_features/adata.shape[1]
         r = re.compile("^MT-",flags=re.IGNORECASE)
         mt_genes = list(filter(r.match, adata.var_names))
         if(len(mt_genes)>0):
@@ -415,8 +418,8 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     adata.uns['assay'] = assay
 
 def plot_qc(adata,
-            fig_size=(4,4),fig_ncol=5,jitter=0.4,
-            pad=1.08,w_pad=None,h_pad=None,
+            fig_size=(4,4),jitter=0.4,
+            pad=1.08,w_pad=None,h_pad=3,
             save_fig=False,fig_path=None,fig_name='qc.pdf',):
     
     """Plot QC metrics
@@ -447,59 +450,45 @@ def plot_qc(adata,
     
     assert 'assay' in adata.uns_keys(),'please run `cal_qc(adata)` first'
     if(adata.uns['assay']=='rna'):
-        n_subplots = 5
-        ann_list = ['n_counts','n_genes','pct_mt']
+        feature = 'Genes'
+        obs_list = ['n_counts','n_genes','pct_genes','pct_mt',] 
     if(adata.uns['assay']=='atac'):
-        n_subplots = 4
-        ann_list = ['n_counts','n_peaks']
+        feature = 'Peaks'
+        obs_list = ['n_counts','n_peaks','pct_peaks',]
+    var_list = ['n_counts','n_cells','pct_cells']
 
-    fig_ncol = min(fig_ncol,n_subplots)
-    fig_nrow = int(np.ceil(5/fig_ncol))
-    fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,fig_size[1]*fig_nrow*1.05))
-    for i,ann in enumerate(ann_list):
+    fig_ncol = len(obs_list)
+    fig_nrow = 2
+    fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.2,fig_size[1]*fig_nrow*1.05))
+    for i in range(fig_ncol*fig_nrow):
         ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
-        ax_i = sns.violinplot(y=ann,data=adata.obs,inner=None)
-        ax_i = sns.stripplot(y=ann,data=adata.obs,
-                             color='black',jitter=jitter,s=mpl.rcParams['lines.markersize']*0.3)  
-        ax_i.set_title(ann)
-        ax_i.set_ylabel('')
-        ax_i.locator_params(axis='y',nbins=5)
-        ax_i.tick_params(axis="y",pad=-2)
-        ax_i.spines['right'].set_visible(False)
-        ax_i.spines['top'].set_visible(False)
-    
-    i=i+1
-    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
-    ax_i = sns.distplot(np.log10(adata.var['n_counts']));
-    if(adata.uns['assay']=='rna'):
-        ax_i.set_title('No. of cells each gene is expressed in');
-    if(adata.uns['assay']=='atac'):
-        ax_i.set_title('No. of cells each peak is observed in');
-    ax_i.set_xlabel('log10(#cells)');
-    ax_i.set_ylabel('')
-    ax_i.locator_params(axis='x',nbins=5)
-    ax_i.locator_params(axis='y',nbins=5)
-    ax_i.tick_params(axis="y",pad=-2)
-    ax_i.tick_params(axis="x",pad=-2)
-    ax_i.spines['right'].set_visible(False)
-    ax_i.spines['top'].set_visible(False)
-    
-    i=i+1
-    ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
-    ax_i = sns.distplot(np.log10(adata.obs['n_counts']));
-    if(adata.uns['assay']=='rna'):
-        ax_i.set_xlabel('log10(#genes)');
-        ax_i.set_title('No. of genes each cell uses');
-    if(adata.uns['assay']=='atac'):
-        ax_i.set_xlabel('log10(#peaks)');
-        ax_i.set_title('No. of peaks each cell uses');
-    ax_i.set_ylabel('')
-    ax_i.locator_params(axis='x',nbins=5)
-    ax_i.locator_params(axis='y',nbins=5)
-    ax_i.tick_params(axis="y",pad=-2)
-    ax_i.tick_params(axis="x",pad=-2)
-    ax_i.spines['right'].set_visible(False)
-    ax_i.spines['top'].set_visible(False)
+        if(i<(len(obs_list)+len(var_list))):
+            if(i<fig_ncol):
+                ann = obs_list[i]
+                sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=adata.obs,inner=None)
+                sc_i2 = sns.stripplot(ax=ax_i,y=ann,data=adata.obs,
+                                     color='black',jitter=jitter,s=mpl.rcParams['lines.markersize']*0.3)  
+
+            else:
+                ann = var_list[i%fig_ncol]
+                sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=adata.var,inner=None)
+                sc_i2 = sns.stripplot(ax=ax_i,y=ann,data=adata.var,
+                                     color='black',jitter=jitter,s=mpl.rcParams['lines.markersize']*0.3)  
+            ax_i.set_title(ann)
+            ax_i.locator_params(axis='y',nbins=5)
+            ax_i.tick_params(axis="y",pad=-2)
+            ax_i.spines['right'].set_visible(False)
+            ax_i.spines['top'].set_visible(False)
+            if(i==0):
+                ax_i.set_ylabel('Cells',rotation=0, size='large',labelpad=50)
+            elif(i==fig_ncol):
+                ax_i.set_ylabel(feature,rotation=0, size='large',labelpad=50)
+            else:
+                ax_i.set_ylabel('')
+                
+        else:
+            ax_i.set_visible(False)
+            
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
 
 
