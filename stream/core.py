@@ -418,7 +418,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     adata.uns['assay'] = assay
 
 def plot_qc(adata,
-            fig_size=(4,4),jitter=0.4,
+            fig_size=(4,4),jitter=0.4,size=1,log_scale=None,hist_plot=None,
             pad=1.08,w_pad=None,h_pad=3,
             save_fig=False,fig_path=None,fig_name='qc.pdf',):
     
@@ -430,8 +430,16 @@ def plot_qc(adata,
         Annotated data matrix.
     fig_size: `tuple`, optional (default: (4,4))
         figure size.
-    fig_ncol: `int`, optional (default: 5)
-        the number of columns of the figure panel
+    jitter: `float`, (default: 0.4)
+        Amount of jitter (only along the categorical axis) to apply.
+    size : `int`, (default: None)
+        Size of the jitter points.
+    log_scale: `list`, (default: None)
+        Indices of plots to use log-transformation (0-indexed). 
+        Index starts at 0 in the upper left corner and increases to the right.
+    hist_plot: `list`, (default: None)
+        Indices of plots to use histogram plot (0-indexed). 
+        Index starts at 0 in the upper left corner and increases to the right.        
     pad: `float`, optional (default: 1.08)
         Padding between the figure edge and the edges of subplots, as a fraction of the font size.
     h_pad, w_pad: `float`, optional (default: None)
@@ -457,38 +465,61 @@ def plot_qc(adata,
         obs_list = ['n_counts','n_peaks','pct_peaks',]
     var_list = ['n_counts','n_cells','pct_cells']
 
-    fig_ncol = len(obs_list)
-    fig_nrow = 2
-    fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.2,fig_size[1]*fig_nrow*1.05))
-    for i in range(fig_ncol*fig_nrow):
-        ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
-        if(i<(len(obs_list)+len(var_list))):
-            if(i<fig_ncol):
-                ann = obs_list[i]
-                sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=adata.obs,inner=None)
-                sc_i2 = sns.stripplot(ax=ax_i,y=ann,data=adata.obs,
-                                     color='black',jitter=jitter,s=mpl.rcParams['lines.markersize']*0.3)  
-
-            else:
-                ann = var_list[i%fig_ncol]
-                sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=adata.var,inner=None)
-                sc_i2 = sns.stripplot(ax=ax_i,y=ann,data=adata.var,
-                                     color='black',jitter=jitter,s=mpl.rcParams['lines.markersize']*0.3)  
-            ax_i.set_title(ann)
-            ax_i.locator_params(axis='y',nbins=5)
-            ax_i.tick_params(axis="y",pad=-2)
-            ax_i.spines['right'].set_visible(False)
-            ax_i.spines['top'].set_visible(False)
-            if(i==0):
-                ax_i.set_ylabel('Cells',rotation=0, size='large',labelpad=50)
-            elif(i==fig_ncol):
-                ax_i.set_ylabel(feature,rotation=0, size='large',labelpad=50)
-            else:
-                ax_i.set_ylabel('')
-                
-        else:
-            ax_i.set_visible(False)
+    if(log_scale is None):
+        log_scale = []
+    for x in log_scale:
+        if(x>=(len(obs_list)+len(var_list))):
+            raise ValueError("Index '%s' out of range"  % (x))
             
+    if(hist_plot is None):
+        hist_plot = []
+    for x in hist_plot:
+        if(x>=(len(obs_list)+len(var_list))):
+            raise ValueError("Index '%s' out of range"  % (x))            
+  
+    fig_ncol = len(obs_list)
+    fig_nrow = 2    
+    fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.2,fig_size[1]*fig_nrow*1.05))
+    df_obs = adata.obs[obs_list].copy()
+    df_var = adata.var[var_list].copy()
+    
+    for i in range(len(obs_list)+len(var_list)):
+        ax_i = fig.add_subplot(fig_nrow,fig_ncol,i+1)
+        if(i<fig_ncol):
+            ann = obs_list[i]
+            if(i in log_scale):
+                df_obs['log10_'+ann] = np.log10(df_obs[ann]+1)
+                ann = 'log10_'+ann 
+            if(i in hist_plot):
+                sc_i1 = sns.distplot(df_obs[ann],vertical=True)
+                ax_i.set_xticks([]) 
+            else:
+                sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=df_obs,inner=None)
+                sc_i2 = sns.stripplot(ax=ax_i,y=ann,data=df_obs,
+                                     color='black',jitter=jitter,s=size) 
+        else:
+            ann = var_list[i%fig_ncol]
+            if(i in log_scale):
+                df_var['log10_'+ann] = np.log10(df_var[ann]+1)
+                ann = 'log10_'+ann 
+            if(i in hist_plot):
+                sc_i1 = sns.distplot(df_var[ann],vertical=True)
+                ax_i.set_xticks([])
+            else:
+                sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=df_var,inner=None)
+                sc_i2 = sns.stripplot(ax=ax_i,y=ann,data=df_var,
+                                     color='black',jitter=jitter,s=size)  
+        ax_i.set_title(ann)
+        ax_i.locator_params(axis='y',nbins=6)
+        ax_i.tick_params(axis="y",pad=-2)
+        ax_i.spines['right'].set_visible(False)
+        ax_i.spines['top'].set_visible(False)
+        if(i==0):
+            ax_i.set_ylabel('Cells',rotation=0, size='large',labelpad=50)
+        elif(i==fig_ncol):
+            ax_i.set_ylabel(feature,rotation=0, size='large',labelpad=50)
+        else:
+            ax_i.set_ylabel('')
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
 
 
