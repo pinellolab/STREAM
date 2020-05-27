@@ -581,17 +581,17 @@ def filter_features(adata,
     if(assay=='atac'):
         feature = 'peaks'
     
-    if('n_counts' in adata.var_names):
+    if('n_counts' in adata.var_keys()):
         n_counts = adata.var['n_counts']
     else:
         n_counts = np.sum(adata.X,axis=0).astype(int)
         adata.var['n_counts'] = n_counts
-    if('n_cells' in adata.var_names):
+    if('n_cells' in adata.var_keys()):
         n_cells = adata.var['n_cells']
     else:
         n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
         adata.var['n_cells'] = n_cells   
-    if('pct_cells' in adata.var_names): 
+    if('pct_cells' in adata.var_keys()): 
         pct_cells = adata.var['pct_cells']
     else:
         pct_cells = n_cells/adata.shape[0]
@@ -669,30 +669,30 @@ def filter_cells(adata,
     assay = assay.lower()
     assert assay in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
             
-    if('n_counts' in adata.obs_names):
+    if('n_counts' in adata.obs_keys()):
         n_counts = adata.obs['n_counts']
     else:
         n_counts = np.sum(adata.X,axis=1).astype(int)
         adata.obs['n_counts'] = n_counts
     if(assay == 'rna'):
-        if('n_genes' in adata.obs_names):
+        if('n_genes' in adata.obs_keys()):
             n_features = adata.obs['n_genes']
         else:
             n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
             adata.obs['n_genes'] = n_features       
-        if('pct_genes' in adata.obs_names):
+        if('pct_genes' in adata.obs_keys()):
             pct_features = adata.obs['pct_genes']
         else:
             pct_features = n_features/adata.shape[1]
             adata.obs['pct_genes'] = pct_features
         feature = 'genes'
     if(assay == 'atac'):
-        if('n_peaks' in adata.obs_names):
+        if('n_peaks' in adata.obs_keys()):
             n_features = adata.obs['n_peaks']
         else:
             n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
             adata.obs['n_peaks'] = n_features       
-        if('pct_peaks' in adata.obs_names):
+        if('pct_peaks' in adata.obs_keys()):
             pct_features = adata.obs['pct_peaks']
         else:
             pct_features = n_features/adata.shape[1]
