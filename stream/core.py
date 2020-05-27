@@ -155,11 +155,14 @@ def read(file_name,file_path='',file_format=None,delimiter='\t',workdir=None, fi
         # adata.raw = adata
     if(file_format == 'mtx'):
         adata = ad.read_mtx(_fp(file_name),**kwargs).T 
-        adata.X = np.array(adata.X.todense())
+        adata.X = adata.X.toarray()
         print(_fp(os.path.join(os.path.dirname(file_name),file_feature)))
         genes = pd.read_csv(_fp(os.path.join(os.path.dirname(file_name),file_feature)), header=None, sep='\t')
-        adata.var_names = genes[1]
-        adata.var['gene_ids'] = genes[0].values
+        if(genes.shape[1]>=2):
+            adata.var_names = genes[1]
+            adata.var['gene_ids'] = genes[0].values
+        else:
+            adata.var_names = genes[0]
         print(_fp(os.path.join(os.path.dirname(file_name),file_sample)))
         adata.obs_names = pd.read_csv(_fp(os.path.join(os.path.dirname(file_name),file_sample)), header=None)[0]
         # adata.raw = adata
@@ -420,7 +423,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
         mt_genes = list(filter(r.match, adata.var_names))
         if(len(mt_genes)>0):
             n_counts_mt = np.sum(adata[:,mt_genes].X,axis=1)
-            adata.obs['pct_mt'] = np.float(n_counts_mt)/n_counts
+            adata.obs['pct_mt'] = n_counts_mt/n_counts
         else:
             adata.obs['pct_mt'] = 0
     adata.uns['assay'] = assay
