@@ -423,7 +423,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
         mt_genes = list(filter(r.match, adata.var_names))
         if(len(mt_genes)>0):
             n_counts_mt = np.sum(adata[:,mt_genes].X,axis=1)
-            adata.obs['pct_mt'] = np.float(n_counts_mt)/n_counts
+            adata.obs['pct_mt'] = n_counts_mt/n_counts
         else:
             adata.obs['pct_mt'] = 0
     adata.uns['assay'] = assay
