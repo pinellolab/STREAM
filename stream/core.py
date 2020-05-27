@@ -745,21 +745,21 @@ def log_transform(adata,base=2):
     return None
 
 
-def normalize_per_cell(adata):
-    """Normalize gene expression based on library size.
+# def normalize_per_cell(adata):
+#     """Normalize gene expression based on library size.
 
-    Parameters
-    ----------
-    adata: AnnData
-        Annotated data matrix.
+#     Parameters
+#     ----------
+#     adata: AnnData
+#         Annotated data matrix.
 
-    Returns
-    -------
-    updates `adata` with the following fields.
-    X: `numpy.ndarray` (`adata.X`)
-        Store #observations × #var_genes normalized data matrix.
-    """
-    adata.X = (np.divide(adata.X.T,adata.X.sum(axis=1)).T)*1e6
+#     Returns
+#     -------
+#     updates `adata` with the following fields.
+#     X: `numpy.ndarray` (`adata.X`)
+#         Store #observations × #var_genes normalized data matrix.
+#     """
+#     adata.X = (np.divide(adata.X.T,adata.X.sum(axis=1)).T)*1e6
 
 def normalize(adata,method='lib_size'):
     """Normalize count matrix.
