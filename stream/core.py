@@ -1335,8 +1335,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                                textposition="bottom center",
                                                name='states',
                                                showlegend=True if is_string_dtype(df_plot[ann]) else False))
-
-
+                fig.update_layout(scene = dict(aspectmode='cube'))
             else:
                 fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color=ann,
                                  opacity=alpha,
@@ -1364,7 +1363,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                                name='states',
                                                showlegend=True if is_string_dtype(df_plot[ann]) else False))
 
-            fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500) 
+                fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500) 
             fig.show(renderer="notebook")
             
     else:
@@ -1588,7 +1587,8 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,comp3=2,key_graph='e
                                            textposition="bottom center",))
                 
             fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500, 
-                              scene = dict(xaxis_title='Dim'+str(comp1+1),yaxis_title='Dim'+str(comp2+1),zaxis_title='Dim'+str(comp3+1))) 
+                              scene = dict(xaxis_title='Dim'+str(comp1+1),yaxis_title='Dim'+str(comp2+1),zaxis_title='Dim'+str(comp3+1),
+                                           aspectmode='cube')) 
         else:
             fig = go.Figure(data=go.Scatter())
             for edge_i in flat_tree.edges():
@@ -2599,6 +2599,10 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
     Returns
     -------
     updates `adata` with the following fields. (Depending on `method`)
+    vis_trans_umap : `umap.UMAP` (`adata.uns['vis_trans_umap']`)
+        Store umap object
+    vis_trans_tsne : `sklearn.manifold._t_sne.TSNE` (`adata.uns['vis_trans_tsne']`)
+        Store tsne object
     X_vis_umap: `numpy.ndarray` (`adata.obsm['X_vis_umap']`)
         Store #observations × 2 umap data matrix. 
     X_vis_tsne: `numpy.ndarray` (`adata.obsm['X_vis_tsne']`)
@@ -2632,15 +2636,19 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
             embedding = adata.obsm['X_vis_umap']
         else:
             reducer = umap.UMAP(n_neighbors=n_neighbors,n_components=2,random_state=42)
-            embedding = reducer.fit_transform(input_data)
+            trans = reducer.fit(input_data)
+            embedding = trans.embedding_
+            adata.uns['vis_trans_umap'] = trans
             adata.obsm['X_vis_umap'] = embedding
     if(method == 'tsne'):
         if(use_precomputed and ('X_vis_tsne' in adata.obsm_keys())):
             print('Importing precomputed tsne visualization ...')
             embedding = adata.obsm['X_vis_tsne']
         else:
-            reducer = TSNE(n_components=2, init='pca',perplexity=perplexity, random_state=0)
-            embedding = reducer.fit_transform(input_data)
+            reducer = TSNE(n_components=2, init='pca',perplexity=perplexity, random_state=42)
+            trans = reducer.fit(input_data)
+            embedding = trans.embedding_
+            adata.uns['vis_trans_tsne'] = trans
             adata.obsm['X_vis_tsne'] = embedding
     
     df_plot = pd.DataFrame(index=adata.obs.index,data = embedding,columns=[method.upper()+str(x) for x in [1,2]])
@@ -3863,7 +3871,10 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
         Store #observations × n_components data matrix after umap.
     X_pca : `numpy.ndarray` (`adata_new.obsm['X_pca']`)
         Store #observations × n_components data matrix after pca.
-
+    X_vis_umap: `numpy.ndarray` (`adata.obsm['X_vis_umap']`)
+        Store #observations × 2 umap data matrix. 
+    X_vis_tsne: `numpy.ndarray` (`adata.obsm['X_vis_tsne']`)
+        Store #observations × 2 tsne data matrix.  
     """
 
     feature = feature.lower()
@@ -3947,10 +3958,15 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
     adata_combined = adata_ref.concatenate(adata_new,batch_categories=['ref','new'])
     shared_obs_key = [x for x in adata_new.obs_keys() if x in adata_ref.obs_keys()]
     shared_var_key = [x for x in adata_new.var_keys() if x in adata_ref.var_keys()]
-    adata_combined.obs = adata_combined.obs[shared_obs_key]
+    adata_combined.obs = adata_combined.obs[shared_obs_key+['batch']]
     adata_combined.var = adata_combined.var[shared_var_key]
+    for vis_trans in ['vis_trans_umap','vis_trans_tsne']:
+        if vis_trans in adata_ref.uns_keys():
+            trans = adata_ref.uns[vis_trans]
+            adata_new.obsm['X_vis_'+vis_trans.split('_')[-1]] = trans.transform(adata_new.obsm['X_dr'])
+            adata_combined.obsm['X_vis_'+vis_trans.split('_')[-1]] = np.vstack((adata_ref.obsm['X_vis_'+vis_trans.split('_')[-1]], adata_new.obsm['X_vis_'+vis_trans.split('_')[-1]]))
     for key in adata_ref.uns_keys():
-        if key in ['workdir', 'var_genes', 'epg', 'flat_tree']:
+        if key in ['workdir', 'var_genes', 'epg', 'flat_tree','vis_trans_tsne','vis_trans_umap']:
             adata_combined.uns[key] = adata_ref.uns[key]
         if(key.split('_')[-1]=='color'):
             if(key in adata_new.uns_keys()):
