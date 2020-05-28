@@ -1551,6 +1551,8 @@ def plot_branches(adata,n_components = None,comp1=0,comp2=1,comp3=2,key_graph='e
     if n_components not in [2,3]:
         raise ValueError("n_components should be 2 or 3")
 
+    assert (all(np.isin(['epg','flat_tree'],adata.uns_keys()))),'''graph is not learnt yet. 
+    please first run: `st.seed_elastic_principal_graph` and `st.elastic_principal_graph` to learn graph'''
     assert (key_graph in ['epg','seed_epg','ori_epg']),"key_graph must be one of ['epg','seed_epg','ori_epg']"    
     if(fig_path is None):
         fig_path = adata.uns['workdir']
