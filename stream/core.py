@@ -1017,7 +1017,7 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         X_pca = adata.obsm['pca']
         pca_variance_ratio = adata.uns['pca_variance_ratio']
     else:
-        sklearn_pca = sklearnPCA(svd_solver='full')
+        sklearn_pca = sklearnPCA(n_components=max_pc,svd_solver='arpack')
         if(feature == 'var_genes'):
             print('using top variable genes ...')
             trans = sklearn_pca.fit(adata.obsm['var_genes'])
@@ -1176,7 +1176,7 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         adata.obsm['X_umap'] = trans.embedding_
         adata.obsm['X_dr'] = trans.embedding_
     if(method == 'pca'):
-        reducer = sklearnPCA(n_components=n_components,svd_solver='full')
+        reducer = sklearnPCA(n_components=n_components,svd_solver='arpack')
         trans = reducer.fit(input_data)
         adata.uns['trans_pca'] = trans
         adata.obsm['X_pca'] = trans.transform(input_data) 
@@ -1810,7 +1810,7 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
             epg_nodes_pos = init_nodes_pos
         elif(clustering=='kmeans'):
             print('K-Means clustering ...')
-            kmeans = KMeans(n_clusters=n_clusters,init='k-means++').fit(input_data)
+            kmeans = KMeans(n_clusters=n_clusters,init='k-means++',random_state=42).fit(input_data)
             cluster_labels = kmeans.labels_
             init_nodes_pos = kmeans.cluster_centers_
             epg_nodes_pos = init_nodes_pos     
