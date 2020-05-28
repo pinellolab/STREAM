@@ -1335,7 +1335,8 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                                textposition="bottom center",
                                                name='states',
                                                showlegend=True if is_string_dtype(df_plot[ann]) else False))
-                fig.update_layout(scene = dict(aspectmode='cube'))
+                fig.update_layout(legend= {'itemsizing': 'constant'},width=500,height=500, 
+                                  scene = dict(aspectmode='cube'))
             else:
                 fig = px.scatter(df_plot_shuf, x='Dim'+str(comp1+1), y='Dim'+str(comp2+1),color=ann,
                                  opacity=alpha,
