@@ -2950,7 +2950,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,
     factor_num_win: `int`, optional (default: 10)
         Number of sliding windows used for making stream plot.
     factor_min_win: `float`, optional (default: 2.0)
-        The minimum number of sliding windows. The window size is calculated based on shortest branch. 
+        The minimum number of sliding windows. The window size is calculated based on shortest branch. (suggested range: 1.5~3.0)
     factor_width: `float`, optional (default: 2.5)
         The ratio between length and width of stream plot. 
     factor_nrow: `int`, optional (default: 200)
