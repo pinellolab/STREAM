@@ -3945,11 +3945,11 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
     adata_combined = adata_ref.concatenate(adata_new,batch_categories=['ref','new'])
-    shared_obs_key = [x for x in adata_new.obs_keys() if x in adata.obs_keys()]
-    shared_var_key = [x for x in adata_new.var_keys() if x in adata.var_keys()]
+    shared_obs_key = [x for x in adata_new.obs_keys() if x in adata_ref.obs_keys()]
+    shared_var_key = [x for x in adata_new.var_keys() if x in adata_ref.var_keys()]
     adata_combined.obs = adata_combined.obs[shared_obs_key]
     adata_combined.var = adata_combined.var[shared_var_key]
-    for key in adata.uns_keys():
+    for key in adata_ref.uns_keys():
         if key in ['workdir', 'var_genes', 'epg', 'flat_tree']:
             adata_combined.uns[key] = adata_ref.uns[key]
         if(key.split('_')[-1]=='color'):
