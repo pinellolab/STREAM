@@ -199,21 +199,21 @@ def write(adata,file_name=None,file_path=None,file_format=None):
     adata: AnnData
         Annotated data matrix. 
     file_name: `str`, optional (default: None)
-        File name. If it's not specified, a file named 'stream_result' with the specified file format will be created 
+        File name. If it's not specified, a file named 'stream_result.pkl' will be created 
         under the working directory
     file_path: `str`, optional (default: '')
         File path. If it's not specified, it's set to working directory
-    file_format: `str`, optional (default: 'pkl')
+    file_format: `str`, optional (default: None)
         File format. By default it's compressed pickle file. Currently two file formats are supported:
         'pklz': compressed pickle file
         'pkl': pickle file
     """
-    
+
+    if(file_name is None):
+        file_name = 'stream_result.pkl'
     if(file_format is None):
         file_format = get_extension(file_name)
     assert (file_format in ['pkl','pklz']),"file_format must be one of ['pkl','pklz']"
-    if(file_name is None):
-        file_name = 'stream_result.'+file_format
     if(file_path is None):
         file_path = adata.uns['workdir']
     
@@ -221,13 +221,10 @@ def write(adata,file_name=None,file_path=None,file_format=None):
         f = gzip.open(os.path.join(file_path,file_name), 'wb')
         pickle.dump(adata, f, protocol=pickle.HIGHEST_PROTOCOL)
         f.close()  
-    elif(file_format == 'pkl'):
+    if(file_format == 'pkl'):
         f = open(os.path.join(file_path,file_name), 'wb')
         pickle.dump(adata, f, protocol=pickle.HIGHEST_PROTOCOL)
         f.close()            
-    else:
-        print('file format ' + file_format + ' is not supported')
-        return
 
 def add_metadata(adata,file_name,delimiter='\t',file_path=''):
     """Add metadata.
@@ -4010,8 +4007,9 @@ def map_new_data(adata_ref,adata_new,use_radius=False):
     shared_var_key = [x for x in adata_new.var_keys() if x in adata_ref.var_keys()]
     adata_combined.obs = adata_combined.obs[shared_obs_key+['batch']]
     adata_combined.var = adata_combined.var[shared_var_key]
+    adata_combined.uns['workdir'] = adata_new.uns['workdir']
     for key in adata_ref.uns_keys():
-        if key in ['workdir', 'var_genes', 'epg', 'flat_tree','vis_trans_tsne','vis_trans_umap']:
+        if key in ['var_genes', 'epg', 'flat_tree','vis_trans_tsne','vis_trans_umap']:
             adata_combined.uns[key] = adata_ref.uns[key]
         if(key.split('_')[-1]=='color'):
             if(key in adata_new.uns_keys()):
