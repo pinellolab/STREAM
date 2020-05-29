@@ -1011,13 +1011,18 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
     
     if(fig_path is None):
         fig_path = adata.uns['workdir']
-    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size    
+    fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size  
+    if(feature is None):
+        feature = 'all_genes'
+    if(feature not in ['all_genes','var_genes']):
+        raise ValueError("unrecognized feature '%s'" % feature)
+
     if(use_precomputed and ('pca' in adata.obsm_keys())):
         print('Importing precomputed principal components')
         X_pca = adata.obsm['pca']
         pca_variance_ratio = adata.uns['pca_variance_ratio']
     else:
-        sklearn_pca = sklearnPCA(n_components=max_pc,svd_solver='arpack')
+        sklearn_pca = sklearnPCA(n_components=max_pc,svd_solver='arpack',random_state=42)
         if(feature == 'var_genes'):
             print('using top variable genes ...')
             trans = sklearn_pca.fit(adata.obsm['var_genes'])
@@ -1041,6 +1046,11 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         #discard the first Principal Component
         adata.obsm['top_pcs'] = X_pca[:,1:(n_pc+1)]
     print(str(n_pc) + ' PCs are selected')
+
+    if('params' not in adata.uns_keys()):
+        adata.uns['params'] = dict()
+    adata.uns['params']['select_top_principal_components'] = {'feature':feature,'first_pc':first_pc,'n_pc':n_pc}
+
     ##plotting
     fig = plt.figure(figsize=fig_size)
     plt.plot(range(max_pc),pca_variance_ratio[:max_pc])
@@ -1081,7 +1091,7 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         Feature used for dimension reduction.
         'var_genes': most variable genes
         'top_pcs': top principal components
-        'all': all genes
+        'all_genes': all genes
     method: `str`, optional (default: 'se')
         Choose from {{'se','mlle','umap','pca'}}
         Method used for dimension reduction.
@@ -1126,7 +1136,7 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         input_data = adata.obsm['var_genes']
     if(feature == 'top_pcs'):
         input_data = adata.obsm['top_pcs']
-    if(feature == 'all'):
+    if(feature == 'all_genes'):
         input_data = adata.X
     print('feature ' + feature + ' is being used ...')
     print(str(n_jobs)+' cpus are being used ...')
@@ -1176,11 +1186,14 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         adata.obsm['X_umap'] = trans.embedding_
         adata.obsm['X_dr'] = trans.embedding_
     if(method == 'pca'):
-        reducer = sklearnPCA(n_components=n_components,svd_solver='arpack')
+        reducer = sklearnPCA(n_components=n_components,svd_solver='arpack',random_state=42)
         trans = reducer.fit(input_data)
         adata.uns['trans_pca'] = trans
         adata.obsm['X_pca'] = trans.transform(input_data) 
         adata.obsm['X_dr'] = adata.obsm['X_pca']
+    if('params' not in adata.uns_keys()):
+        adata.uns['params'] = dict()
+    adata.uns['params']['dimension_reduction'] = {'feature':feature,'method':method,'n_components':n_components}
     return None
 
 def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,color=None,key_graph='epg',
@@ -1726,7 +1739,7 @@ def infer_initial_structure(adata_low,nb_min=5):
         init_edges = epg_low.edges()
     return init_nodes_pos,init_edges
 
-def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='kmeans',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,n_neighbors=50, nb_pct=None):
+def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clustering='kmeans',damping=0.75,pref_perc=50,n_clusters=10,max_n_clusters=200,n_neighbors=50, nb_pct=None,use_vis=False):
     
     """Seeding the initial elastic principal graph.
     
@@ -1756,7 +1769,9 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
         The number of neighbor cells used for spectral clustering.
     nb_pct: `float`, optional (default: None)
         The percentage of neighbor cells (when sepcified, it will overwrite n_neighbors).
-
+    use_vis: `bool`, optional (default: False)
+        If True, the manifold learnt from st.plot_visualization_2D() will replace the manifold learnt from st.dimension_reduction().
+        The principal graph will be learnt in the new manifold.
 
     Returns
     -------
@@ -1785,6 +1800,11 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
     """
 
     print('Seeding initial elastic principal graph...')
+    if(use_vis):
+        if('X_vis' in adata.obsm_keys()):
+            adata.obsm['X_dr'] = adata.obsm['X_vis']
+        else:
+            raise ValueError("Please run `st.plot_visualization_2D()` first")
     input_data = adata.obsm['X_dr']
     if(nb_pct!=None):
         n_neighbors = int(np.around(input_data.shape[0]*nb_pct))    
@@ -1852,11 +1872,14 @@ def seed_elastic_principal_graph(adata,init_nodes_pos=None,init_edges=None,clust
     adata.uns['seed_flat_tree'] = deepcopy(flat_tree)  
     project_cells_to_epg(adata)
     calculate_pseudotime(adata)
+    if('params' not in adata.uns_keys()):
+        adata.uns['params'] = dict()
+    adata.uns['params']['epg'] = {'use_vis':use_vis}
     print('Number of initial branches: ' + str(len(dict_branches))) 
 
 
 def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.02,epg_mu=0.1,epg_trimmingradius='Inf',
-                            epg_finalenergy = 'Penalized',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,
+                            epg_finalenergy = 'Penalized',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,use_vis=False,
                             save_fig=False,fig_name='ElPiGraph_analysis.pdf',fig_path=None,fig_size=(8,8),**kwargs):
     """Elastic principal graph learning.
     
@@ -1882,6 +1905,10 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
         beta parameter of the penalized elastic energy.
     epg_n_processes: `int`, optional (default: 1)
         the number of processes to use.
+    use_vis: `bool`, optional (default: False)
+        Only valid when st.seed_elastic_principal_graph() is not performed.
+        If True, the manifold learnt from st.plot_visualization_2D() will replace the manifold learnt from st.dimension_reduction().
+        The principal graph will be learnt in the new manifold.
     save_fig: `bool`, optional (default: False)
         if True,save the figure.
     fig_size: `tuple`, optional (default: (8,8))
@@ -1914,7 +1941,7 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     """
     if(fig_path is None):
         fig_path = adata.uns['workdir']
-    input_data = adata.obsm['X_dr']
+
     if('seed_epg' in adata.uns_keys()):
         epg = adata.uns['seed_epg']
         dict_nodes_pos = nx.get_node_attributes(epg,'pos')
@@ -1926,8 +1953,18 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
             epg_n_nodes = init_nodes_pos.shape[0]+incr_n_nodes
     else:
         print('No initial structure is seeded')
+        if(use_vis):
+            if('X_vis' in adata.obsm_keys()):
+                adata.obsm['X_dr'] = adata.obsm['X_vis']
+            else:
+                raise ValueError("Please run `st.plot_visualization_2D()` first")
+        if('params' not in adata.uns_keys()):
+            adata.uns['params'] = dict()
+        adata.uns['params']['epg'] = {'use_vis':use_vis}
         init_nodes_pos = robjects.NULL
         R_init_edges = robjects.NULL
+
+    input_data = adata.obsm['X_dr']
         
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
@@ -2035,6 +2072,7 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_co
     if(len(extract_branches(epg))<3):
         print("No branching points are detected. This step is skipped")
         return
+
     input_data = adata.obsm['X_dr']
     epg_obj_collapse = ElPiGraph.CollapseBrances(X = input_data, TargetPG = epg_obj[0], Mode = epg_collapse_mode, ControlPar = epg_collapse_par, **kwargs)
 
@@ -2243,8 +2281,8 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
     if(len(extract_branches(epg))<3):
         print("No branching points are detected. This step is skipped")
         return
-    input_data = adata.obsm['X_dr']
 
+    input_data = adata.obsm['X_dr']
     epg_obj_shift = ElPiGraph.ShiftBranching(X = input_data, 
                                            TargetPG = epg_obj[0], 
                                            TrimmingRadius = epg_trimmingradius,                       
@@ -2337,8 +2375,8 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
     else:
         epg_obj = adata.uns['epg_obj']
         epg = adata.uns['epg']
-    input_data = adata.obsm['X_dr']
 
+    input_data = adata.obsm['X_dr']
     epg_obj_extend = ElPiGraph.ExtendLeaves(X = input_data, 
                                           TargetPG = epg_obj[0],
                                           TrimmingRadius = epg_trimmingradius,
@@ -2609,7 +2647,9 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
     X_vis_umap: `numpy.ndarray` (`adata.obsm['X_vis_umap']`)
         Store #observations × 2 umap data matrix. 
     X_vis_tsne: `numpy.ndarray` (`adata.obsm['X_vis_tsne']`)
-        Store #observations × 2 tsne data matrix.     
+        Store #observations × 2 tsne data matrix. 
+    X_vis : `numpy.ndarray` (`adata.obsm['X_vis']`)
+        A #observations × 2 data matrix after visualization.   
     """    
     if(fig_path is None):
         fig_path = adata.uns['workdir']
@@ -2653,6 +2693,10 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
             embedding = trans.embedding_
             adata.uns['vis_trans_tsne'] = trans
             adata.obsm['X_vis_tsne'] = embedding
+    adata.obsm['X_vis'] = embedding
+    if('params' not in adata.uns_keys()):
+        adata.uns['params'] = dict()
+    adata.uns['params']['plot_visualization_2D'] = {'method':method}
     
     df_plot = pd.DataFrame(index=adata.obs.index,data = embedding,columns=[method.upper()+str(x) for x in [1,2]])
     for ann in color:
@@ -3820,7 +3864,7 @@ def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percent
     adata.uns['markers_'+ident+'_all'] = df_markers
     adata.uns['markers_'+ident] = dict_markers    
 
-def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle',use_radius=True,first_pc=False,top_pcs_feature=None):
+def map_new_data(adata_ref,adata_new,use_radius=False):
     """ Map new data to the inferred trajectories
     
     Parameters
@@ -3829,19 +3873,7 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
         Annotated data matrix.
     adata_new: new AnnData
         Annotated data matrix for new data (to be mapped).
-    feature: `str`, optional (default: 'var_genes')
-        Choose from {{'var_genes','top_pcs','all'}}
-        Feature used for mapping. This should be consistent with the feature used for inferring trajectories
-        'var_genes': most variable genes
-        'all': all genes
-        'top_pcs': top principal components
-    method: `str`, optional (default: 'mlle')
-        Choose from {{'mlle','umap','pca'}}
-        Method used for mapping. This should be consistent with the dimension reduction method used for inferring trajectories
-        'mlle': Modified locally linear embedding algorithm
-        'umap': Uniform Manifold Approximation and Projection
-        'pca': Principal component analysis
-    use_radius: `bool`, optional (default: True)
+    use_radius: `bool`, optional (default: False)
         Only valid when `method = 'mlle'`. If True, when searching for the neighbors for each cell in MLLE space, STREAM uses a fixed radius instead of a fixed number of cells.
     first_pc: `bool`, optional (default: False)
         Only valid when `feature='top_pcs'` If True, the first principal component will be included
@@ -3880,12 +3912,11 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
         Store #observations × 2 tsne data matrix.  
     """
 
-    feature = feature.lower()
-    method = method.lower()
-    assert (feature in ['var_genes','top_pcs','all']),"feature must be one of ['var_genes','top_pcs','all']"
-    assert (method in ['mlle','umap','pca']),"feature must be one of ['mlle','umap','pca']"
+    feature = adata_ref.uns['params']['dimension_reduction']['feature']
+    method = adata_ref.uns['params']['dimension_reduction']['method']
+    assert (method in ['mlle','umap','pca']),"'%s' is not supported. Please use one of 'mlle','umap', and 'pca' for dimension reduction." %method
     if(feature == 'var_genes'):
-        print('Top variable genes are being used for mapping...')
+        print('Top variable genes are being used for mapping ...')
         if('var_genes' not in adata_ref.uns_keys()):
             raise ValueError("variable genes are not selected yet in `adata_ref`")
         for x in adata_ref.uns['var_genes']:
@@ -3894,16 +3925,17 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
         adata_new.uns['var_genes'] = adata_ref.uns['var_genes'].copy()
         adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
         input_data = adata_new.obsm['var_genes']
-    if(feature == 'all'):
-        print('All genes are being used for mapping...')
+    if(feature == 'all_genes'):
+        print('All genes are being used for mapping ...')
         if(not set(adata_ref.var_names) <= set(adata_new.var_names)):
             raise ValueError("`adata_new.var_names` does not contain all the genes in `adata_ref.var_names`")
         input_data = adata_new[:,adata_ref.var.index].X
     if(feature == 'top_pcs'):
-        print('Top principal components are being used for mapping...')
+        print('Top principal components are being used for mapping ...')
         if('top_pcs' not in adata_ref.uns_keys()):
             raise ValueError("top principal components are not selected yet in `adata_ref`")
         trans = adata_ref.uns['top_pcs']
+        top_pcs_feature = adata_ref.uns['params']['select_top_principal_components']['feature']
         if(top_pcs_feature == 'var_genes'):
             if('var_genes' not in adata_ref.uns_keys()):
                 raise ValueError("variable genes are not selected yet in `adata_ref`")
@@ -3913,6 +3945,7 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
         else:
             X_pca = trans.transform(adata_new[:,adata_ref.var.index].X) 
         n_pc = adata_ref.obsm['top_pcs'].shape[1]
+        first_pc = adata_ref.uns['params']['select_top_principal_components']['first_pc']
         if(first_pc):
             adata_new.obsm['top_pcs'] = X_pca[:,0:(n_pc)]
         else:
@@ -3922,10 +3955,7 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
     adata_new.uns['epg'] = adata_ref.uns['epg'].copy()
     adata_new.uns['flat_tree'] = adata_ref.uns['flat_tree'].copy() 
 
-    # if(method == 'se'):
-    #     trans = adata_ref.uns['trans_se']
-    #     adata_new.obsm['X_se_mapping'] = trans.transform(input_data)
-    #     adata_new.obsm['X_dr'] = adata_new.obsm['X_se_mapping'].copy()
+    print("method '%s' is being used for mapping ..." %method)
     if(method == 'mlle'):
         if('trans_mlle' in adata_ref.uns_keys()):
             trans = adata_ref.uns['trans_mlle']
@@ -3956,6 +3986,17 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
             adata_new.obsm['X_dr'] = adata_new.obsm['X_pca_mapping'].copy()
         else:
             raise Exception("Please run 'st.dimension_reduction()' using 'pca' first.")  
+
+    if('plot_visualization_2D' in adata_ref.uns['params'].keys()):
+        print('Visualizing new cells on 2D plane ...')
+        vis_method = adata_ref.uns['params']['plot_visualization_2D']['method']
+        vis_trans = 'vis_trans_' + vis_method
+        trans = adata_ref.uns[vis_trans]
+        adata_new.obsm['X_vis_'+vis_method] = trans.transform(adata_new.obsm['X_dr'])
+        if(adata_ref.uns['params']['epg']['use_vis']):
+            print("Using the manifold from `plot_visualization_2D()` ")
+            adata_new.obsm['X_dr'] = adata_new.obsm['X_vis_'+vis_method]
+            
     project_cells_to_epg(adata_new)
     calculate_pseudotime(adata_new)
     adata_combined = adata_ref.concatenate(adata_new,batch_categories=['ref','new'])
@@ -3963,11 +4004,6 @@ def map_new_data(adata_ref,adata_new,color=None,feature='var_genes',method='mlle
     shared_var_key = [x for x in adata_new.var_keys() if x in adata_ref.var_keys()]
     adata_combined.obs = adata_combined.obs[shared_obs_key+['batch']]
     adata_combined.var = adata_combined.var[shared_var_key]
-    for vis_trans in ['vis_trans_umap','vis_trans_tsne']:
-        if vis_trans in adata_ref.uns_keys():
-            trans = adata_ref.uns[vis_trans]
-            adata_new.obsm['X_vis_'+vis_trans.split('_')[-1]] = trans.transform(adata_new.obsm['X_dr'])
-            adata_combined.obsm['X_vis_'+vis_trans.split('_')[-1]] = np.vstack((adata_ref.obsm['X_vis_'+vis_trans.split('_')[-1]], adata_new.obsm['X_vis_'+vis_trans.split('_')[-1]]))
     for key in adata_ref.uns_keys():
         if key in ['workdir', 'var_genes', 'epg', 'flat_tree','vis_trans_tsne','vis_trans_umap']:
             adata_combined.uns[key] = adata_ref.uns[key]
