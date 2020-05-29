@@ -367,14 +367,14 @@ def add_cell_colors(adata,file_path='',file_name=None):
 #     return None
 
 
-def cal_qc(adata,expr_cutoff=0,assay='rna'):
+def cal_qc(adata,expr_cutoff=1,assay='rna'):
     """Calculate quality control metrics.
     
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    expr_cutoff: `float`, optional (default: 0)
+    expr_cutoff: `float`, optional (default: 1)
         Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
     assay: `str`, optional (default: 'rna')
             Choose from {{'rna','atac'}},case insensitive
@@ -407,13 +407,13 @@ def cal_qc(adata,expr_cutoff=0,assay='rna'):
 
     n_counts = np.sum(adata.X,axis=0).astype(int)
     adata.var['n_counts'] = n_counts
-    n_cells = np.sum(adata.X>expr_cutoff,axis=0).astype(int)
+    n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
     adata.var['n_cells'] = n_cells 
     adata.var['pct_cells'] = n_cells/adata.shape[0]
 
     n_counts = np.sum(adata.X,axis=1).astype(int)
     adata.obs['n_counts'] = n_counts
-    n_features = np.sum(adata.X>expr_cutoff,axis=1).astype(int)
+    n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
     if(assay=='atac'):
         adata.obs['n_peaks'] = n_features  
         adata.obs['pct_peaks'] = n_features/adata.shape[1]
@@ -540,7 +540,7 @@ def filter_features(adata,
                     min_n_cells = None, max_n_cells=None,
                     min_pct_cells = None, max_pct_cells=None,
                     min_n_counts = None, max_n_counts=None,
-                    expr_cutoff = 0,assay=None):
+                    expr_cutoff = 1,assay=None):
     """Filter out features based on different metrics.
 
     Parameters
@@ -553,7 +553,7 @@ def filter_features(adata,
         Minimum percentage of cells expressing one feature
     min_n_counts: `int`, optional (default: None)
         Minimum number of read count for one feature
-    expr_cutoff: `float`, optional (default: 0)
+    expr_cutoff: `float`, optional (default: 1)
         Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
     assay: `str`, optional (default: 'rna')
             Choose from {{'rna','atac'}},case insensitive
@@ -590,7 +590,7 @@ def filter_features(adata,
     if('n_cells' in adata.var_keys()):
         n_cells = adata.var['n_cells']
     else:
-        n_cells = np.sum(adata.X>expr_cutoff,axis=0).astype(int)
+        n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
         adata.var['n_cells'] = n_cells   
     if('pct_cells' in adata.var_keys()): 
         pct_cells = adata.var['pct_cells']
@@ -630,7 +630,7 @@ def filter_cells(adata,
                  min_n_features = None, max_n_features = None,
                  min_pct_features = None, max_pct_features = None,
                  min_n_counts=None, max_n_counts = None,
-                 expr_cutoff = 0,assay=None):
+                 expr_cutoff = 1,assay=None):
     """Filter out cells based on different metrics.
 
     Parameters
@@ -643,7 +643,7 @@ def filter_cells(adata,
         Minimum percentage of features expressed
     min_n_counts: `int`, optional (default: None)
         Minimum number of read count for one cell
-    expr_cutoff: `float`, optional (default: 0)
+    expr_cutoff: `float`, optional (default: 1)
         Expression cutoff. If greater than expr_cutoff,the gene is considered 'expressed'
     assay: `str`, optional (default: 'rna')
             Choose from {{'rna','atac'}},case insensitive    
@@ -679,7 +679,7 @@ def filter_cells(adata,
         if('n_genes' in adata.obs_keys()):
             n_features = adata.obs['n_genes']
         else:
-            n_features = np.sum(adata.X>expr_cutoff,axis=1).astype(int)
+            n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
             adata.obs['n_genes'] = n_features       
         if('pct_genes' in adata.obs_keys()):
             pct_features = adata.obs['pct_genes']
@@ -691,7 +691,7 @@ def filter_cells(adata,
         if('n_peaks' in adata.obs_keys()):
             n_features = adata.obs['n_peaks']
         else:
-            n_features = np.sum(adata.X>expr_cutoff,axis=1).astype(int)
+            n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
             adata.obs['n_peaks'] = n_features       
         if('pct_peaks' in adata.obs_keys()):
             pct_features = adata.obs['pct_peaks']
