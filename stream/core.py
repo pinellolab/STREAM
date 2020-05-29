@@ -4218,7 +4218,7 @@ def save_vr_report(adata,ann_list=None,gene_list=None,file_name='stream_vr_repor
     else:
         print(file_name + '.zip is saved at ' + adata.uns['workdir'])
 
-def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=None,
+def save_web_report(adata,n_markers=5,file_name='stream_web_report',preference=None,
                     title="experiment name",
                     description="experiment description",
                     starting_node="root node",
@@ -4231,8 +4231,8 @@ def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=Non
         Annotated data matrix.
     file_name: `str`, optional (default: 'stream_report')
         Ouput Zip file name.
-    n_genes: `int`, optional (default: 5)
-        Number of top genes selected from each output marker gene file. 
+    n_markers: `int`, optional (default: 5)
+        Number of top markers selected from each output marker gene file. 
     title: `str`, optional (default: 'experiment name')
         Experiment name displayed on STREAM website.
     description: `str`, optional (default: 'experiment description')
@@ -4244,7 +4244,7 @@ def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=Non
     preference: `list`, optional (default: None): 
         The preference of nodes. The branch with speficied nodes are preferred and put on the top part. 
         The higher ranks the node have, the closer to the top the branch with that node is.
-    **kwargs: additional arguments to stream_plot() and stream_plot_gene()
+    **kwargs: additional arguments to plot_stream()
     
     Returns
     -------
@@ -4252,11 +4252,11 @@ def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=Non
     """    
     if('flat_tree' not in adata.uns_keys()):
         raise ValueError('Please run st.plot_flat_tree(adata) before saving web report')
-    if('leaf_genes' not in adata.uns_keys()):
+    if('leaf_markers' not in adata.uns_keys()):
         raise ValueError('Please run st.detect_leaf_markers(adata) before saving web report')
-    if('transition_genes' not in adata.uns_keys()):
+    if('transition_markers' not in adata.uns_keys()):
         raise ValueError('Please run st.detect_transistion_markers(adata) before saving web report')
-    if(('de_genes_greater' not in adata.uns_keys()) or ('de_genes_less' not in adata.uns_keys())):
+    if(('de_markers_greater' not in adata.uns_keys()) or ('de_markers_less' not in adata.uns_keys())):
         raise ValueError('Please run st.detect_de_markers(adata) before saving web report')
     
     rootdir = os.path.join(adata.uns['workdir'],file_name)
@@ -4337,46 +4337,46 @@ def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=Non
 
     gene_list = []
 
-    print('Generating transition genes...')
-    #transition genes
-    file_path = os.path.join(reportdir,'transition_genes')
+    print('Generating transition markers...')
+    #transition markers
+    file_path = os.path.join(reportdir,'transition_markers')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)   
-    for edge_i in adata.uns['transition_genes'].keys():
-        df_tg_i = adata.uns['transition_genes'][edge_i]
-        df_tg_i.to_csv(os.path.join(file_path,'transition_genes_'+ edge_i[0]+'_'+edge_i[1] + '.tsv'),sep = '\t',index = True)
-        gene_list = gene_list + df_tg_i.index[:n_genes].tolist() 
+    for edge_i in adata.uns['transition_markers'].keys():
+        df_tg_i = adata.uns['transition_markers'][edge_i]
+        df_tg_i.to_csv(os.path.join(file_path,'transition_markers_'+ edge_i[0]+'_'+edge_i[1] + '.tsv'),sep = '\t',index = True)
+        gene_list = gene_list + df_tg_i.index[:n_markers].tolist() 
 
-    print('Generating DE genes...')
-    #DE genes
-    file_path = os.path.join(reportdir,'de_genes')
+    print('Generating DE markers...')
+    #DE markers
+    file_path = os.path.join(reportdir,'de_markers')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)
-    for pair_i in adata.uns['de_genes_greater'].keys():  
-        df_de_i_greater = adata.uns['de_genes_greater'][pair_i]
-        df_de_i_greater.to_csv(os.path.join(file_path,'de_genes_greater_'+pair_i[0][0]+'_'+pair_i[0][1] + ' and '\
+    for pair_i in adata.uns['de_markers_greater'].keys():  
+        df_de_i_greater = adata.uns['de_markers_greater'][pair_i]
+        df_de_i_greater.to_csv(os.path.join(file_path,'de_markers_greater_'+pair_i[0][0]+'_'+pair_i[0][1] + ' and '\
                                             + pair_i[1][0]+'_'+pair_i[1][1] + '.tsv'),sep = '\t',index = True) 
-        gene_list = gene_list + df_de_i_greater.index[:n_genes].tolist() 
-    for pair_i in adata.uns['de_genes_less'].keys():
-        df_de_i_less = adata.uns['de_genes_less'][pair_i]
-        df_de_i_less.to_csv(os.path.join(file_path,'de_genes_less_'+pair_i[0][0]+'_'+pair_i[0][1] + ' and '\
+        gene_list = gene_list + df_de_i_greater.index[:n_markers].tolist() 
+    for pair_i in adata.uns['de_markers_less'].keys():
+        df_de_i_less = adata.uns['de_markers_less'][pair_i]
+        df_de_i_less.to_csv(os.path.join(file_path,'de_markers_less_'+pair_i[0][0]+'_'+pair_i[0][1] + ' and '\
                                          + pair_i[1][0]+'_'+pair_i[1][1] + '.tsv'),sep = '\t',index = True)
-        gene_list = gene_list + df_de_i_less.index[:n_genes].tolist()
+        gene_list = gene_list + df_de_i_less.index[:n_markers].tolist()
 
-    print('Generating leaf genes...')
-    #leaf genes
-    file_path = os.path.join(reportdir,'leaf_genes')
+    print('Generating leaf markers...')
+    #leaf markers
+    file_path = os.path.join(reportdir,'leaf_markers')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)   
-    for leaf_i in adata.uns['leaf_genes'].keys():  
-        df_lg_i =  adata.uns['leaf_genes'][leaf_i]
-        df_lg_i.to_csv(os.path.join(file_path,'leaf_genes'+leaf_i[0]+'_'+leaf_i[1] + '.tsv'),sep = '\t',index = True)
-        gene_list = gene_list + df_lg_i.index[:n_genes].tolist() 
+    for leaf_i in adata.uns['leaf_markers'].keys():  
+        df_lg_i =  adata.uns['leaf_markers'][leaf_i]
+        df_lg_i.to_csv(os.path.join(file_path,'leaf_markers'+leaf_i[0]+'_'+leaf_i[1] + '.tsv'),sep = '\t',index = True)
+        gene_list = gene_list + df_lg_i.index[:n_markers].tolist() 
 
     gene_list = np.unique(gene_list)
-    print('Visualizing ' + str(gene_list.shape[0]) + ' genes from detected top marker genes...') 
+    print('Visualizing ' + str(gene_list.shape[0]) + ' markers from detected top marker markers...') 
 
-    print('Generating subway map plots and stream plots of genes...')
+    print('Generating subway map plots and stream plots of markers...')
     #subway map plots and stream plots of genes
     df_gene_expr = pd.DataFrame(index= adata.obs_names.tolist(),
                                 data = adata[:,gene_list].X,
