@@ -3089,7 +3089,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
     list_string_type = [k for k,v in dict_ann.items() if is_string_dtype(v)]
     if(len(list_string_type)>0):
         dict_verts,dict_extent = \
-        cal_stream_polygon_string(adata,dict_ann,root=root,preference=None,dist_scale=dist_scale,
+        cal_stream_polygon_string(adata,dict_ann,root=root,preference=preference,dist_scale=dist_scale,
                                   factor_num_win=factor_num_win,factor_min_win=factor_min_win,factor_width=factor_width,
                                   log_scale=log_scale,factor_zoomin=factor_zoomin)  
         dict_plot['string'] = [dict_verts,dict_extent]
