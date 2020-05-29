@@ -118,15 +118,15 @@ def set_workdir(adata,workdir=None):
     print('Saving results in: %s' % workdir)
 
 
-def read(file_name,file_path='',file_format=None,delimiter='\t',workdir=None, file_sample='barcodes.tsv',file_feature='genes.tsv',**kwargs):
+def read(file_name,file_path=None,file_format=None,delimiter='\t',workdir=None, file_sample='barcodes.tsv',file_feature='genes.tsv',**kwargs):
     """Read gene expression matrix into anndata object.
     
     Parameters
     ----------
     file_name: `str`
         Input data file name.
-    file_path: `str`, optional (default: '')
-        File path. 
+    file_path: `str`, optional (default: None)
+        File path. Empty string by default
     file_format: `str`, optional (default: None)
         File format. currently supported file formats: 'tsv','txt','tab','data','csv','mtx','h5ad','pklz','pkl'. If None, file_format will be inferred from the file extension.
     delimiter: `str`, optional (default: '\t')
@@ -146,6 +146,8 @@ def read(file_name,file_path='',file_format=None,delimiter='\t',workdir=None, fi
     if(file_format is None):
         file_format = get_extension(file_name)
     assert (file_format in ['tsv','txt','tab','data','csv','mtx','h5ad','pkl','pklz']),"file_format must be one of ['tsv','txt','tab','data','csv','mtx','h5ad','pkl','pklz']"
+    if(file_path is None):
+        file_path = ''
     _fp = lambda f:  os.path.join(file_path,f)     
     if(file_format in ['tsv','txt','tab','data']):
         adata = ad.read_text(_fp(file_name),delimiter=delimiter,**kwargs).T
@@ -189,7 +191,7 @@ def read(file_name,file_path='',file_format=None,delimiter='\t',workdir=None, fi
         print("To change working directory, please run set_workdir(adata,workdir=new_directory)")
     return adata
 
-def write(adata,file_name=None,file_path='',file_format='pkl'):
+def write(adata,file_name=None,file_path=None,file_format=None):
     """Write Anndate object to file
     
     Parameters
@@ -206,11 +208,13 @@ def write(adata,file_name=None,file_path='',file_format='pkl'):
         'pklz': compressed pickle file
         'pkl': pickle file
     """
-
+    
+    if(file_format is None):
+        file_format = get_extension(file_name)
+    assert (file_format in ['pkl','pklz']),"file_format must be one of ['pkl','pklz']"
     if(file_name is None):
         file_name = 'stream_result.'+file_format
-    
-    if(file_path is ''):
+    if(file_path is None):
         file_path = adata.uns['workdir']
     
     if(file_format == 'pklz'):
