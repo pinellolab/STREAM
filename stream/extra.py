@@ -2183,22 +2183,22 @@ def adjust_spines(ax, spines):
         # no xaxis ticks
         ax.xaxis.set_ticks([])
 
-def scale_gene_expr(params):
-    df_gene_detection = params[0]
-    gene = params[1]
+def scale_marker_expr(params):
+    df_marker_detection = params[0]
+    marker = params[1]
     percentile_expr = params[2]
-    gene_values = df_gene_detection[gene].copy()
-    if(min(gene_values)<0):
-        min_gene_values = np.percentile(gene_values[gene_values<0],100-percentile_expr)
-        gene_values[gene_values<min_gene_values] = min_gene_values
-        max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
-        gene_values[gene_values>max_gene_values] = max_gene_values
-        gene_values = gene_values - min(gene_values)
+    marker_values = df_marker_detection[marker].copy()
+    if(min(marker_values)<0):
+        min_marker_values = np.percentile(marker_values[marker_values<0],100-percentile_expr)
+        marker_values[marker_values<min_marker_values] = min_marker_values
+        max_marker_values = np.percentile(marker_values[marker_values>0],percentile_expr)
+        marker_values[marker_values>max_marker_values] = max_marker_values
+        marker_values = marker_values - min(marker_values)
     else:
-        max_gene_values = np.percentile(gene_values[gene_values>0],percentile_expr)
-        gene_values[gene_values>max_gene_values] = max_gene_values
-    gene_values = gene_values/max_gene_values
-    return gene_values
+        max_marker_values = np.percentile(marker_values[marker_values>0],percentile_expr)
+        marker_values[marker_values>max_marker_values] = max_marker_values
+    marker_values = marker_values/max_marker_values
+    return marker_values
 
 def barycenter_weights_modified(X, Z, reg=1e-3):
     """Compute barycenter weights of X from Y along the first axis

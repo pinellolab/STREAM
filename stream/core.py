@@ -367,14 +367,14 @@ def add_cell_colors(adata,file_path='',file_name=None):
 #     return None
 
 
-def cal_qc(adata,expr_cutoff=1,assay='rna'):
+def cal_qc(adata,expr_cutoff=0,assay='rna'):
     """Calculate quality control metrics.
     
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
-    expr_cutoff: `float`, optional (default: 1)
+    expr_cutoff: `float`, optional (default: 0)
         Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
     assay: `str`, optional (default: 'rna')
             Choose from {{'rna','atac'}},case insensitive
@@ -407,13 +407,13 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
 
     n_counts = np.sum(adata.X,axis=0).astype(int)
     adata.var['n_counts'] = n_counts
-    n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
+    n_cells = np.sum(adata.X>expr_cutoff,axis=0).astype(int)
     adata.var['n_cells'] = n_cells 
     adata.var['pct_cells'] = n_cells/adata.shape[0]
 
     n_counts = np.sum(adata.X,axis=1).astype(int)
     adata.obs['n_counts'] = n_counts
-    n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
+    n_features = np.sum(adata.X>expr_cutoff,axis=1).astype(int)
     if(assay=='atac'):
         adata.obs['n_peaks'] = n_features  
         adata.obs['pct_peaks'] = n_features/adata.shape[1]
@@ -540,7 +540,7 @@ def filter_features(adata,
                     min_n_cells = None, max_n_cells=None,
                     min_pct_cells = None, max_pct_cells=None,
                     min_n_counts = None, max_n_counts=None,
-                    expr_cutoff = 1,assay=None):
+                    expr_cutoff = 0,assay=None):
     """Filter out features based on different metrics.
 
     Parameters
@@ -553,7 +553,7 @@ def filter_features(adata,
         Minimum percentage of cells expressing one feature
     min_n_counts: `int`, optional (default: None)
         Minimum number of read count for one feature
-    expr_cutoff: `float`, optional (default: 1)
+    expr_cutoff: `float`, optional (default: 0)
         Expression cutoff. If greater than expr_cutoff,the feature is considered 'expressed'
     assay: `str`, optional (default: 'rna')
             Choose from {{'rna','atac'}},case insensitive
@@ -590,7 +590,7 @@ def filter_features(adata,
     if('n_cells' in adata.var_keys()):
         n_cells = adata.var['n_cells']
     else:
-        n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
+        n_cells = np.sum(adata.X>expr_cutoff,axis=0).astype(int)
         adata.var['n_cells'] = n_cells   
     if('pct_cells' in adata.var_keys()): 
         pct_cells = adata.var['pct_cells']
@@ -630,7 +630,7 @@ def filter_cells(adata,
                  min_n_features = None, max_n_features = None,
                  min_pct_features = None, max_pct_features = None,
                  min_n_counts=None, max_n_counts = None,
-                 expr_cutoff = 1,assay=None):
+                 expr_cutoff = 0,assay=None):
     """Filter out cells based on different metrics.
 
     Parameters
@@ -643,7 +643,7 @@ def filter_cells(adata,
         Minimum percentage of features expressed
     min_n_counts: `int`, optional (default: None)
         Minimum number of read count for one cell
-    expr_cutoff: `float`, optional (default: 1)
+    expr_cutoff: `float`, optional (default: 0)
         Expression cutoff. If greater than expr_cutoff,the gene is considered 'expressed'
     assay: `str`, optional (default: 'rna')
             Choose from {{'rna','atac'}},case insensitive    
@@ -679,7 +679,7 @@ def filter_cells(adata,
         if('n_genes' in adata.obs_keys()):
             n_features = adata.obs['n_genes']
         else:
-            n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
+            n_features = np.sum(adata.X>expr_cutoff,axis=1).astype(int)
             adata.obs['n_genes'] = n_features       
         if('pct_genes' in adata.obs_keys()):
             pct_features = adata.obs['pct_genes']
@@ -691,7 +691,7 @@ def filter_cells(adata,
         if('n_peaks' in adata.obs_keys()):
             n_features = adata.obs['n_peaks']
         else:
-            n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
+            n_features = np.sum(adata.X>expr_cutoff,axis=1).astype(int)
             adata.obs['n_peaks'] = n_features       
         if('pct_peaks' in adata.obs_keys()):
             pct_features = adata.obs['pct_peaks']
@@ -3182,10 +3182,10 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
             plt.savefig(os.path.join(file_path_S,'stream_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
-def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
-                             use_precomputed=True, root='S0',preference=None):
+def detect_transistion_markers(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
+                               use_precomputed=True, root='S0',preference=None):
 
-    """Detect transition genes along one branch.
+    """Detect transition markers along one branch.
     Parameters
     ----------
     adata: AnnData
@@ -3193,15 +3193,15 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
     cutoff_spearman: `float`, optional (default: 0.4)
         Between 0 and 1. The cutoff used for Spearman's rank correlation coefficient.
     cutoff_logfc: `float`, optional (default: 0.25)
-        The log-transformed fold change cutoff between cells around start and end node.
+        The log2-transformed fold change cutoff between cells around start and end node.
     percentile_expr: `int`, optional (default: 95)
-        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+        Between 0 and 100. Between 0 and 100. Specify the percentile of marker expression greater than 0 to filter out some extreme marker expressions. 
     min_num_cells: `int`, optional (default: 5)
-    	The minimum number of cells in which genes are expressed.
+        The minimum number of cells in which markers are expressed.
     n_jobs: `int`, optional (default: 1)
-        The number of parallel jobs to run when scaling the gene expressions .
+        The number of parallel jobs to run when scaling the marker expressions .
     use_precomputed: `bool`, optional (default: True)
-        If True, the previously computed scaled gene expression will be used
+        If True, the previously computed scaled marker expression will be used
     root: `str`, optional (default: 'S0'): 
         The starting node
     preference: `list`, optional (default: None): 
@@ -3211,48 +3211,48 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
     Returns
     -------
     updates `adata` with the following fields.
-    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
-        Scaled gene expression for marker gene detection.    
-    transition_genes: `dict` (`adata.uns['transition_genes']`)
-        Transition genes for each branch deteced by STREAM.
+    scaled_marker_expr: `list` (`adata.uns['scaled_marker_expr']`)
+        Scaled marker expression for marker marker detection.    
+    transition_markers: `dict` (`adata.uns['transition_markers']`)
+        Transition markers for each branch deteced by STREAM.
     """
 
-    file_path = os.path.join(adata.uns['workdir'],'transition_genes')
+    file_path = os.path.join(adata.uns['workdir'],'transition_markers')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
     
     flat_tree = adata.uns['flat_tree']
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
-    df_gene_detection = adata.obs.copy()
-    df_gene_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
-    if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
-        print('Importing precomputed scaled gene expression matrix ...')
-        results = adata.uns['scaled_gene_expr']       
-        df_scaled_gene_expr = pd.DataFrame(results).T
-        input_genes_expressed = df_scaled_gene_expr.columns.tolist()
+    df_marker_detection = adata.obs.copy()
+    df_marker_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
+    if(use_precomputed and ('scaled_marker_expr' in adata.uns_keys())):
+        print('Importing precomputed scaled marker expression matrix ...')
+        results = adata.uns['scaled_marker_expr']       
+        df_scaled_marker_expr = pd.DataFrame(results).T
+        input_markers_expressed = df_scaled_marker_expr.columns.tolist()
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
                              columns=adata.var_names.tolist())
-        input_genes = adata.var_names.tolist()
-        #exclude genes that are expressed in fewer than min_num_cells cells
-        #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-        # print('Minimum number of cells expressing genes: '+ str(min_num_cells))
-        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
-        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-        df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
+        input_markers = adata.var_names.tolist()
+        #exclude markers that are expressed in fewer than min_num_cells cells
+        #min_num_cells = max(5,int(round(df_marker_detection.shape[0]*0.001)))
+        # print('Minimum number of cells expressing markers: '+ str(min_num_cells))
+        print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
+        input_markers_expressed = np.array(input_markers)[np.where((df_sc[input_markers]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_marker_detection[input_markers_expressed] = df_sc[input_markers_expressed].copy()
 
         print(str(n_jobs)+' cpus are being used ...')
-        params = [(df_gene_detection,x,percentile_expr) for x in input_genes_expressed]
+        params = [(df_marker_detection,x,percentile_expr) for x in input_markers_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
-        results = pool.map(scale_gene_expr,params)
+        results = pool.map(scale_marker_expr,params)
         pool.close()
-        adata.uns['scaled_gene_expr'] = results
-        df_scaled_gene_expr = pd.DataFrame(results).T
+        adata.uns['scaled_marker_expr'] = results
+        df_scaled_marker_expr = pd.DataFrame(results).T
 
-    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
-    df_gene_detection[input_genes_expressed] = df_scaled_gene_expr
-    #### TG (Transition Genes) along each branch
+    print(str(len(input_markers_expressed)) + ' markers are being scanned ...')
+    df_marker_detection[input_markers_expressed] = df_scaled_marker_expr
+    #### TG (Transition markers) along each branch
     dict_tg_edges = dict()
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
     if(preference!=None):
@@ -3261,58 +3261,58 @@ def detect_transistion_genes(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, per
         preference_nodes = None
     root_node = dict_label_node[root]
     bfs_edges = bfs_edges_modified(flat_tree,root_node,preference=preference_nodes)
-#     all_branches = np.unique(df_gene_detection['branch_id']).tolist()
+#     all_branches = np.unique(df_marker_detection['branch_id']).tolist()
     for edge_i in bfs_edges:
         edge_i_alias = (dict_node_state[edge_i[0]],dict_node_state[edge_i[1]])
         if edge_i in nx.get_edge_attributes(flat_tree,'id').values():
-            df_cells_edge_i = deepcopy(df_gene_detection[df_gene_detection.branch_id==edge_i])
+            df_cells_edge_i = deepcopy(df_marker_detection[df_marker_detection.branch_id==edge_i])
             df_cells_edge_i['lam_ordered'] = df_cells_edge_i['lam']
         else:
-            df_cells_edge_i = deepcopy(df_gene_detection[df_gene_detection.branch_id==(edge_i[1],edge_i[0])])
+            df_cells_edge_i = deepcopy(df_marker_detection[df_marker_detection.branch_id==(edge_i[1],edge_i[0])])
             df_cells_edge_i['lam_ordered'] = flat_tree.edges[edge_i]['len'] - df_cells_edge_i['lam']
         df_cells_edge_i_sort = df_cells_edge_i.sort_values(['lam_ordered'])
         df_stat_pval_qval = pd.DataFrame(columns = ['stat','logfc','pval','qval'],dtype=float)
-        for genename in input_genes_expressed:
+        for markername in input_markers_expressed:
             id_initial = range(0,int(df_cells_edge_i_sort.shape[0]*0.2))
             id_final = range(int(df_cells_edge_i_sort.shape[0]*0.8),int(df_cells_edge_i_sort.shape[0]*1))
-            values_initial = df_cells_edge_i_sort.iloc[id_initial,:][genename]
-            values_final = df_cells_edge_i_sort.iloc[id_final,:][genename]
+            values_initial = df_cells_edge_i_sort.iloc[id_initial,:][markername]
+            values_final = df_cells_edge_i_sort.iloc[id_final,:][markername]
             diff_initial_final = abs(values_final.mean() - values_initial.mean())
             if(diff_initial_final>0):
                 logfc = np.log2(max(values_final.mean(),values_initial.mean())/(min(values_final.mean(),values_initial.mean())+diff_initial_final/1000.0))
             else:
                 logfc = 0
             if(logfc>cutoff_logfc):
-                df_stat_pval_qval.loc[genename] = np.nan
-                df_stat_pval_qval.loc[genename,['stat','pval']] = spearmanr(df_cells_edge_i_sort.loc[:,genename],\
+                df_stat_pval_qval.loc[markername] = np.nan
+                df_stat_pval_qval.loc[markername,['stat','pval']] = spearmanr(df_cells_edge_i_sort.loc[:,markername],\
                                                                             df_cells_edge_i_sort.loc[:,'lam_ordered'])
-                df_stat_pval_qval.loc[genename,'logfc'] = logfc
+                df_stat_pval_qval.loc[markername,'logfc'] = logfc
         if(df_stat_pval_qval.shape[0]==0):
-            print('No Transition genes are detected in branch ' + edge_i_alias[0]+'_'+edge_i_alias[1])
+            print('No Transition markers are detected in branch ' + edge_i_alias[0]+'_'+edge_i_alias[1])
         else:
             p_values = df_stat_pval_qval['pval']
             q_values = multipletests(p_values, method='fdr_bh')[1]
             df_stat_pval_qval['qval'] = q_values
             dict_tg_edges[edge_i_alias] = df_stat_pval_qval[(abs(df_stat_pval_qval.stat)>=cutoff_spearman)].sort_values(['qval'])
-            dict_tg_edges[edge_i_alias].to_csv(os.path.join(file_path,'transition_genes_'+ edge_i_alias[0]+'_'+edge_i_alias[1] + '.tsv'),sep = '\t',index = True)
-    adata.uns['transition_genes'] = dict_tg_edges   
+            dict_tg_edges[edge_i_alias].to_csv(os.path.join(file_path,'transition_markers_'+ edge_i_alias[0]+'_'+edge_i_alias[1] + '.tsv'),sep = '\t',index = True)
+    adata.uns['transition_markers'] = dict_tg_edges   
 
 
-def plot_transition_genes(adata,num_genes = 15,
-                          save_fig=False,fig_path=None,fig_size=(12,8)):
+def plot_transition_markers(adata,num_markers = 15,
+                            save_fig=False,fig_path=None,fig_size=(12,8)):
     if(fig_path is None):
-        fig_path = os.path.join(adata.uns['workdir'],'transition_genes')
+        fig_path = os.path.join(adata.uns['workdir'],'transition_markers')
     if(not os.path.exists(fig_path)):
         os.makedirs(fig_path) 
 
-    dict_tg_edges = adata.uns['transition_genes']
+    dict_tg_edges = adata.uns['transition_markers']
     flat_tree = adata.uns['flat_tree']
     # dict_node_state = nx.get_node_attributes(flat_tree,'label')    
     colors = sns.color_palette("Set1", n_colors=8, desat=0.8)
     for edge_i in dict_tg_edges.keys():
 
         df_tg_edge_i = deepcopy(dict_tg_edges[edge_i])
-        df_tg_edge_i = df_tg_edge_i.iloc[:num_genes,:]
+        df_tg_edge_i = df_tg_edge_i.iloc[:num_markers,:]
 
         stat = df_tg_edge_i.stat[::-1]
         qvals = df_tg_edge_i.qval[::-1]
@@ -3350,15 +3350,15 @@ def plot_transition_genes(adata,num_genes = 15,
                 ax.text(rect.get_x()-0.02, rect.get_y()+rect.get_height()/2.0, \
                         "{:.2E}".format(Decimal(str(qvals[i]))),color='w',fontsize=9,**alignment)
         if(save_fig):        
-            plt.savefig(os.path.join(fig_path,'transition_genes_'+ edge_i[0]+'_'+edge_i[1]+'.pdf'),\
+            plt.savefig(os.path.join(fig_path,'transition_markers_'+ edge_i[0]+'_'+edge_i[1]+'.pdf'),\
                         pad_inches=1,bbox_inches='tight')
-            plt.close(fig)    
+            plt.close(fig)  
 
 
-def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,min_num_cells=5,
-                    use_precomputed=True, root='S0',preference=None):
+def detect_de_markers(adata,cutoff_zscore=1,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,min_num_cells=5,
+                      use_precomputed=True, root='S0',preference=None):
 
-    """Detect differentially expressed genes between different sub-branches.
+    """Detect differentially expressed markers between different sub-branches.
     Parameters
     ----------
     adata: AnnData
@@ -3368,13 +3368,13 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
     cutoff_logfc: `float`, optional (default: 0.25)
         The log-transformed fold change cutoff between a pair of branches.
     percentile_expr: `int`, optional (default: 95)
-        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+        Between 0 and 100. Between 0 and 100. Specify the percentile of marker expression greater than 0 to filter out some extreme marker expressions. 
     n_jobs: `int`, optional (default: 1)
-        The number of parallel jobs to run when scaling the gene expressions .
+        The number of parallel jobs to run when scaling the marker expressions .
     min_num_cells: `int`, optional (default: 5)
-    	The minimum number of cells in which genes are expressed.
+        The minimum number of cells in which markers are expressed.
     use_precomputed: `bool`, optional (default: True)
-        If True, the previously computed scaled gene expression will be used
+        If True, the previously computed scaled marker expression will be used
     root: `str`, optional (default: 'S0'): 
         The starting node
     preference: `list`, optional (default: None): 
@@ -3384,53 +3384,53 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
     Returns
     -------
     updates `adata` with the following fields.
-    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
-        Scaled gene expression for marker gene detection.    
-    de_genes_greater: `dict` (`adata.uns['de_genes_greater']`)
-        DE(differentially expressed) genes for each pair of branches deteced by STREAM. 
-        Store the genes that have higher expression on the former part of one branch pair.
-    de_genes_less: `dict` (`adata.uns['de_genes_less']`)
-        DE(differentially expressed) genes for each pair of branches deteced by STREAM. 
-        Store the genes that have higher expression on the latter part of one branch pair.
+    scaled_marker_expr: `list` (`adata.uns['scaled_marker_expr']`)
+        Scaled marker expression for marker marker detection.    
+    de_markers_greater: `dict` (`adata.uns['de_markers_greater']`)
+        DE(differentially expressed) markers for each pair of branches deteced by STREAM. 
+        Store the markers that have higher expression on the former part of one branch pair.
+    de_markers_less: `dict` (`adata.uns['de_markers_less']`)
+        DE(differentially expressed) markers for each pair of branches deteced by STREAM. 
+        Store the markers that have higher expression on the latter part of one branch pair.
     """
 
-    file_path = os.path.join(adata.uns['workdir'],'de_genes')
+    file_path = os.path.join(adata.uns['workdir'],'de_markers')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
 
     flat_tree = adata.uns['flat_tree']
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
-    df_gene_detection = adata.obs.copy()
-    df_gene_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
+    df_marker_detection = adata.obs.copy()
+    df_marker_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
 
-    if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
-        print('Importing precomputed scaled gene expression matrix ...')
-        results = adata.uns['scaled_gene_expr']  
-        df_scaled_gene_expr = pd.DataFrame(results).T
-        input_genes_expressed = df_scaled_gene_expr.columns.tolist()        
+    if(use_precomputed and ('scaled_marker_expr' in adata.uns_keys())):
+        print('Importing precomputed scaled marker expression matrix ...')
+        results = adata.uns['scaled_marker_expr']  
+        df_scaled_marker_expr = pd.DataFrame(results).T
+        input_markers_expressed = df_scaled_marker_expr.columns.tolist()        
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
                              columns=adata.var_names.tolist())
-        input_genes = adata.var_names.tolist()
-        #exclude genes that are expressed in fewer than min_num_cells cells
-        #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
-        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-        df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
+        input_markers = adata.var_names.tolist()
+        #exclude markers that are expressed in fewer than min_num_cells cells
+        #min_num_cells = max(5,int(round(df_marker_detection.shape[0]*0.001)))
+        print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
+        input_markers_expressed = np.array(input_markers)[np.where((df_sc[input_markers]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_marker_detection[input_markers_expressed] = df_sc[input_markers_expressed].copy()
 
         print(str(n_jobs)+' cpus are being used ...')
-        params = [(df_gene_detection,x,percentile_expr) for x in input_genes_expressed]
+        params = [(df_marker_detection,x,percentile_expr) for x in input_markers_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
-        results = pool.map(scale_gene_expr,params)
+        results = pool.map(scale_marker_expr,params)
         pool.close()
-        adata.uns['scaled_gene_expr'] = results
-        df_scaled_gene_expr = pd.DataFrame(results).T
+        adata.uns['scaled_marker_expr'] = results
+        df_scaled_marker_expr = pd.DataFrame(results).T
 
-    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
-    df_gene_detection[input_genes_expressed] = df_scaled_gene_expr 
+    print(str(len(input_markers_expressed)) + ' markers are being scanned ...')
+    df_marker_detection[input_markers_expressed] = df_scaled_marker_expr 
 
-    #### DE (Differentially expressed genes) between sub-branches
+    #### DE (Differentially expressed markers) between sub-branches
     dict_de_greater = dict()
     dict_de_less = dict()
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -3441,7 +3441,7 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
     root_node = dict_label_node[root]
     bfs_edges = bfs_edges_modified(flat_tree,root_node,preference=preference_nodes)
     pairs_branches = list()
-#     all_branches = np.unique(df_gene_detection['branch_id']).tolist()
+#     all_branches = np.unique(df_marker_detection['branch_id']).tolist()
     for node_i in dict_node_state.keys():
         neighbor_branches = [x for x in bfs_edges if node_i in x]
         if(len(neighbor_branches)>1):
@@ -3449,30 +3449,30 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
     for pair_i in pairs_branches:
         pair_i_alias = ((dict_node_state[pair_i[0][0]],dict_node_state[pair_i[0][1]]),(dict_node_state[pair_i[1][0]],dict_node_state[pair_i[1][1]]))
         if(pair_i[0] in nx.get_edge_attributes(flat_tree,'id').values()):
-            df_cells_sub1 = df_gene_detection[df_gene_detection.branch_id==pair_i[0]]
+            df_cells_sub1 = df_marker_detection[df_marker_detection.branch_id==pair_i[0]]
         else:
-            df_cells_sub1 = df_gene_detection[df_gene_detection.branch_id==(pair_i[0][1],pair_i[0][0])]
+            df_cells_sub1 = df_marker_detection[df_marker_detection.branch_id==(pair_i[0][1],pair_i[0][0])]
         if(pair_i[1] in nx.get_edge_attributes(flat_tree,'id').values()):
-            df_cells_sub2 = df_gene_detection[df_gene_detection.branch_id==pair_i[1]]  
+            df_cells_sub2 = df_marker_detection[df_marker_detection.branch_id==pair_i[1]]  
         else:
-            df_cells_sub2 = df_gene_detection[df_gene_detection.branch_id==(pair_i[1][1],pair_i[1][0])]
+            df_cells_sub2 = df_marker_detection[df_marker_detection.branch_id==(pair_i[1][1],pair_i[1][0])]
         #only use Mann-Whitney U test when the number of observation in each sample is > 20
         if(df_cells_sub1.shape[0]>20 and df_cells_sub2.shape[0]>20):
             df_de_pval_qval = pd.DataFrame(columns = ['z_score','U','logfc','mean_up','mean_down','pval','qval'],dtype=float)
-            for genename in input_genes_expressed:
-                sub1_values = df_cells_sub1.loc[:,genename].tolist()
-                sub2_values = df_cells_sub2.loc[:,genename].tolist()
+            for markername in input_markers_expressed:
+                sub1_values = df_cells_sub1.loc[:,markername].tolist()
+                sub2_values = df_cells_sub2.loc[:,markername].tolist()
                 diff_mean = abs(np.mean(sub1_values) - np.mean(sub2_values))
                 if(diff_mean>0):
                     logfc = np.log2(max(np.mean(sub1_values),np.mean(sub2_values))/(min(np.mean(sub1_values),np.mean(sub2_values))+diff_mean/1000.0))
                 else:
                     logfc = 0
                 if(logfc>cutoff_logfc):
-                    df_de_pval_qval.loc[genename] = np.nan
-                    df_de_pval_qval.loc[genename,['U','pval']] = mannwhitneyu(sub1_values,sub2_values,alternative='two-sided')
-                    df_de_pval_qval.loc[genename,'logfc'] = logfc
-                    df_de_pval_qval.loc[genename,'mean_up'] = np.mean(sub1_values)
-                    df_de_pval_qval.loc[genename,'mean_down'] = np.mean(sub2_values)
+                    df_de_pval_qval.loc[markername] = np.nan
+                    df_de_pval_qval.loc[markername,['U','pval']] = mannwhitneyu(sub1_values,sub2_values,alternative='two-sided')
+                    df_de_pval_qval.loc[markername,'logfc'] = logfc
+                    df_de_pval_qval.loc[markername,'mean_up'] = np.mean(sub1_values)
+                    df_de_pval_qval.loc[markername,'mean_down'] = np.mean(sub2_values)
                     sub1_sub2_values = sub1_values + sub2_values
                     len_sub1 = len(sub1_values)
                     len_sub2 = len(sub2_values)
@@ -3484,9 +3484,9 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
                         sum_k = sum_k + (t**3-t)/float(len_sub*(len_sub-1))
                     mu_U = (len_sub1*len_sub2)/2.0
                     sigma_U = np.sqrt(len_sub1*len_sub2*(len_sub+1-sum_k)/12.0)
-                    df_de_pval_qval.loc[genename,'z_score'] = (df_de_pval_qval.loc[genename,'U']-mu_U)/sigma_U
+                    df_de_pval_qval.loc[markername,'z_score'] = (df_de_pval_qval.loc[markername,'U']-mu_U)/sigma_U
             if(df_de_pval_qval.shape[0]==0):
-                print('No DE genes are detected between branches ' + pair_i_alias[0][0]+'_'+pair_i_alias[0][1]+\
+                print('No DE markers are detected between branches ' + pair_i_alias[0][0]+'_'+pair_i_alias[0][1]+\
                       ' and '+pair_i_alias[1][0]+'_'+pair_i_alias[1][1])
             else:
                 p_values = df_de_pval_qval['pval']
@@ -3494,57 +3494,57 @@ def detect_de_genes(adata,cutoff_zscore=2,cutoff_logfc = 0.25,percentile_expr=95
                 df_de_pval_qval['qval'] = q_values
                 dict_de_greater[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
                                                           (df_de_pval_qval['z_score']>0)].sort_values(['z_score'],ascending=False)
-                dict_de_greater[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_greater_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                dict_de_greater[pair_i_alias].to_csv(os.path.join(file_path,'de_markers_greater_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
                                         + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)
                 dict_de_less[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['z_score'])>cutoff_zscore)&
                                                        (df_de_pval_qval['z_score']<0)].sort_values(['z_score'])
-                dict_de_less[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_less_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                dict_de_less[pair_i_alias].to_csv(os.path.join(file_path,'de_markers_less_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
                                      + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)   
         else:
             print('There are not sufficient cells (should be greater than 20) between branches '+\
                   pair_i_alias[0][0]+'_'+pair_i_alias[0][1] +' and '+\
                   pair_i_alias[1][0]+'_'+pair_i_alias[1][1]+ '. fold_change is calculated')
             df_de_pval_qval = pd.DataFrame(columns = ['logfc','mean_up','mean_down'],dtype=float)
-            for genename in input_genes_expressed:
-                sub1_values = df_cells_sub1.loc[:,genename].tolist()
-                sub2_values = df_cells_sub2.loc[:,genename].tolist()
+            for markername in input_markers_expressed:
+                sub1_values = df_cells_sub1.loc[:,markername].tolist()
+                sub2_values = df_cells_sub2.loc[:,markername].tolist()
                 diff_mean = abs(np.mean(sub1_values) - np.mean(sub2_values))
                 if(diff_mean>0):
                     logfc = np.log2(max(np.mean(sub1_values),np.mean(sub2_values))/(min(np.mean(sub1_values),np.mean(sub2_values))+diff_mean/1000.0))
                 else:
                     logfc = 0
                 if(logfc>cutoff_logfc):
-                    df_de_pval_qval.loc[genename] = np.nan
+                    df_de_pval_qval.loc[markername] = np.nan
                     # #make sure the largest fold change is 5
-                    # df_de_pval_qval.loc[genename,'fold_change'] = np.log2((np.mean(sub1_values)+1/24.0)/(np.mean(sub2_values)+1/24.0))
-                    df_de_pval_qval.loc[genename,'logfc'] = logfc
-                    df_de_pval_qval.loc[genename,'mean_up'] = np.mean(sub1_values)
-                    df_de_pval_qval.loc[genename,'mean_down'] = np.mean(sub2_values)
+                    # df_de_pval_qval.loc[markername,'fold_change'] = np.log2((np.mean(sub1_values)+1/24.0)/(np.mean(sub2_values)+1/24.0))
+                    df_de_pval_qval.loc[markername,'logfc'] = logfc
+                    df_de_pval_qval.loc[markername,'mean_up'] = np.mean(sub1_values)
+                    df_de_pval_qval.loc[markername,'mean_down'] = np.mean(sub2_values)
             if(df_de_pval_qval.shape[0]==0):
-                print('No DE genes are detected between branches ' + pair_i_alias[0][0]+'_'+pair_i_alias[0][1]+\
+                print('No DE markers are detected between branches ' + pair_i_alias[0][0]+'_'+pair_i_alias[0][1]+\
                       ' and '+pair_i_alias[1][0]+'_'+pair_i_alias[1][1])
             else:
                 dict_de_greater[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
                                                           (df_de_pval_qval['logfc']>0)].sort_values(['logfc'],ascending=False)
-                dict_de_greater[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_greater_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                dict_de_greater[pair_i_alias].to_csv(os.path.join(file_path,'de_markers_greater_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
                                         + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)                
                 dict_de_less[pair_i_alias] = df_de_pval_qval[(abs(df_de_pval_qval['logfc'])>cutoff_logfc)&
                                                        (df_de_pval_qval['logfc']<0)].sort_values(['logfc'])
-                dict_de_less[pair_i_alias].to_csv(os.path.join(file_path,'de_genes_less_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
+                dict_de_less[pair_i_alias].to_csv(os.path.join(file_path,'de_markers_less_'+pair_i_alias[0][0]+'_'+pair_i_alias[0][1] + ' and '\
                                      + pair_i_alias[1][0]+'_'+pair_i_alias[1][1] + '.tsv'),sep = '\t',index = True)   
-    adata.uns['de_genes_greater'] = dict_de_greater
-    adata.uns['de_genes_less'] = dict_de_less
+    adata.uns['de_markers_greater'] = dict_de_greater
+    adata.uns['de_markers_less'] = dict_de_less
 
 
-def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
+def plot_de_markers(adata,num_markers = 15,cutoff_zscore=1,cutoff_logfc = 0.25,
                   save_fig=False,fig_path=None,fig_size=(12,8)):
     if(fig_path is None):
-        fig_path = os.path.join(adata.uns['workdir'],'de_genes')
+        fig_path = os.path.join(adata.uns['workdir'],'de_markers')
     if(not os.path.exists(fig_path)):
         os.makedirs(fig_path)  
 
-    dict_de_greater = adata.uns['de_genes_greater']
-    dict_de_less = adata.uns['de_genes_less']
+    dict_de_greater = adata.uns['de_markers_greater']
+    dict_de_less = adata.uns['de_markers_less']
     flat_tree = adata.uns['flat_tree']
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
     colors = sns.color_palette("Set1", n_colors=8, desat=0.8)
@@ -3554,14 +3554,14 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
         ax = fig.add_subplot(gs[0],adjustable='box')
         if('z_score' in dict_de_greater[sub_edges_i].columns):
             if(not dict_de_greater[sub_edges_i].empty):
-                val_greater = dict_de_greater[sub_edges_i].iloc[:num_genes,:]['z_score'].values  # the bar lengths
-                pos_greater = np.arange(dict_de_greater[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
+                val_greater = dict_de_greater[sub_edges_i].iloc[:num_markers,:]['z_score'].values  # the bar lengths
+                pos_greater = np.arange(dict_de_greater[sub_edges_i].iloc[:num_markers,:].shape[0])-1    # the bar centers on the y axis
             else:
-                val_greater = np.repeat(0,num_genes)
-                pos_greater = np.arange(num_genes)-1
+                val_greater = np.repeat(0,num_markers)
+                pos_greater = np.arange(num_markers)-1
             ax.bar(pos_greater,val_greater, align='center',color = colors[0])
             ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_zscore, cutoff_zscore], "k--",lw=2)
-            q_vals = dict_de_greater[sub_edges_i].iloc[:num_genes,:]['qval'].values
+            q_vals = dict_de_greater[sub_edges_i].iloc[:num_markers,:]['qval'].values
             for i, q in enumerate(q_vals):
                 alignment = {'horizontalalignment': 'center', 'verticalalignment': 'bottom'}
                 ax.text(pos_greater[i], val_greater[i]+.1, \
@@ -3569,18 +3569,18 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
             ax.set_ylim(0,max(val_greater)+1.5)
             ax.set_ylabel('z_score')
-            ax.set_title('DE genes between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
+            ax.set_title('DE markers between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
                          sub_edges_i[1][0]+'_'+sub_edges_i[1][1])
             ax1 = fig.add_subplot(gs[1], adjustable='box')
             if(not dict_de_less[sub_edges_i].empty):
-                val_less = dict_de_less[sub_edges_i].iloc[:num_genes,:]['z_score'].values  # the bar lengths
-                pos_less = np.arange(dict_de_less[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
+                val_less = dict_de_less[sub_edges_i].iloc[:num_markers,:]['z_score'].values  # the bar lengths
+                pos_less = np.arange(dict_de_less[sub_edges_i].iloc[:num_markers,:].shape[0])-1    # the bar centers on the y axis
             else:
-                val_less = np.repeat(0,num_genes)
-                pos_less = np.arange(num_genes)-1
+                val_less = np.repeat(0,num_markers)
+                pos_less = np.arange(num_markers)-1
             ax1.bar(pos_less,val_less, align='center',color = colors[1])
             ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_zscore, -cutoff_zscore], "k--",lw=2)
-            q_vals = dict_de_less[sub_edges_i].iloc[:num_genes,:]['qval'].values
+            q_vals = dict_de_less[sub_edges_i].iloc[:num_markers,:]['qval'].values
             for i, q in enumerate(q_vals):
                 alignment = {'horizontalalignment': 'center', 'verticalalignment': 'top'}
                 ax1.text(pos_less[i], val_less[i]-.1, \
@@ -3595,30 +3595,30 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             ax1.xaxis.tick_top()
             plt.tight_layout()
             if(save_fig):
-                plt.savefig(os.path.join(fig_path,'de_genes_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
+                plt.savefig(os.path.join(fig_path,'de_markers_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
                             + sub_edges_i[1][0]+'_'+sub_edges_i[1][1]+'.pdf'),pad_inches=1,bbox_inches='tight')
                 plt.close(fig)
         else:
             if(not dict_de_greater[sub_edges_i].empty):
-                val_greater = dict_de_greater[sub_edges_i].iloc[:num_genes,:]['logfc'].values  # the bar lengths
-                pos_greater = np.arange(dict_DE_greater[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
+                val_greater = dict_de_greater[sub_edges_i].iloc[:num_markers,:]['logfc'].values  # the bar lengths
+                pos_greater = np.arange(dict_DE_greater[sub_edges_i].iloc[:num_markers,:].shape[0])-1    # the bar centers on the y axis
             else:
-                val_greater = np.repeat(0,num_genes)
-                pos_greater = np.arange(num_genes)-1
+                val_greater = np.repeat(0,num_markers)
+                pos_greater = np.arange(num_markers)-1
             ax.bar(pos_greater,val_greater, align='center',color = colors[0])
             ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_logfc, cutoff_logfc], "k--",lw=2)
             plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
             ax.set_ylim(0,max(val_greater)+1.5)
             ax.set_ylabel('log_fold_change')
-            ax.set_title('DE genes between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
+            ax.set_title('DE markers between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
                          sub_edges_i[1][0]+'_'+sub_edges_i[1][1])
             ax1 = fig.add_subplot(gs[1], adjustable='box')
             if(not dict_de_less[sub_edges_i].empty):
-                val_less = dict_de_less[sub_edges_i].iloc[:num_genes,:]['logfc'].values  # the bar lengths
-                pos_less = np.arange(dict_de_less[sub_edges_i].iloc[:num_genes,:].shape[0])-1    # the bar centers on the y axis
+                val_less = dict_de_less[sub_edges_i].iloc[:num_markers,:]['logfc'].values  # the bar lengths
+                pos_less = np.arange(dict_de_less[sub_edges_i].iloc[:num_markers,:].shape[0])-1    # the bar centers on the y axis
             else:
-                val_less = np.repeat(0,num_genes)
-                pos_less = np.arange(num_genes)-1
+                val_less = np.repeat(0,num_markers)
+                pos_less = np.arange(num_markers)-1
             ax1.bar(pos_less,val_less, align='center',color = colors[1])
             ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_logfc, -cutoff_logfc], "k--",lw=2)
             plt.xticks(pos_less,dict_de_less[sub_edges_i].index)
@@ -3631,14 +3631,14 @@ def plot_de_genes(adata,num_genes = 15,cutoff_zscore=2,cutoff_logfc = 0.25,
             ax1.xaxis.tick_top()
             plt.tight_layout()
             if(save_fig):
-                plt.savefig(os.path.join(fig_path,'de_genes_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
+                plt.savefig(os.path.join(fig_path,'de_markers_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
                             + sub_edges_i[1][0]+'_'+sub_edges_i[1][1]+'.pdf'),pad_inches=1,bbox_inches='tight')
-                plt.close(fig) 
+                plt.close(fig)  
 
 
-def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
-                      use_precomputed=True, root='S0',preference=None):
-    """Detect leaf genes for each branch.
+def detect_leaf_markers(adata,cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
+                        use_precomputed=True, root='S0',preference=None):
+    """Detect leaf markers for each branch.
     Parameters
     ----------
     adata: AnnData
@@ -3648,13 +3648,13 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     cutoff_pvalue: `float`, optional (default: 1e-2)
         The p value cutoff used for Kruskal-Wallis H-test and post-hoc pairwise Conover’s test.
     percentile_expr: `int`, optional (default: 95)
-        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+        Between 0 and 100. Between 0 and 100. Specify the percentile of marker expression greater than 0 to filter out some extreme marker expressions. 
     n_jobs: `int`, optional (default: 1)
-        The number of parallel jobs to run when scaling the gene expressions .
+        The number of parallel jobs to run when scaling the marker expressions .
     min_num_cells: `int`, optional (default: 5)
-    	The minimum number of cells in which genes are expressed.
+        The minimum number of cells in which markers are expressed.
     use_precomputed: `bool`, optional (default: True)
-        If True, the previously computed scaled gene expression will be used
+        If True, the previously computed scaled marker expression will be used
     root: `str`, optional (default: 'S0'): 
         The starting node
     preference: `list`, optional (default: None): 
@@ -3664,51 +3664,52 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     Returns
     -------
     updates `adata` with the following fields.
-    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
-        Scaled gene expression for marker gene detection.    
-    leaf_genes_all: `pandas.core.frame.DataFrame` (`adata.uns['leaf_genes_all']`)
-        All the leaf genes from all leaf branches.
-    leaf_genes: `dict` (`adata.uns['leaf_genes']`)
-        Leaf genes for each branch.
+    scaled_marker_expr: `list` (`adata.uns['scaled_marker_expr']`)
+        Scaled marker expression for marker marker detection.    
+    leaf_markers_all: `pandas.core.frame.DataFrame` (`adata.uns['leaf_markers_all']`)
+        All the leaf markers from all leaf branches.
+    leaf_markers: `dict` (`adata.uns['leaf_markers']`)
+        Leaf markers for each branch.
     """
 
-    file_path = os.path.join(adata.uns['workdir'],'leaf_genes')
+    file_path = os.path.join(adata.uns['workdir'],'leaf_markers')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
 
     flat_tree = adata.uns['flat_tree']
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
-    df_gene_detection = adata.obs.copy()
-    df_gene_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
+    df_marker_detection = adata.obs.copy()
+    df_marker_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
 
-    if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
-        print('Importing precomputed scaled gene expression matrix ...')
-        results = adata.uns['scaled_gene_expr']          
-        df_scaled_gene_expr = pd.DataFrame(results).T
-        input_genes_expressed = df_scaled_gene_expr.columns.tolist()
+    if(use_precomputed and ('scaled_marker_expr' in adata.uns_keys())):
+        print('Importing precomputed scaled marker expression matrix ...')
+        results = adata.uns['scaled_marker_expr']          
+        df_scaled_marker_expr = pd.DataFrame(results).T
+        input_markers = df_scaled_marker_expr.columns.tolist()
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
                              columns=adata.var_names.tolist())
-        input_genes = adata.var_names.tolist()
-        #exclude genes that are expressed in fewer than min_num_cells cells
-        #min_num_cells = max(5,int(round(df_gene_detection.shape[0]*0.001)))
-        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
-        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-        df_gene_detection[input_genes_expressed] = df_sc[input_genes_expressed].copy()
+        #exclude markers that are expressed in fewer than min_num_cells cells
+        print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
+        if('n_cells' in adata.var_keys()):
+            input_markers = adata.var_names[adata.var['n_cells']>=min_num_cells].tolist()
+        else:
+            input_markers = adata.var_names[np.sum(adata.X>0,axis=0).astype(int)]>=min_num_cells.tolist()
+        df_marker_detection[input_markers] = df_sc[input_markers].copy()
 
         print(str(n_jobs)+' cpus are being used ...')
-        params = [(df_gene_detection,x,percentile_expr) for x in input_genes_expressed]
+        params = [(df_marker_detection,x,percentile_expr) for x in input_markers]
         pool = multiprocessing.Pool(processes=n_jobs)
-        results = pool.map(scale_gene_expr,params)
+        results = pool.map(scale_marker_expr,params)
         pool.close()
-        adata.uns['scaled_gene_expr'] = results
-        df_scaled_gene_expr = pd.DataFrame(results).T
+        adata.uns['scaled_marker_expr'] = results
+        df_scaled_marker_expr = pd.DataFrame(results).T
 
-    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
-    df_gene_detection[input_genes_expressed] = df_scaled_gene_expr    
+    print(str(len(input_markers)) + ' markers are being scanned ...')
+    df_marker_detection[input_markers] = df_scaled_marker_expr    
 
-    #### find marker genes that are specific to one leaf branch
+    #### find marker markers that are specific to one leaf branch
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
     if(preference!=None):
         preference_nodes = [dict_label_node[x] for x in preference]
@@ -3719,17 +3720,17 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
     leaves = [k for k,v in flat_tree.degree() if v==1]
     leaf_edges = [x for x in bfs_edges if (x[0] in leaves) or (x[1] in leaves)]    
 
-    df_gene_detection['bfs_edges'] = df_gene_detection['branch_id']
-    df_gene_detection.astype('object')
-    for x in df_gene_detection['branch_id'].unique():
-        id_ = df_gene_detection[df_gene_detection['branch_id']==x].index
+    df_marker_detection['bfs_edges'] = df_marker_detection['branch_id']
+    df_marker_detection.astype('object')
+    for x in df_marker_detection['branch_id'].unique():
+        id_ = df_marker_detection[df_marker_detection['branch_id']==x].index
         if x not in bfs_edges:
-            df_gene_detection.loc[id_,'bfs_edges'] =pd.Series(index=id_,data=[(x[1],x[0])]*len(id_))
+            df_marker_detection.loc[id_,'bfs_edges'] =pd.Series(index=id_,data=[(x[1],x[0])]*len(id_))
     
-    df_leaf_genes = pd.DataFrame(columns=['zscore','H_statistic','H_pvalue']+leaf_edges)
-    for gene in input_genes_expressed:
-        meann_values = df_gene_detection[['bfs_edges',gene]].groupby(by = 'bfs_edges')[gene].mean()
-        br_values = df_gene_detection[['bfs_edges',gene]].groupby(by = 'bfs_edges')[gene].apply(list)
+    df_leaf_markers = pd.DataFrame(columns=['zscore','H_statistic','H_pvalue']+leaf_edges)
+    for marker in input_markers:
+        meann_values = df_marker_detection[['bfs_edges',marker]].groupby(by = 'bfs_edges')[marker].mean()
+        br_values = df_marker_detection[['bfs_edges',marker]].groupby(by = 'bfs_edges')[marker].apply(list)
         leaf_mean_values = meann_values[leaf_edges]
         leaf_mean_values.sort_values(inplace=True)
         leaf_br_values = br_values[leaf_edges]
@@ -3747,26 +3748,26 @@ def detect_leaf_genes(adata,cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr
                 list_br_values = [leaf_br_values[x] for x in leaf_edges]
                 kurskal_statistic,kurskal_pvalue = stats.kruskal(*list_br_values)
                 if(kurskal_pvalue<cutoff_pvalue):  
-                    df_conover_pvalues= posthoc_conover(df_gene_detection[[x in leaf_edges for x in df_gene_detection['bfs_edges']]], 
-                                                       val_col=gene, group_col='bfs_edges', p_adjust = 'fdr_bh')
+                    df_conover_pvalues= posthoc_conover(df_marker_detection[[x in leaf_edges for x in df_marker_detection['bfs_edges']]], 
+                                                       val_col=marker, group_col='bfs_edges', p_adjust = 'fdr_bh')
                     cand_conover_pvalues = df_conover_pvalues[~df_conover_pvalues.columns.isin([cand_br])][cand_br]
                     if(all(cand_conover_pvalues < cutoff_pvalue)):
-                        df_leaf_genes.loc[gene,:] = 1.0
-                        df_leaf_genes.loc[gene,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
-                        df_leaf_genes.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
-    df_leaf_genes.rename(columns={x:dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue' for x in leaf_edges},inplace=True)
-    df_leaf_genes.sort_values(by=['H_pvalue','zscore'],ascending=[True,False],inplace=True)
-    df_leaf_genes.to_csv(os.path.join(file_path,'leaf_genes.tsv'),sep = '\t',index = True)
-    dict_leaf_genes = dict()
+                        df_leaf_markers.loc[marker,:] = 1.0
+                        df_leaf_markers.loc[marker,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
+                        df_leaf_markers.loc[marker,cand_conover_pvalues.index] = cand_conover_pvalues
+    df_leaf_markers.rename(columns={x:dict_node_state[x[0]]+dict_node_state[x[1]]+'_pvalue' for x in leaf_edges},inplace=True)
+    df_leaf_markers.sort_values(by=['H_pvalue','zscore'],ascending=[True,False],inplace=True)
+    df_leaf_markers.to_csv(os.path.join(file_path,'leaf_markers.tsv'),sep = '\t',index = True)
+    dict_leaf_markers = dict()
     for x in leaf_edges:
         x_alias = (dict_node_state[x[0]],dict_node_state[x[1]])
-        dict_leaf_genes[x_alias] = df_leaf_genes[df_leaf_genes[x_alias[0]+x_alias[1]+'_pvalue']==1.0]
-        dict_leaf_genes[x_alias].to_csv(os.path.join(file_path,'leaf_genes'+x_alias[0]+'_'+x_alias[1] + '.tsv'),sep = '\t',index = True)
-    adata.uns['leaf_genes_all'] = df_leaf_genes
-    adata.uns['leaf_genes'] = dict_leaf_genes
+        dict_leaf_markers[x_alias] = df_leaf_markers[df_leaf_markers[x_alias[0]+x_alias[1]+'_pvalue']==1.0]
+        dict_leaf_markers[x_alias].to_csv(os.path.join(file_path,'leaf_markers'+x_alias[0]+'_'+x_alias[1] + '.tsv'),sep = '\t',index = True)
+    adata.uns['leaf_markers_all'] = df_leaf_markers
+    adata.uns['leaf_markers'] = dict_leaf_markers
 
 
-def find_marker(adata,ident='label',cutoff_zscore=1.5,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
+def detect_markers(adata,ident='label',cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
                 use_precomputed=True):
     """Detect markers (highly expressed or suppressed) for the specified ident.
     Parameters
@@ -4190,11 +4191,11 @@ def save_web_report(adata,n_genes=5,file_name='stream_web_report',preference=Non
     if('flat_tree' not in adata.uns_keys()):
         raise ValueError('Please run st.plot_flat_tree(adata) before saving web report')
     if('leaf_genes' not in adata.uns_keys()):
-        raise ValueError('Please run st.detect_leaf_genes(adata) before saving web report')
+        raise ValueError('Please run st.detect_leaf_markers(adata) before saving web report')
     if('transition_genes' not in adata.uns_keys()):
-        raise ValueError('Please run st.detect_transistion_genes(adata) before saving web report')
+        raise ValueError('Please run st.detect_transistion_markers(adata) before saving web report')
     if(('de_genes_greater' not in adata.uns_keys()) or ('de_genes_less' not in adata.uns_keys())):
-        raise ValueError('Please run st.detect_de_genes(adata) before saving web report')
+        raise ValueError('Please run st.detect_de_markers(adata) before saving web report')
     
     rootdir = os.path.join(adata.uns['workdir'],file_name)
     reportdir = os.path.join(rootdir,file_name)
