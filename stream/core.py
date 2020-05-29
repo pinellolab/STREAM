@@ -3182,7 +3182,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
             plt.savefig(os.path.join(file_path_S,'stream_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
-def detect_transistion_markers(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
+def detect_transistion_markers(adata,marker_list=None,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
                                use_precomputed=True, root='S0',preference=None):
 
     """Detect transition markers along one branch.
@@ -3190,6 +3190,8 @@ def detect_transistion_markers(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, p
     ----------
     adata: AnnData
         Annotated data matrix.
+    marker_list: `list`, optional (default: None): 
+        A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
     cutoff_spearman: `float`, optional (default: 0.4)
         Between 0 and 1. The cutoff used for Spearman's rank correlation coefficient.
     cutoff_logfc: `float`, optional (default: 0.25)
@@ -3220,6 +3222,15 @@ def detect_transistion_markers(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, p
     file_path = os.path.join(adata.uns['workdir'],'transition_markers')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
+
+    if(marker_list is None):
+        marker_list = adata.var_names.tolist()
+    else:
+        ###remove duplicate keys
+        marker_list = list(dict.fromkeys(marker_list)) 
+        for marker in marker_list:
+            if(marker not in adata.var_names):
+                raise ValueError("could not find '%s' in `adata.var_names`"  % (marker))
     
     flat_tree = adata.uns['flat_tree']
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
@@ -3227,17 +3238,23 @@ def detect_transistion_markers(adata,cutoff_spearman=0.4, cutoff_logfc = 0.25, p
     df_marker_detection.rename(columns={"label": "CELL_LABEL", "branch_lam": "lam"},inplace = True)
     if(use_precomputed and ('scaled_marker_expr' in adata.uns_keys())):
         print('Importing precomputed scaled marker expression matrix ...')
-        results = adata.uns['scaled_marker_expr']       
-        df_scaled_marker_expr = pd.DataFrame(results).T
-        input_markers_expressed = df_scaled_marker_expr.columns.tolist()
+        results = adata.uns['scaled_marker_expr']    
+        df_results = pd.DataFrame(results).T 
+        if(all(np.isin(marker_list,df_results.columns.tolist()))):
+            input_markers_expressed = marker_list
+            df_scaled_marker_expr = df_results[input_markers_expressed]
+        else:
+            raise ValueError("Not all markers in `marker_list` can be found in precomputed scaled marker expression matrix. Please set `use_precomputed=False`")
+        
     else:
+        input_markers = marker_list
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
-                             columns=adata.var_names.tolist())
-        input_markers = adata.var_names.tolist()
+                             columns=input_markers)
         #exclude markers that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_marker_detection.shape[0]*0.001)))
         # print('Minimum number of cells expressing markers: '+ str(min_num_cells))
+
         print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
         input_markers_expressed = np.array(input_markers)[np.where((df_sc[input_markers]>0).sum(axis=0)>min_num_cells)[0]].tolist()
         df_marker_detection[input_markers_expressed] = df_sc[input_markers_expressed].copy()
@@ -3355,7 +3372,7 @@ def plot_transition_markers(adata,num_markers = 15,
             plt.close(fig)  
 
 
-def detect_de_markers(adata,cutoff_zscore=1,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,min_num_cells=5,
+def detect_de_markers(adata,marker_list=None,cutoff_zscore=1,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,min_num_cells=5,
                       use_precomputed=True, root='S0',preference=None):
 
     """Detect differentially expressed markers between different sub-branches.
@@ -3363,7 +3380,9 @@ def detect_de_markers(adata,cutoff_zscore=1,cutoff_logfc = 0.25,percentile_expr=
     ----------
     adata: AnnData
         Annotated data matrix.
-    cutoff_zscore: `float`, optional (default: 2)
+    marker_list: `list`, optional (default: None): 
+        A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
+    cutoff_zscore: `float`, optional (default: 1)
         The z-score cutoff used for Mann–Whitney U test.
     cutoff_logfc: `float`, optional (default: 0.25)
         The log-transformed fold change cutoff between a pair of branches.
@@ -3398,6 +3417,15 @@ def detect_de_markers(adata,cutoff_zscore=1,cutoff_logfc = 0.25,percentile_expr=
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
 
+    if(marker_list is None):
+        marker_list = adata.var_names.tolist()
+    else:
+        ###remove duplicate keys
+        marker_list = list(dict.fromkeys(marker_list)) 
+        for marker in marker_list:
+            if(marker not in adata.var_names):
+                raise ValueError("could not find '%s' in `adata.var_names`"  % (marker))
+
     flat_tree = adata.uns['flat_tree']
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
     df_marker_detection = adata.obs.copy()
@@ -3406,8 +3434,12 @@ def detect_de_markers(adata,cutoff_zscore=1,cutoff_logfc = 0.25,percentile_expr=
     if(use_precomputed and ('scaled_marker_expr' in adata.uns_keys())):
         print('Importing precomputed scaled marker expression matrix ...')
         results = adata.uns['scaled_marker_expr']  
-        df_scaled_marker_expr = pd.DataFrame(results).T
-        input_markers_expressed = df_scaled_marker_expr.columns.tolist()        
+        df_results = pd.DataFrame(results).T 
+        if(all(np.isin(marker_list,df_results.columns.tolist()))):
+            input_markers_expressed = marker_list
+            df_scaled_marker_expr = df_results[input_markers_expressed]
+        else:
+            raise ValueError("Not all markers in `marker_list` can be found in precomputed scaled marker expression matrix. Please set `use_precomputed=False`")   
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
@@ -3636,13 +3668,15 @@ def plot_de_markers(adata,num_markers = 15,cutoff_zscore=1,cutoff_logfc = 0.25,
                 plt.close(fig)  
 
 
-def detect_leaf_markers(adata,cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
+def detect_leaf_markers(adata,marker_list=None,cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
                         use_precomputed=True, root='S0',preference=None):
     """Detect leaf markers for each branch.
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
+    marker_list: `list`, optional (default: None): 
+        A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
     cutoff_zscore: `float`, optional (default: 1.5)
         The z-score cutoff used for mean values of all leaf branches.
     cutoff_pvalue: `float`, optional (default: 1e-2)
@@ -3676,6 +3710,15 @@ def detect_leaf_markers(adata,cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_exp
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)    
 
+    if(marker_list is None):
+        marker_list = adata.var_names.tolist()
+    else:
+        ###remove duplicate keys
+        marker_list = list(dict.fromkeys(marker_list)) 
+        for marker in marker_list:
+            if(marker not in adata.var_names):
+                raise ValueError("could not find '%s' in `adata.var_names`"  % (marker))
+
     flat_tree = adata.uns['flat_tree']
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
     df_marker_detection = adata.obs.copy()
@@ -3684,8 +3727,12 @@ def detect_leaf_markers(adata,cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_exp
     if(use_precomputed and ('scaled_marker_expr' in adata.uns_keys())):
         print('Importing precomputed scaled marker expression matrix ...')
         results = adata.uns['scaled_marker_expr']          
-        df_scaled_marker_expr = pd.DataFrame(results).T
-        input_markers = df_scaled_marker_expr.columns.tolist()
+        df_results = pd.DataFrame(results).T 
+        if(all(np.isin(marker_list,df_results.columns.tolist()))):
+            input_markers_expressed = marker_list
+            df_scaled_marker_expr = df_results[input_markers_expressed]
+        else:
+            raise ValueError("Not all markers in `marker_list` can be found in precomputed scaled marker expression matrix. Please set `use_precomputed=False`")
     else:
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
@@ -3767,13 +3814,15 @@ def detect_leaf_markers(adata,cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_exp
     adata.uns['leaf_markers'] = dict_leaf_markers
 
 
-def detect_markers(adata,ident='label',cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
+def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,
                 use_precomputed=True):
     """Detect markers (highly expressed or suppressed) for the specified ident.
     Parameters
     ----------
     adata: AnnData
         Annotated data matrix.
+    marker_list: `list`, optional (default: None): 
+        A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
     cutoff_zscore: `float`, optional (default: 1.5)
         The z-score cutoff used for mean values of all leaf branches.
     cutoff_pvalue: `float`, optional (default: 1e-2)
@@ -3801,6 +3850,15 @@ def detect_markers(adata,ident='label',cutoff_zscore=1.,cutoff_pvalue=1e-2,perce
     file_path = os.path.join(adata.uns['workdir'],'markers_found')
     if(not os.path.exists(file_path)):
         os.makedirs(file_path)  
+
+    if(marker_list is None):
+        marker_list = adata.var_names.tolist()
+    else:
+        ###remove duplicate keys
+        marker_list = list(dict.fromkeys(marker_list)) 
+        for marker in marker_list:
+            if(marker not in adata.var_names):
+                raise ValueError("could not find '%s' in `adata.var_names`"  % (marker))
         
     if ident not in adata.obs.columns:
         raise ValueError("'%s' does not exist in `adata.obs`" %(ident))
@@ -3812,8 +3870,12 @@ def detect_markers(adata,ident='label',cutoff_zscore=1.,cutoff_pvalue=1e-2,perce
     if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
         print('Importing precomputed scaled gene expression matrix ...')
         results = adata.uns['scaled_gene_expr']
-        df_scaled_gene_expr = pd.DataFrame(results).T
-        input_genes_expressed = df_scaled_gene_expr.columns.tolist()                  
+        df_results = pd.DataFrame(results).T 
+        if(all(np.isin(marker_list,df_results.columns.tolist()))):
+            input_markers_expressed = marker_list
+            df_scaled_marker_expr = df_results[input_markers_expressed]
+        else:
+            raise ValueError("Not all markers in `marker_list` can be found in precomputed scaled marker expression matrix. Please set `use_precomputed=False`")                  
     else:
         #exclude genes that are expressed in fewer than min_num_cells cells
         print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
