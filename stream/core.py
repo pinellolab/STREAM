@@ -2982,7 +2982,7 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
             plt.savefig(os.path.join(file_path_S,'stream_sc_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
-def plot_stream(adata,root='S0',color = None,preference=None,
+def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
                 factor_num_win=10,factor_min_win=2.0,factor_width=2.5,factor_nrow=200,factor_ncol=400,
                 log_scale = False,factor_zoomin=100.0,
                 fig_size=(7,4.5),fig_legend_order=None,fig_legend_ncol=1,
@@ -3002,10 +3002,12 @@ def plot_stream(adata,root='S0',color = None,preference=None,
     preference: `list`, optional (default: None): 
         The preference of nodes. The branch with speficied nodes are preferred and put on the top part of stream plot. 
         The higher ranks the node have, the closer to the top the branch with that node is.
+    dist_scale: `float`,optional (default: 0.9)
+        Scaling factor. It controls the width of STREAM plot branches. The smaller, the thinner the branch will be.
     factor_num_win: `int`, optional (default: 10)
-        Number of sliding windows used for making stream plot.
+        Number of sliding windows used for making stream plot. It controls the smoothness of STREAM plot.
     factor_min_win: `float`, optional (default: 2.0)
-        The minimum number of sliding windows. The window size is calculated based on shortest branch. (suggested range: 1.5~3.0)
+        The minimum number of sliding windows. It controls the resolution of STREAM plot. The window size is calculated based on shortest branch. (suggested range: 1.5~3.0)
     factor_width: `float`, optional (default: 2.5)
         The ratio between length and width of stream plot. 
     factor_nrow: `int`, optional (default: 200)
@@ -3086,7 +3088,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,
     list_string_type = [k for k,v in dict_ann.items() if is_string_dtype(v)]
     if(len(list_string_type)>0):
         dict_verts,dict_extent = \
-        cal_stream_polygon_string(adata,dict_ann,root=root,preference=None,
+        cal_stream_polygon_string(adata,dict_ann,root=root,preference=None,dist_scale=dist_scale,
                                   factor_num_win=factor_num_win,factor_min_win=factor_min_win,factor_width=factor_width,
                                   log_scale=log_scale,factor_zoomin=factor_zoomin)  
         dict_plot['string'] = [dict_verts,dict_extent]
@@ -3094,7 +3096,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,
     list_numeric_type = [k for k,v in dict_ann.items() if is_numeric_dtype(v)]
     if(len(list_numeric_type)>0):
         verts,extent,ann_order,dict_ann_df,dict_im_array = \
-        cal_stream_polygon_numeric(adata,dict_ann,root=root,preference=preference,
+        cal_stream_polygon_numeric(adata,dict_ann,root=root,preference=preference,dist_scale=dist_scale,
                                    factor_num_win=factor_num_win,factor_min_win=factor_min_win,factor_width=factor_width,
                                    factor_nrow=factor_nrow,factor_ncol=factor_ncol,
                                    log_scale=log_scale,factor_zoomin=factor_zoomin)     

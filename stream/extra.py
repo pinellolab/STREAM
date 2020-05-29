@@ -893,7 +893,7 @@ def fill_im_array(dict_im_array,df_bins_gene,flat_tree,df_base_x,df_base_y,df_to
     return dict_im_array
 
 
-def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,
+def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scale=dist_scale,
                               factor_num_win=10,factor_min_win=2.0,factor_width=2.5,
                               log_scale=False,factor_zoomin=100.0):
     list_ann_string = [k for k,v in dict_ann.items() if is_string_dtype(v)]
@@ -964,7 +964,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,
             node = dfs_nodes_copy.pop()
             prev_node = dict_tree[node]['prev']
             if(node in leaves):
-                dict_shift_dist[(prev_node,node)] = -1.1*(num_nonroot_leaf-1)/2.0 + id_leaf*1.1
+                dict_shift_dist[(prev_node,node)] = -(np.float(1)/dist_scale)*(num_nonroot_leaf-1)/2.0 + id_leaf*(np.float(1)/dist_scale)
                 id_leaf = id_leaf+1
             else:
                 next_nodes = dict_tree[node]['next']
@@ -1482,7 +1482,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,
         dict_extent[ann] = extent
     return dict_verts,dict_extent
 
-def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None,
+def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_scale=dist_scale,
                                factor_num_win=10,factor_min_win=2.0,factor_width=2.5,
                                factor_nrow=200,factor_ncol=400,
                                log_scale=False,factor_zoomin=100.0):
@@ -1554,7 +1554,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None,
         node = dfs_nodes_copy.pop()
         prev_node = dict_tree[node]['prev']
         if(node in leaves):
-            dict_shift_dist[(prev_node,node)] = -1.1*(num_nonroot_leaf-1)/2.0 + id_leaf*1.1
+            dict_shift_dist[(prev_node,node)] = -(np.float(1)/dist_scale)*(num_nonroot_leaf-1)/2.0 + id_leaf*(np.float(1)/dist_scale)
             id_leaf = id_leaf+1
         else:
             next_nodes = dict_tree[node]['next']
