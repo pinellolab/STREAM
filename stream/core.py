@@ -3182,7 +3182,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
             plt.savefig(os.path.join(file_path_S,'stream_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
             plt.close(fig)
 
-def detect_transistion_markers(adata,marker_list=None,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
+def detect_transition_markers(adata,marker_list=None,cutoff_spearman=0.4, cutoff_logfc = 0.25, percentile_expr=95, n_jobs = 1,min_num_cells=5,
                                use_precomputed=True, root='S0',preference=None):
 
     """Detect transition markers along one branch.
@@ -3192,6 +3192,7 @@ def detect_transistion_markers(adata,marker_list=None,cutoff_spearman=0.4, cutof
         Annotated data matrix.
     marker_list: `list`, optional (default: None): 
         A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
+        If none, all available features (genes/peaks/kmers/motifs) will be scanned.
     cutoff_spearman: `float`, optional (default: 0.4)
         Between 0 and 1. The cutoff used for Spearman's rank correlation coefficient.
     cutoff_logfc: `float`, optional (default: 0.25)
@@ -3384,6 +3385,7 @@ def detect_de_markers(adata,marker_list=None,cutoff_zscore=1,cutoff_logfc = 0.25
         Annotated data matrix.
     marker_list: `list`, optional (default: None): 
         A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
+        If none, all available features (genes/peaks/kmers/motifs) will be scanned.
     cutoff_zscore: `float`, optional (default: 1)
         The z-score cutoff used for Mann–Whitney U test.
     cutoff_logfc: `float`, optional (default: 0.25)
@@ -3681,6 +3683,7 @@ def detect_leaf_markers(adata,marker_list=None,cutoff_zscore=1.,cutoff_pvalue=1e
         Annotated data matrix.
     marker_list: `list`, optional (default: None): 
         A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
+        If none, all available features (genes/peaks/kmers/motifs) will be scanned.
     cutoff_zscore: `float`, optional (default: 1.5)
         The z-score cutoff used for mean values of all leaf branches.
     cutoff_pvalue: `float`, optional (default: 1e-2)
@@ -3827,6 +3830,7 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
         Annotated data matrix.
     marker_list: `list`, optional (default: None): 
         A list of candidate markers to be scanned. Instead of scanning all available genes/peaks/kmers/motifs, this will limit the scanning to a specific list of genes/peaks/kmers/motifs
+        If none, all available features (genes/peaks/kmers/motifs) will be scanned.
     cutoff_zscore: `float`, optional (default: 1.5)
         The z-score cutoff used for mean values of all leaf branches.
     cutoff_pvalue: `float`, optional (default: 1e-2)
