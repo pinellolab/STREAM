@@ -3224,8 +3224,10 @@ def detect_transistion_markers(adata,marker_list=None,cutoff_spearman=0.4, cutof
         os.makedirs(file_path)    
 
     if(marker_list is None):
+        print('Scanning all features ...')
         marker_list = adata.var_names.tolist()
     else:
+        print('Scanning the specified marker list ...')
         ###remove duplicate keys
         marker_list = list(dict.fromkeys(marker_list)) 
         for marker in marker_list:
@@ -3418,8 +3420,10 @@ def detect_de_markers(adata,marker_list=None,cutoff_zscore=1,cutoff_logfc = 0.25
         os.makedirs(file_path)    
 
     if(marker_list is None):
+        print('Scanning all features ...')
         marker_list = adata.var_names.tolist()
     else:
+        print('Scanning the specified marker list ...')
         ###remove duplicate keys
         marker_list = list(dict.fromkeys(marker_list)) 
         for marker in marker_list:
@@ -3441,10 +3445,10 @@ def detect_de_markers(adata,marker_list=None,cutoff_zscore=1,cutoff_logfc = 0.25
         else:
             raise ValueError("Not all markers in `marker_list` can be found in precomputed scaled marker expression matrix. Please set `use_precomputed=False`")   
     else:
+        input_markers = marker_list
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
-                             columns=adata.var_names.tolist())
-        input_markers = adata.var_names.tolist()
+                             columns=input_markers)
         #exclude markers that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_marker_detection.shape[0]*0.001)))
         print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
@@ -3711,8 +3715,10 @@ def detect_leaf_markers(adata,marker_list=None,cutoff_zscore=1.,cutoff_pvalue=1e
         os.makedirs(file_path)    
 
     if(marker_list is None):
+        print('Scanning all features ...')
         marker_list = adata.var_names.tolist()
     else:
+        print('Scanning the specified marker list ...')
         ###remove duplicate keys
         marker_list = list(dict.fromkeys(marker_list)) 
         for marker in marker_list:
@@ -3734,27 +3740,25 @@ def detect_leaf_markers(adata,marker_list=None,cutoff_zscore=1.,cutoff_pvalue=1e
         else:
             raise ValueError("Not all markers in `marker_list` can be found in precomputed scaled marker expression matrix. Please set `use_precomputed=False`")
     else:
+        input_markers = marker_list
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
                              data = adata.X,
-                             columns=adata.var_names.tolist())
+                             columns=input_markers)
         #exclude markers that are expressed in fewer than min_num_cells cells
         print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
-        if('n_cells' in adata.var_keys()):
-            input_markers = adata.var_names[adata.var['n_cells']>=min_num_cells].tolist()
-        else:
-            input_markers = adata.var_names[np.sum(adata.X>0,axis=0).astype(int)]>=min_num_cells.tolist()
-        df_marker_detection[input_markers] = df_sc[input_markers].copy()
+        input_markers_expressed = np.array(input_markers)[np.where((df_sc[input_markers]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_marker_detection[input_markers_expressed] = df_sc[input_markers_expressed].copy()
 
         print(str(n_jobs)+' cpus are being used ...')
-        params = [(df_marker_detection,x,percentile_expr) for x in input_markers]
+        params = [(df_marker_detection,x,percentile_expr) for x in input_markers_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
         results = pool.map(scale_marker_expr,params)
         pool.close()
         adata.uns['scaled_marker_expr'] = results
         df_scaled_marker_expr = pd.DataFrame(results).T
 
-    print(str(len(input_markers)) + ' markers are being scanned ...')
-    df_marker_detection[input_markers] = df_scaled_marker_expr    
+    print(str(len(input_markers_expressed)) + ' markers are being scanned ...')
+    df_marker_detection[input_markers_expressed] = df_scaled_marker_expr    
 
     #### find marker markers that are specific to one leaf branch
     dict_label_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}
@@ -3775,7 +3779,7 @@ def detect_leaf_markers(adata,marker_list=None,cutoff_zscore=1.,cutoff_pvalue=1e
             df_marker_detection.loc[id_,'bfs_edges'] =pd.Series(index=id_,data=[(x[1],x[0])]*len(id_))
     
     df_leaf_markers = pd.DataFrame(columns=['zscore','H_statistic','H_pvalue']+leaf_edges)
-    for marker in input_markers:
+    for marker in input_markers_expressed:
         meann_values = df_marker_detection[['bfs_edges',marker]].groupby(by = 'bfs_edges')[marker].mean()
         br_values = df_marker_detection[['bfs_edges',marker]].groupby(by = 'bfs_edges')[marker].apply(list)
         leaf_mean_values = meann_values[leaf_edges]
@@ -3828,19 +3832,19 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
     cutoff_pvalue: `float`, optional (default: 1e-2)
         The p value cutoff used for Kruskal-Wallis H-test and post-hoc pairwise Conover’s test.
     percentile_expr: `int`, optional (default: 95)
-        Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions. 
+        Between 0 and 100. Between 0 and 100. Specify the percentile of marker expression greater than 0 to filter out some extreme marker expressions. 
     n_jobs: `int`, optional (default: all available cpus)
-        The number of parallel jobs to run when scaling the gene expressions .
+        The number of parallel jobs to run when scaling the marker expressions .
     min_num_cells: `int`, optional (default: 5)
-        The minimum number of cells in which genes are expressed.
+        The minimum number of cells in which markers are expressed.
     use_precomputed: `bool`, optional (default: True)
-        If True, the previously computed scaled gene expression will be used
+        If True, the previously computed scaled marker expression will be used
 
     Returns
     -------
     updates `adata` with the following fields.
-    scaled_gene_expr: `list` (`adata.uns['scaled_gene_expr']`)
-        Scaled gene expression for marker gene detection.    
+    scaled_marker_expr: `list` (`adata.uns['scaled_marker_expr']`)
+        Scaled marker expression for marker marker detection.    
     markers_ident_all: `pandas.core.frame.DataFrame` (`adata.uns['markers_ident_all']`)
         All markers for all ident labels.
     markers_ident: `dict` (`adata.uns['markers_']`)
@@ -3852,8 +3856,10 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
         os.makedirs(file_path)  
 
     if(marker_list is None):
+        print('Scanning all features ...')
         marker_list = adata.var_names.tolist()
     else:
+        print('Scanning the specified marker list ...')
         ###remove duplicate keys
         marker_list = list(dict.fromkeys(marker_list)) 
         for marker in marker_list:
@@ -3862,14 +3868,10 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
         
     if ident not in adata.obs.columns:
         raise ValueError("'%s' does not exist in `adata.obs`" %(ident))
-    df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                         data = adata.X,
-                         columns=adat.var_names.tolist())
-    input_genes = adata.var_names.tolist()
 
-    if(use_precomputed and ('scaled_gene_expr' in adata.uns_keys())):
-        print('Importing precomputed scaled gene expression matrix ...')
-        results = adata.uns['scaled_gene_expr']
+    if(use_precomputed and ('scaled_marker_expr' in adata.uns_keys())):
+        print('Importing precomputed scaled marker expression matrix ...')
+        results = adata.uns['scaled_marker_expr']
         df_results = pd.DataFrame(results).T 
         if(all(np.isin(marker_list,df_results.columns.tolist()))):
             input_markers_expressed = marker_list
@@ -3877,30 +3879,34 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
         else:
             raise ValueError("Not all markers in `marker_list` can be found in precomputed scaled marker expression matrix. Please set `use_precomputed=False`")                  
     else:
-        #exclude genes that are expressed in fewer than min_num_cells cells
-        print("Filtering out genes that are expressed in less than " + str(min_num_cells) + " cells ...")
-        input_genes_expressed = np.array(input_genes)[np.where((df_sc[input_genes]>0).sum(axis=0)>min_num_cells)[0]].tolist()
-        df_sc_filtered = df_sc[input_genes_expressed].copy()
+        input_markers = marker_list
+        df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
+                            data = adata.X,
+                            columns=input_markers)
+        #exclude markers that are expressed in fewer than min_num_cells cells
+        print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
+        input_markers_expressed = np.array(input_markers)[np.where((df_sc[input_markers]>0).sum(axis=0)>min_num_cells)[0]].tolist()
+        df_sc_filtered = df_sc[input_markers_expressed].copy()
 
         print(str(n_jobs)+' cpus are being used ...')
-        params = [(df_sc_filtered,x,percentile_expr) for x in input_genes_expressed]
+        params = [(df_sc_filtered,x,percentile_expr) for x in input_markers_expressed]
         pool = multiprocessing.Pool(processes=n_jobs)
-        results = pool.map(scale_gene_expr,params)
+        results = pool.map(scale_marker_expr,params)
         pool.close()
-        adata.uns['scaled_gene_expr'] = results
-        df_scaled_gene_expr = pd.DataFrame(results).T
+        adata.uns['scaled_marker_expr'] = results
+        df_scaled_marker_expr = pd.DataFrame(results).T
 
-    print(str(len(input_genes_expressed)) + ' genes are being scanned ...')
-    df_input = df_scaled_gene_expr 
+    print(str(len(input_markers_expressed)) + ' markers are being scanned ...')
+    df_input = df_scaled_marker_expr 
     df_input[ident] = adata.obs[ident]
     
     uniq_ident = np.unique(df_input[ident]).tolist()
 
     df_markers = pd.DataFrame(columns=['zscore','H_statistic','H_pvalue']+uniq_ident)
-    for gene in input_genes_expressed:
-        mean_values = df_input[[ident,gene]].groupby(by = ident)[gene].mean()
+    for marker in input_markers_expressed:
+        mean_values = df_input[[ident,marker]].groupby(by = ident)[marker].mean()
         mean_values.sort_values(inplace=True)
-        list_marker_expr = df_input[[ident,gene]].groupby(by = ident)[gene].apply(list)
+        list_marker_expr = df_input[[ident,marker]].groupby(by = ident)[marker].apply(list)
         if(mean_values.shape[0]<2):
             print('At least two distinct' + ident + 'are required')
         else:
@@ -3915,12 +3921,12 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
                 kurskal_statistic,kurskal_pvalue = stats.kruskal(*list_marker_expr)
                 if(kurskal_pvalue<cutoff_pvalue):  
                     df_conover_pvalues= posthoc_conover(df_input, 
-                                                       val_col=gene, group_col=ident, p_adjust = 'fdr_bh')
+                                                       val_col=marker, group_col=ident, p_adjust = 'fdr_bh')
                     cand_conover_pvalues = df_conover_pvalues[cand_ident]
                     if(all(cand_conover_pvalues < cutoff_pvalue)):
-    #                     df_markers.loc[gene,:] = 1.0
-                        df_markers.loc[gene,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
-                        df_markers.loc[gene,cand_conover_pvalues.index] = cand_conover_pvalues
+    #                     df_markers.loc[marker,:] = 1.0
+                        df_markers.loc[marker,['zscore','H_statistic','H_pvalue']] = [cand_zscore,kurskal_statistic,kurskal_pvalue]
+                        df_markers.loc[marker,cand_conover_pvalues.index] = cand_conover_pvalues
     df_markers.sort_values(by=['H_pvalue','zscore'],ascending=[True,False],inplace=True)    
     df_markers.to_csv(os.path.join(file_path,'markers_'+ident+'.tsv'),sep = '\t',index = True)
     dict_markers = dict()
@@ -3928,7 +3934,7 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
         dict_markers[x] = df_markers[df_markers[x]==-1].loc[:,df_markers.columns!=x]
         dict_markers[x].to_csv(os.path.join(file_path,'markers_'+ident+'_'+x+'.tsv'),sep = '\t',index = True)
     adata.uns['markers_'+ident+'_all'] = df_markers
-    adata.uns['markers_'+ident] = dict_markers    
+    adata.uns['markers_'+ident] = dict_markers 
 
 def map_new_data(adata_ref,adata_new,use_radius=False):
     """ Map new data to the inferred trajectories
