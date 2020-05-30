@@ -3319,15 +3319,14 @@ def detect_transition_markers(adata,marker_list=None,cutoff_spearman=0.4, cutoff
 
 
 def plot_transition_markers(adata,num_markers = 15,
-                            save_fig=False,fig_path=None,fig_size=(12,8)):
+                            save_fig=False,fig_path=None,fig_size=None):
     if(fig_path is None):
         fig_path = os.path.join(adata.uns['workdir'],'transition_markers')
     if(not os.path.exists(fig_path)):
-        os.makedirs(fig_path) 
+        os.makedirs(fig_path)
 
     dict_tg_edges = adata.uns['transition_markers']
     flat_tree = adata.uns['flat_tree']
-    # dict_node_state = nx.get_node_attributes(flat_tree,'label')    
     colors = sns.color_palette("Set1", n_colors=8, desat=0.8)
     for edge_i in dict_tg_edges.keys():
 
@@ -3339,40 +3338,42 @@ def plot_transition_markers(adata,num_markers = 15,
 
         pos = np.arange(df_tg_edge_i.shape[0])-1
         bar_colors = np.tile(colors[4],(len(stat),1))
-        # bar_colors = repeat(colors[0],len(stat))
         id_neg = np.arange(len(stat))[np.array(stat<0)]
         bar_colors[id_neg]=colors[2]
 
-        fig = plt.figure(figsize=(12,np.ceil(0.4*len(stat))))
+        if(fig_size is None):
+            fig_size = (12,np.ceil(0.4*len(stat)))
+        fig = plt.figure(figsize=fig_size)
         ax = fig.add_subplot(1,1,1, adjustable='box')
         ax.barh(pos,stat,align='center',height=0.8,tick_label=[''],color = bar_colors)
-        ax.set_xlabel('Spearman Correlation Coefficient')
+        ax.set_xlabel('Spearman correlation coefficient')
         ax.set_title("branch " + edge_i[0]+'_'+edge_i[1])
-
-        adjust_spines(ax, ['bottom'])
-        ax.spines['left'].set_position('center')
-        ax.spines['left'].set_color('none')
-        ax.set_xlim((-1,1))
+        ax.spines['left'].set_visible(False) 
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False) 
         ax.set_ylim((min(pos)-1,max(pos)+1))
 
         rects = ax.patches
         for i,rect in enumerate(rects):
             if(stat[i]>0):
                 alignment = {'horizontalalignment': 'left', 'verticalalignment': 'center'}
-                ax.text(rect.get_x()+rect.get_width()+0.02, rect.get_y() + rect.get_height()/2.0, \
-                        qvals.index[i],fontsize=12,**alignment)
-                ax.text(rect.get_x()+0.02, rect.get_y()+rect.get_height()/2.0, \
-                        "{:.2E}".format(Decimal(str(qvals[i]))),color='black',fontsize=9,**alignment)
+                ax.text(rect.get_x()+rect.get_width()+0.01, rect.get_y() + rect.get_height()/2.0, \
+                        qvals.index[i],**alignment)
+                ax.text(rect.get_x()+0.01, rect.get_y()+rect.get_height()/2.0,
+                        "{:.2E}".format(Decimal(str(qvals[i]))),size=0.8*mpl.rcParams['font.size'],
+                        color='black',**alignment)
             else:
                 alignment = {'horizontalalignment': 'right', 'verticalalignment': 'center'}
-                ax.text(rect.get_x()+rect.get_width()-0.02, rect.get_y()+rect.get_height()/2.0, \
-                        qvals.index[i],fontsize=12,**alignment)
-                ax.text(rect.get_x()-0.02, rect.get_y()+rect.get_height()/2.0, \
-                        "{:.2E}".format(Decimal(str(qvals[i]))),color='w',fontsize=9,**alignment)
+                ax.text(rect.get_x()+rect.get_width()-0.01, rect.get_y()+rect.get_height()/2.0, \
+                        qvals.index[i],**alignment)
+                ax.text(rect.get_x()-0.01, rect.get_y()+rect.get_height()/2.0,
+                        "{:.2E}".format(Decimal(str(qvals[i]))),size=0.8*mpl.rcParams['font.size'],
+                        color='w',**alignment)
+        plt.tight_layout()
         if(save_fig):        
             plt.savefig(os.path.join(fig_path,'transition_markers_'+ edge_i[0]+'_'+edge_i[1]+'.pdf'),\
                         pad_inches=1,bbox_inches='tight')
-            plt.close(fig)  
+            plt.close(fig)
 
 
 def detect_de_markers(adata,marker_list=None,cutoff_zscore=1,cutoff_logfc = 0.25,percentile_expr=95,n_jobs = 1,min_num_cells=5,
@@ -3587,7 +3588,7 @@ def plot_de_markers(adata,num_markers = 15,cutoff_zscore=1,cutoff_logfc = 0.25,
     dict_node_state = nx.get_node_attributes(flat_tree,'label')
     colors = sns.color_palette("Set1", n_colors=8, desat=0.8)
     for sub_edges_i in dict_de_greater.keys():
-        fig = plt.figure(figsize=(20,12))
+        fig = plt.figure(figsize=fig_size)
         gs = gridspec.GridSpec(2,1)
         ax = fig.add_subplot(gs[0],adjustable='box')
         if('z_score' in dict_de_greater[sub_edges_i].columns):
@@ -3598,17 +3599,21 @@ def plot_de_markers(adata,num_markers = 15,cutoff_zscore=1,cutoff_logfc = 0.25,
                 val_greater = np.repeat(0,num_markers)
                 pos_greater = np.arange(num_markers)-1
             ax.bar(pos_greater,val_greater, align='center',color = colors[0])
-            ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_zscore, cutoff_zscore], "k--",lw=2)
+            ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_zscore, cutoff_zscore], "k--")
             q_vals = dict_de_greater[sub_edges_i].iloc[:num_markers,:]['qval'].values
             for i, q in enumerate(q_vals):
                 alignment = {'horizontalalignment': 'center', 'verticalalignment': 'bottom'}
                 ax.text(pos_greater[i], val_greater[i]+.1, \
-                        "{:.2E}".format(Decimal(str(q))),color='black',fontsize=15,**alignment)
-            plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
-            ax.set_ylim(0,max(val_greater)+1.5)
-            ax.set_ylabel('z_score')
+                        "{:.2E}".format(Decimal(str(q))),color='black',size=0.6*mpl.rcParams['font.size'],
+                        **alignment)
+            plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=-45)
+            ax.set_ylabel('z score')
             ax.set_title('DE markers between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
-                         sub_edges_i[1][0]+'_'+sub_edges_i[1][1])
+                         sub_edges_i[1][0]+'_'+sub_edges_i[1][1]) 
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False) 
+            ax.locator_params(axis='y',nbins=5)
+        
             ax1 = fig.add_subplot(gs[1], adjustable='box')
             if(not dict_de_less[sub_edges_i].empty):
                 val_less = dict_de_less[sub_edges_i].iloc[:num_markers,:]['z_score'].values  # the bar lengths
@@ -3617,20 +3622,22 @@ def plot_de_markers(adata,num_markers = 15,cutoff_zscore=1,cutoff_logfc = 0.25,
                 val_less = np.repeat(0,num_markers)
                 pos_less = np.arange(num_markers)-1
             ax1.bar(pos_less,val_less, align='center',color = colors[1])
-            ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_zscore, -cutoff_zscore], "k--",lw=2)
+            ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_zscore, -cutoff_zscore], "k--")
             q_vals = dict_de_less[sub_edges_i].iloc[:num_markers,:]['qval'].values
             for i, q in enumerate(q_vals):
                 alignment = {'horizontalalignment': 'center', 'verticalalignment': 'top'}
                 ax1.text(pos_less[i], val_less[i]-.1, \
-                        "{:.2E}".format(Decimal(str(q))),color='black',fontsize=15,**alignment)
+                        "{:.2E}".format(Decimal(str(q))),color='black',size=0.6*mpl.rcParams['font.size'],
+                         **alignment)
             plt.xticks(pos_less,dict_de_less[sub_edges_i].index)
-            ax1.set_ylim(min(val_less)-1.5,0)
-            ax1.set_xticklabels(dict_de_less[sub_edges_i].index,rotation=90)
-            ax1.set_ylabel('z_score')
+            ax1.set_xticklabels(dict_de_less[sub_edges_i].index,rotation=-45)
+            ax1.set_ylabel('z score')
 
-            ax.set_xlim(-2,14)
-            ax1.set_xlim(-2,14)
+            ax1.spines['right'].set_visible(False)
+            ax1.spines['bottom'].set_visible(False) 
             ax1.xaxis.tick_top()
+            ax1.locator_params(axis='y',nbins=5)
+            
             plt.tight_layout()
             if(save_fig):
                 plt.savefig(os.path.join(fig_path,'de_markers_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
@@ -3644,12 +3651,15 @@ def plot_de_markers(adata,num_markers = 15,cutoff_zscore=1,cutoff_logfc = 0.25,
                 val_greater = np.repeat(0,num_markers)
                 pos_greater = np.arange(num_markers)-1
             ax.bar(pos_greater,val_greater, align='center',color = colors[0])
-            ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_logfc, cutoff_logfc], "k--",lw=2)
-            plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=90)
-            ax.set_ylim(0,max(val_greater)+1.5)
-            ax.set_ylabel('log_fold_change')
+            ax.plot([pos_greater[0]-1,pos_greater[-1]+1], [cutoff_logfc, cutoff_logfc], "k--")
+            plt.xticks(pos_greater,dict_de_greater[sub_edges_i].index,rotation=-45)
+            ax.set_ylabel('log(fold change)')
             ax.set_title('DE markers between branches ' + sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and ' + \
                          sub_edges_i[1][0]+'_'+sub_edges_i[1][1])
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.locator_params(axis='y',nbins=5)
+            
             ax1 = fig.add_subplot(gs[1], adjustable='box')
             if(not dict_de_less[sub_edges_i].empty):
                 val_less = dict_de_less[sub_edges_i].iloc[:num_markers,:]['logfc'].values  # the bar lengths
@@ -3658,20 +3668,21 @@ def plot_de_markers(adata,num_markers = 15,cutoff_zscore=1,cutoff_logfc = 0.25,
                 val_less = np.repeat(0,num_markers)
                 pos_less = np.arange(num_markers)-1
             ax1.bar(pos_less,val_less, align='center',color = colors[1])
-            ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_logfc, -cutoff_logfc], "k--",lw=2)
+            ax1.plot([pos_less[0]-1,pos_less[-1]+1], [-cutoff_logfc, -cutoff_logfc], "k--")
             plt.xticks(pos_less,dict_de_less[sub_edges_i].index)
-            ax1.set_ylim(min(val_less)-1.5,0)
-            ax1.set_xticklabels(dict_de_less[sub_edges_i].index,rotation=90)
-            ax1.set_ylabel('log_fold_change')
+            ax1.set_xticklabels(dict_de_less[sub_edges_i].index,rotation=-45)
+            ax1.set_ylabel('log(fold change)')
 
-            ax.set_xlim(-2,14)
-            ax1.set_xlim(-2,14)
+            ax1.spines['right'].set_visible(False)
+            ax1.spines['bottom'].set_visible(False) 
             ax1.xaxis.tick_top()
+            ax1.locator_params(axis='y',nbins=5)
+            
             plt.tight_layout()
             if(save_fig):
                 plt.savefig(os.path.join(fig_path,'de_markers_'+sub_edges_i[0][0]+'_'+sub_edges_i[0][1] + ' and '\
                             + sub_edges_i[1][0]+'_'+sub_edges_i[1][1]+'.pdf'),pad_inches=1,bbox_inches='tight')
-                plt.close(fig)  
+                plt.close(fig) 
 
 
 def detect_leaf_markers(adata,marker_list=None,cutoff_zscore=1.,cutoff_pvalue=1e-2,percentile_expr=95,n_jobs = 1,min_num_cells=5,

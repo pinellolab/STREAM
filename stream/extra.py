@@ -2162,26 +2162,26 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
     return verts,extent,cell_list_sorted,dict_ann_df,dict_im_array
 
 
-def adjust_spines(ax, spines):
-    for loc, spine in ax.spines.items():
-        if loc in spines:
-            spine.set_position(('outward', 10))  # outward by 10 points
-            spine.set_smart_bounds(True)
-        else:
-            spine.set_color('none')  # don't draw spine
+# def adjust_spines(ax, spines):
+#     for loc, spine in ax.spines.items():
+#         if loc in spines:
+#             spine.set_position(('outward', 10))  # outward by 10 points
+#             spine.set_smart_bounds(True)
+#         else:
+#             spine.set_color('none')  # don't draw spine
 
-    # turn off ticks where there is no spine
-    if 'left' in spines:
-        ax.yaxis.set_ticks_position('left')
-    else:
-        # no yaxis ticks
-        ax.yaxis.set_ticks([])
+#     # turn off ticks where there is no spine
+#     if 'left' in spines:
+#         ax.yaxis.set_ticks_position('left')
+#     else:
+#         # no yaxis ticks
+#         ax.yaxis.set_ticks([])
 
-    if 'bottom' in spines:
-        ax.xaxis.set_ticks_position('bottom')
-    else:
-        # no xaxis ticks
-        ax.xaxis.set_ticks([])
+#     if 'bottom' in spines:
+#         ax.xaxis.set_ticks_position('bottom')
+#     else:
+#         # no xaxis ticks
+#         ax.xaxis.set_ticks([])
 
 def scale_marker_expr(params):
     df_marker_detection = params[0]
