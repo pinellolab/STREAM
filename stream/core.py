@@ -3251,7 +3251,7 @@ def detect_transistion_markers(adata,marker_list=None,cutoff_spearman=0.4, cutof
     else:
         input_markers = marker_list
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                             data = adata.X,
+                             data = adata[:,input_markers].X,
                              columns=input_markers)
         #exclude markers that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_marker_detection.shape[0]*0.001)))
@@ -3447,7 +3447,7 @@ def detect_de_markers(adata,marker_list=None,cutoff_zscore=1,cutoff_logfc = 0.25
     else:
         input_markers = marker_list
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                             data = adata.X,
+                             data = adata[:,input_markers].X,
                              columns=input_markers)
         #exclude markers that are expressed in fewer than min_num_cells cells
         #min_num_cells = max(5,int(round(df_marker_detection.shape[0]*0.001)))
@@ -3742,7 +3742,7 @@ def detect_leaf_markers(adata,marker_list=None,cutoff_zscore=1.,cutoff_pvalue=1e
     else:
         input_markers = marker_list
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                             data = adata.X,
+                             data = adata[:,input_markers].X,
                              columns=input_markers)
         #exclude markers that are expressed in fewer than min_num_cells cells
         print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
@@ -3881,7 +3881,7 @@ def detect_markers(adata,marker_list=None,ident='label',cutoff_zscore=1.,cutoff_
     else:
         input_markers = marker_list
         df_sc = pd.DataFrame(index= adata.obs_names.tolist(),
-                            data = adata.X,
+                            data = adata[:,input_markers].X,
                             columns=input_markers)
         #exclude markers that are expressed in fewer than min_num_cells cells
         print("Filtering out markers that are expressed in less than " + str(min_num_cells) + " cells ...")
