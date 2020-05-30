@@ -2007,11 +2007,14 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     project_cells_to_epg(adata)
     calculate_pseudotime(adata)
     print('Number of branches after learning elastic principal graph: ' + str(len(dict_branches)))
+    if('params' not in adata.uns_keys()):
+        adata.uns['params'] = dict()
+    adata.uns['params']['epg'] = {'epg_alpha':epg_alpha,'epg_lambda':epg_lambda,'epg_mu':epg_mu,'epg_trimmingradius':epg_trimmingradius,'epg_beta':epg_beta}
 
 
 def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_collapse_par = 5,   
-                                  epg_lambda=0.02,epg_mu=0.1,epg_trimmingradius='Inf',
-                                  epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False,**kwargs): 
+                                  epg_lambda=None,epg_mu=None,epg_trimmingradius=None,
+                                  epg_finalenergy = 'base',epg_alpha=None,epg_beta=None,epg_n_processes=1,reset=False,**kwargs): 
     """Prune the learnt elastic principal graph by filtering out 'trivial' branches.
     
     Parameters
@@ -2028,18 +2031,18 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_co
         'EdgesLength', branches shorter than epg_collapse_par are removed        
     epg_collapse_par: `float`, optional (default: 5)
         The paramter used to control different modes.
-    epg_lambda: `float`, optional (default: 0.02)
-        lambda parameter used to compute the elastic energy.
-    epg_mu: `float`, optional (default: 0.1)
-        mu parameter used to compute the elastic energy.
-    epg_trimmingradius: `float`, optional (default: 'Inf')  
-        maximal distance from a node to the points it controls in the embedding.
+    epg_lambda: `float`, optional (default: None)
+        lambda parameter used to compute the elastic energy. By default using the same `epg_lambda` from `elastic_principal_graph()`
+    epg_mu: `float`, optional (default: None)
+        mu parameter used to compute the elastic energy. By default using the same `epg_mu` from `elastic_principal_graph()`
+    epg_trimmingradius: `float`, optional (default: None)  
+        maximal distance from a node to the points it controls in the embedding. By default using the same `epg_trimmingradius` from `elastic_principal_graph()`
     epg_finalenergy: `str`, optional (default: 'Penalized')
         indicate the final elastic energy associated with the configuration.
-    epg_alpha: `float`, optional (default: 0.02)
-        alpha parameter of the penalized elastic energy.
-    epg_beta: `float`, optional (default: 0.0)
-        beta parameter of the penalized elastic energy.
+    epg_alpha: `float`, optional (default: None)
+        alpha parameter of the penalized elastic energy. By default using the same `epg_alpha` from `elastic_principal_graph()`
+    epg_beta: `float`, optional (default: None)
+        beta parameter of the penalized elastic energy. By default using the same `epg_beta` from `elastic_principal_graph()`
     epg_n_processes: `int`, optional (default: 1)
         The number of processes to use.
     reset: `bool`, optional (default: False)
@@ -2062,6 +2065,17 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_co
     """
 
     print('Collasping small branches ...')
+    if(epg_alpha is None):
+        epg_alpha = adata.uns['params']['epg']['epg_alpha']
+    if(epg_beta is None):
+        epg_beta = adata.uns['params']['epg']['epg_beta']
+    if(epg_lambda is None):
+        epg_lambda = adata.uns['params']['epg']['epg_lambda']
+    if(epg_mu is None):
+        epg_mu = adata.uns['params']['epg']['epg_mu']   
+    if(epg_trimmingradius is None):
+        epg_trimmingradius = adata.uns['params']['epg']['epg_trimmingradius']
+
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
     if(reset):
@@ -2116,8 +2130,8 @@ def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_co
 
 
 def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,                                  
-                       epg_lambda=0.01,epg_mu=0.1,epg_trimmingradius='Inf',
-                       epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False,**kwargs):
+                       epg_lambda=None,epg_mu=None,epg_trimmingradius=None,
+                       epg_finalenergy = 'base',epg_alpha=None,epg_beta=None,epg_n_processes=1,reset=False,**kwargs):
     """Optimize branching node by expanding the nodes around a branching point.
     
     Parameters
@@ -2130,18 +2144,18 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
         The maximum number of iteration steps .
     mode: `int`, optional (default: 2)
         The energy computation mode.
-    epg_lambda: `float`, optional (default: 0.02)
-        lambda parameter used to compute the elastic energy.
-    epg_mu: `float`, optional (default: 0.1)
-        mu parameter used to compute the elastic energy.
-    epg_trimmingradius: `float`, optional (default: 'Inf')  
-        maximal distance from a node to the points it controls in the embedding.
+    epg_lambda: `float`, optional (default: None)
+        lambda parameter used to compute the elastic energy. By default using the same `epg_lambda` from `elastic_principal_graph()`
+    epg_mu: `float`, optional (default: None)
+        mu parameter used to compute the elastic energy. By default using the same `epg_mu` from `elastic_principal_graph()`
+    epg_trimmingradius: `float`, optional (default: None)  
+        maximal distance from a node to the points it controls in the embedding. By default using the same `epg_trimmingradius` from `elastic_principal_graph()`
     epg_finalenergy: `str`, optional (default: 'Penalized')
         indicate the final elastic energy associated with the configuration.
     epg_alpha: `float`, optional (default: 0.02)
-        alpha parameter of the penalized elastic energy.
+        alpha parameter of the penalized elastic energy. By default using the same `epg_alpha` from `elastic_principal_graph()`
     epg_beta: `float`, optional (default: 0.0)
-        beta parameter of the penalized elastic energy.
+        beta parameter of the penalized elastic energy. By default using the same `epg_beta` from `elastic_principal_graph()`
     epg_n_processes: `int`, optional (default: 1)
         The number of processes to use.
     reset: `bool`, optional (default: False)
@@ -2164,6 +2178,17 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
     """
 
     print('Optimizing branching...')
+    if(epg_alpha is None):
+        epg_alpha = adata.uns['params']['epg']['epg_alpha']
+    if(epg_beta is None):
+        epg_beta = adata.uns['params']['epg']['epg_beta']
+    if(epg_lambda is None):
+        epg_lambda = adata.uns['params']['epg']['epg_lambda']
+    if(epg_mu is None):
+        epg_mu = adata.uns['params']['epg']['epg_mu']   
+    if(epg_trimmingradius is None):
+        epg_trimmingradius = adata.uns['params']['epg']['epg_trimmingradius']
+
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
     if(reset):
@@ -2222,8 +2247,8 @@ def optimize_branching(adata,incr_n_nodes=30,epg_maxsteps=50,mode=2,
 
 
 def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05,epg_shift_max=5,                             
-                   epg_lambda=0.01,epg_mu=0.1,epg_trimmingradius='Inf',
-                   epg_finalenergy = 'base',epg_alpha=0.02,epg_beta=0.0,epg_n_processes=1,reset=False,**kwargs):
+                   epg_lambda=None,epg_mu=None,epg_trimmingradius=None,
+                   epg_finalenergy = 'base',epg_alpha=None,epg_beta=None,epg_n_processes=1,reset=False,**kwargs):
     """Move branching node to the area with higher density.
     
     Parameters
@@ -2237,18 +2262,18 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
         The radius used when computing point density if epg_shift_mode = 'NodeDensity'.
     epg_shift_max: `float`, optional (default: 5)
         The maxium distance (defined as the number of edges) to consider when exploring the neighborhood of branching point
-    epg_lambda: `float`, optional (default: 0.02)
-        lambda parameter used to compute the elastic energy.
-    epg_mu: `float`, optional (default: 0.1)
-        mu parameter used to compute the elastic energy.
-    epg_trimmingradius: `float`, optional (default: 'Inf')  
-        maximal distance from a node to the points it controls in the embedding.
+    epg_lambda: `float`, optional (default: None)
+        lambda parameter used to compute the elastic energy. By default using the same `epg_lambda` from `elastic_principal_graph()`
+    epg_mu: `float`, optional (default: None)
+        mu parameter used to compute the elastic energy. By default using the same `epg_mu` from `elastic_principal_graph()`
+    epg_trimmingradius: `float`, optional (default: None)  
+        maximal distance from a node to the points it controls in the embedding. By default using the same `epg_trimmingradius` from `elastic_principal_graph()`
     epg_finalenergy: `str`, optional (default: 'Penalized')
         indicate the final elastic energy associated with the configuration.
-    epg_alpha: `float`, optional (default: 0.02)
-        alpha parameter of the penalized elastic energy.
-    epg_beta: `float`, optional (default: 0.0)
-        beta parameter of the penalized elastic energy.
+    epg_alpha: `float`, optional (default: None)
+        alpha parameter of the penalized elastic energy. By default using the same `epg_alpha` from `elastic_principal_graph()`
+    epg_beta: `float`, optional (default: None)
+        beta parameter of the penalized elastic energy. By default using the same `epg_beta` from `elastic_principal_graph()`
     epg_n_processes: `int`, optional (default: 1)
         The number of processes to use.
     reset: `bool`, optional (default: False)
@@ -2271,6 +2296,17 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
     """
 
     print('Shifting branching point to denser area ...')
+    if(epg_alpha is None):
+        epg_alpha = adata.uns['params']['epg']['epg_alpha']
+    if(epg_beta is None):
+        epg_beta = adata.uns['params']['epg']['epg_beta']
+    if(epg_lambda is None):
+        epg_lambda = adata.uns['params']['epg']['epg_lambda']
+    if(epg_mu is None):
+        epg_mu = adata.uns['params']['epg']['epg_mu']   
+    if(epg_trimmingradius is None):
+        epg_trimmingradius = adata.uns['params']['epg']['epg_trimmingradius']
+
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
     if(reset):
@@ -2331,7 +2367,7 @@ def shift_branching(adata,epg_shift_mode = 'NodeDensity',epg_shift_radius = 0.05
     print('Number of branches after shifting branching: ' + str(len(dict_branches)))
 
 
-def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par = 0.5,epg_trimmingradius='Inf',reset=False,**kwargs):
+def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par = 0.5,epg_trimmingradius=None,reset=False,**kwargs):
     """Extend the leaves of elastic principal graph with additional nodes.
     
     Parameters
@@ -2346,8 +2382,8 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
         'QuantDists':for each leaf node, the extreme points are ordered by their distance from the node and the 100*epg_ext_par th percentile of the points farther than epg_ext_par is returned
     epg_ext_par: `float`, optional (default: 0.5)
         The paramter used to control different modes.
-    epg_trimmingradius: `float`, optional (default: 'Inf')  
-        maximal distance from a node to the points it controls in the embedding.
+    epg_trimmingradius: `float`, optional (default: None)  
+        maximal distance from a node to the points it controls in the embedding. By default using the same `epg_trimmingradius` from `elastic_principal_graph()`
     reset: `bool`, optional (default: False)
         If true, reset the current elastic principal graph to the initial elastic principal graph (i.e. the graph obtained from running 'elastic_principal_graph')
     **kwargs: additional arguments to `ElPiGraph.CollapseBrances`
@@ -2367,7 +2403,10 @@ def extend_elastic_principal_graph(adata,epg_ext_mode = 'QuantDists',epg_ext_par
         It contains node attribtutes ('pos','label') and edge attributes ('nodes','id','len','color').
     """
 
-    print('Extending leaves with additional nodes ...')
+    print('Extending leaves with additional nodes ...') 
+    if(epg_trimmingradius is None):
+        epg_trimmingradius = adata.uns['params']['epg']['epg_trimmingradius']
+
     ElPiGraph = importr('ElPiGraph.R')
     pandas2ri.activate()
     if(reset):
