@@ -2009,7 +2009,7 @@ def elastic_principal_graph(adata,epg_n_nodes = 50,incr_n_nodes=30,epg_lambda=0.
     print('Number of branches after learning elastic principal graph: ' + str(len(dict_branches)))
     if('params' not in adata.uns_keys()):
         adata.uns['params'] = dict()
-    adata.uns['params']['epg'] = {'epg_alpha':epg_alpha,'epg_lambda':epg_lambda,'epg_mu':epg_mu,'epg_trimmingradius':epg_trimmingradius,'epg_beta':epg_beta}
+    adata.uns['params']['epg'].update({'epg_alpha':epg_alpha,'epg_lambda':epg_lambda,'epg_mu':epg_mu,'epg_trimmingradius':epg_trimmingradius,'epg_beta':epg_beta})
 
 
 def prune_elastic_principal_graph(adata,epg_collapse_mode = 'PointNumber',epg_collapse_par = 5,   
