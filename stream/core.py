@@ -1695,7 +1695,7 @@ def switch_to_low_dimension(adata,n_components=2):
     if('X_dr' not in adata.obsm_keys()):
         raise ValueError('Please run dimension reduction first')
     if(n_components >= adata.obsm['X_dr'].shape[1]):         
-        raise ValueError("`n_components` should be smaller than '%s'" %adata.obsm['X_dr'].shape[1])
+        raise ValueError("`n_components` should be smaller than %s" %adata.obsm['X_dr'].shape[1])
     adata_low = adata.copy()
     adata_low.obsm['X_dr'] = adata.obsm['X_dr'][:,:n_components]
     adata_low.obsm['X_dr_ori'] = adata.obsm['X_dr']
