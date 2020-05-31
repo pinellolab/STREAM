@@ -158,13 +158,15 @@ def read(file_name,file_path=None,file_format=None,delimiter='\t',workdir=None, 
     if(file_format == 'mtx'):
         adata = ad.read_mtx(_fp(file_name),**kwargs).T 
         adata.X = adata.X.toarray()
-        genes = pd.read_csv(_fp(file_feature), header=None, sep='\t')
-        if(genes.shape[1]>=2):
-            adata.var_names = genes[1]
-            adata.var['gene_ids'] = genes[0].values
-        else:
-            adata.var_names = genes[0]
         adata.obs_names = pd.read_csv(_fp(file_sample), header=None)[0]
+        features = pd.read_csv(_fp(file_feature), header=None, sep='\t')
+        features.index = features.index.astype('str')
+        adata.var = features
+        # if(genes.shape[1]>=2):
+        #     adata.var_names = genes[1]
+        #     adata.var['gene_ids'] = genes[0].values
+        # else:
+        #     adata.var_names = genes[0]
         # adata.raw = adata
     if(file_format == 'h5ad'):
         adata = ad.read_h5ad(_fp(file_name),**kwargs)
