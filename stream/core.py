@@ -1693,11 +1693,9 @@ def switch_to_low_dimension(adata,n_components=2):
         Annotated data matrix used in low dimensional space
     """
     if('X_dr' not in adata.obsm_keys()):
-        print('Please run dimension reduction first')
-        return
+        raise ValueError('Please run dimension reduction first')
     if(adata.obsm['X_dr'].shape[1]<=n_components):         
-        print('The number of components in adata should be greater than n_components ' + str(n_components))
-        return
+        raise ValueError("The number of components in adata should be greater than '%s'" %n_components)
     adata_low = adata.copy()
     adata_low.obsm['X_dr'] = adata.obsm['X_dr'][:,:n_components]
     adata_low.obsm['X_dr_ori'] = adata.obsm['X_dr']
