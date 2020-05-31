@@ -1033,7 +1033,7 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
             adata.obsm['pca'] = X_pca
             adata.uns['pca_variance_ratio'] = pca_variance_ratio                
         else:
-            print('using all the genes ...')
+            print('using all the features ...')
             trans = sklearn_pca.fit(adata.X)
             X_pca = trans.transform(adata.X)            
 #             X_pca = sklearn_pca.fit_transform(adata.X)
