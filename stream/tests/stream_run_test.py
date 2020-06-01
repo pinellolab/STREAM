@@ -71,6 +71,7 @@ def stream_test_Nestorowa_2016():
 	for path in pathlist.glob('**/*'):
 		if path.is_file() and (not path.name.startswith('.')):
 			file = os.path.relpath(str(path),ref_temp_folder)
+			print(file)
 			if(file.endswith('pdf')):
 				if(os.path.getsize(os.path.join(comp_temp_folder,file))>0):
 					print('The file %s passed' %file)
@@ -84,6 +85,7 @@ def stream_test_Nestorowa_2016():
 					if(is_numeric_dtype(df_ref[c])):
 						checklist.append(all(np.isclose(df_ref[c],df_comp[c])))
 					else:
+						print(c)
 						checklist.append(all(df_ref[c]==df_comp[c]))
 				if(all(checklist)):
 					print('The file %s passed' %file)
