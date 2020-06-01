@@ -79,13 +79,12 @@ def stream_test_Nestorowa_2016():
 					raise Exception('Error! The file %s is not matched' %file)
 			else:
 				checklist = list()
-				df_ref = pd.read_csv(os.path.join(ref_temp_folder,file),sep='\t')
-				df_comp = pd.read_csv(os.path.join(comp_temp_folder,file),sep='\t')
+				df_ref = pd.read_csv(os.path.join(ref_temp_folder,file),sep='\t',index_col=0)
+				df_comp = pd.read_csv(os.path.join(comp_temp_folder,file),sep='\t',index_col=0)
 				for c in df_ref.columns:
 					if(is_numeric_dtype(df_ref[c])):
 						checklist.append(all(np.isclose(df_ref[c],df_comp[c])))
 					else:
-						print(c)
 						checklist.append(all(df_ref[c]==df_comp[c]))
 				if(all(checklist)):
 					print('The file %s passed' %file)
