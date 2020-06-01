@@ -6,8 +6,16 @@
 
 Latest News
 -----------
-> Jun 1, 2020
-Version 1.0 is now available.
+> Jun 1, 2020  
+
+Version 1.0 is now available. The v1.0 has added a lot of new functionality:
+1) added support of scATAC-seq analysis using peaks as features
+2) added support of interactive plots with plotly
+3) redesigned all plotting-related functions
+4) redesigned *mapping* procedure
+5) removed support of STREAM command line interface
+See [v1.0]() for more details.
+
 
 > Jan 14, 2020
 
@@ -31,7 +39,7 @@ STREAM is written using the class `anndata` [Wolf et al. Genome Biology (2018)](
 Installation with Bioconda (Recommended)
 ----------------------------------------
 ```sh
-conda install -c bioconda stream
+$ conda install -c bioconda stream
 ```
 
 If you are new to conda environment:
@@ -70,19 +78,21 @@ You should see the notebook open in your browser.
 Tutorial
 --------
 
-* Example for scRNA-seq: [1.1.STREAM_scRNA-seq (Bifurcation).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.1.STREAM_scRNA-seq%20%28Bifurcation%29.ipynb?flush_cache=true)
+* Example for scRNA-seq: [1.1-STREAM_scRNA-seq (Bifurcation).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.1.STREAM_scRNA-seq%20%28Bifurcation%29.ipynb?flush_cache=true)
 
-* Example for scRNA-seq: [1.2.STREAM_scRNA-seq (Multifurcation).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.2.STREAM_scRNA-seq%20%28Multifurcation%29.ipynb?flush_cache=true)
+* Example for scRNA-seq: [1.2-STREAM_scRNA-seq (Multifurcation).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.2.STREAM_scRNA-seq%20%28Multifurcation%29.ipynb?flush_cache=true)
 
 * Example for scATAC-seq(using peaks): [2.1-STREAM_scATAC-seq_peaks.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.1-STREAM_scATAC-seq_peaks.ipynb?flush_cache=true)
 
-* Example for scATAC-seq(using k-mers): [2.2.STREAM_scATAC-seq_k-mers.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.2.STREAM_scATAC-seq_k-mers.ipynb?flush_cache=true)
+* Example for scATAC-seq(using k-mers): [2.2-STREAM_scATAC-seq_k-mers.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.2.STREAM_scATAC-seq_k-mers.ipynb?flush_cache=true)
 
-* Example for scATAC-seq(using motifs): [2.3.STREAM_scATAC-seq_motifs.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.3.STREAM_scATAC-seq_motifs.ipynb?flush_cache=true)
+* Example for scATAC-seq(using motifs): [2.3-STREAM_scATAC-seq_motifs.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.3.STREAM_scATAC-seq_motifs.ipynb?flush_cache=true)
 
-* Example for *mapping* feature: [3.STREAM_mapping.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/3.STREAM_mapping.ipynb?flush_cache=true)
+* Example for *mapping* feature: [3-STREAM_mapping.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/3.STREAM_mapping.ipynb?flush_cache=true)
 
-* Example for complex trajectories: [4.STREAM_complex_trajectories.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/4.STREAM_complex_trajectories.ipynb?flush_cache=true)
+* Example for complex trajectories: [4-sSTREAM_complex_trajectories.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/4.STREAM_complex_trajectories.ipynb?flush_cache=true)
+
+Tutorials for v0.4.1 and earlier versions can be found [here](https://github.com/pinellolab/STREAM/tree/master/tutorial/archives/v0.4.1_and_earlier_versions)
 
 Installation with Docker
 ------------------------
