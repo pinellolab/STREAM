@@ -3013,12 +3013,12 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                                     lw=ax_i.spines['bottom'].get_linewidth()*1e-5)
             ax_i.set_title(ann)
             plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
-        if(save_fig):
-            file_path_S = os.path.join(fig_path,root)
-            if(not os.path.exists(file_path_S)):
-                os.makedirs(file_path_S) 
-            plt.savefig(os.path.join(file_path_S,'stream_sc_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
-            plt.close(fig)
+            if(save_fig):
+                file_path_S = os.path.join(fig_path,root)
+                if(not os.path.exists(file_path_S)):
+                    os.makedirs(file_path_S) 
+                plt.savefig(os.path.join(file_path_S,'stream_sc_' + slugify(ann) + '.' + fig_format),pad_inches=1,bbox_inches='tight')
+                plt.close(fig)
 
 def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
                 factor_num_win=10,factor_min_win=2.0,factor_width=2.5,factor_nrow=200,factor_ncol=400,
