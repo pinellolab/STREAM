@@ -9,7 +9,7 @@ Latest News
 > Jun 1, 2020  
 
 Version 1.0 is now available. The v1.0 has added a lot of new functionality:
-1) added QC plots
+1) added QC metrics and plots
 2) added support of scATAC-seq analysis using peaks as features
 3) added support of interactive plots with plotly
 4) redesigned all plotting-related functions

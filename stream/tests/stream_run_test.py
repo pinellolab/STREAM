@@ -83,13 +83,13 @@ def stream_test_Nestorowa_2016():
 			else:
 				checklist = list()
 				df_ref = pd.read_csv(os.path.join(ref_temp_folder,file),sep='\t')
-				print(df_ref.shape)
-				print(df_ref.head())
+				# print(df_ref.shape)
+				# print(df_ref.head())
 				df_comp = pd.read_csv(os.path.join(comp_temp_folder,file),sep='\t')
-				print(df_comp.shape)
-				print(df_comp.head())
+				# print(df_comp.shape)
+				# print(df_comp.head())
 				for c in df_ref.columns:
-					print(c)
+					# print(c)
 					if(is_numeric_dtype(df_ref[c])):
 						checklist.append(all(np.isclose(df_ref[c],df_comp[c])))
 					else:
