@@ -16,7 +16,7 @@ Version 1.0 is now available. The v1.0 has added a lot of new functionality:
 5) redesigned *mapping* procedure
 6) removed support of STREAM command line interface  
 
-See [v1.0]() for more details.
+See [v1.0](https://github.com/pinellolab/STREAM/releases/tag/v1.0) for more details.
 
 
 > Jan 14, 2020
