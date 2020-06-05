@@ -17,7 +17,7 @@ RUN conda config --add channels bioconda
 RUN apt-get update && apt-get install gsl-bin libgsl0-dev -y && apt-get clean
 
 #Install stream package
-RUN conda install libgfortran stream=1.0 jupyter tzlocal -y && conda clean --all -y
+RUN conda install stream=1.0 jupyter tzlocal -y && conda clean --all -y
 RUN Rscript -e 'install.packages("stringi",repos="https://cloud.r-project.org/")'
 
 
