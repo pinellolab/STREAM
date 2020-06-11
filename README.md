@@ -60,12 +60,12 @@ $ conda config --add channels conda-forge
 
 * *For single cell **RNA-seq** analysis*:
 ```sh
-$ conda create -n env_stream python stream jupyter
+$ conda create -n env_stream python stream=1.0 jupyter
 $ conda activate env_stream
 ```
 * *For single cell **ATAC-seq** analysis*:
 ```sh
-$ conda create -n env_stream python stream stream_atac jupyter
+$ conda create -n env_stream python stream=1.0 stream_atac jupyter
 $ conda activate env_stream
 ```
 
@@ -92,7 +92,7 @@ Tutorial
 
 * Example for *mapping* feature: [3-STREAM_mapping.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/3.STREAM_mapping.ipynb?flush_cache=true)
 
-* Example for complex trajectories: [4-sSTREAM_complex_trajectories.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/4.STREAM_complex_trajectories.ipynb?flush_cache=true)
+* Example for complex trajectories: [4-STREAM_complex_trajectories.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/4.STREAM_complex_trajectories.ipynb?flush_cache=true)
 
 Tutorials for v0.4.1 and earlier versions can be found [here](https://github.com/pinellolab/STREAM/tree/master/tutorial/archives/v0.4.1_and_earlier_versions)
 
