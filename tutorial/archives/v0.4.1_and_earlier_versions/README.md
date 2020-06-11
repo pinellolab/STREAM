@@ -62,17 +62,17 @@ You should see the notebook open in your browser.
 Tutorial
 --------
 
-* Example for scRNA-seq: [1.1.STREAM_scRNA-seq (on 2D plane).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.1.STREAM_scRNA-seq%20%28on%202D%20plane%29.ipynb?flush_cache=true)
+* Example for scRNA-seq: [1.1.STREAM_scRNA-seq (on 2D plane).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/archives/v0.4.1_and_earlier_versions/1.1.STREAM_scRNA-seq%20%28on%202D%20plane%29.ipynb?flush_cache=true)
 
-* Example for scRNA-seq: [1.2.STREAM_scRNA-seq (in 3D space).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.2.STREAM_scRNA-seq%20%28in%203D%20space%29.ipynb?flush_cache=true)
+* Example for scRNA-seq: [1.2.STREAM_scRNA-seq (in 3D space).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/archives/v0.4.1_and_earlier_versions/1.2.STREAM_scRNA-seq%20%28in%203D%20space%29.ipynb?flush_cache=true)
 
-* Example for *mapping* feature: [2.STREAM_mapping.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.STREAM_mapping.ipynb?flush_cache=true)
+* Example for *mapping* feature: [2.STREAM_mapping.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/archives/v0.4.1_and_earlier_versions/2.STREAM_mapping.ipynb?flush_cache=true)
 
-* Example for complex trajectories: [3.STREAM_complex_trajectories.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/3.STREAM_complex_trajectories.ipynb?flush_cache=true)
+* Example for complex trajectories: [3.STREAM_complex_trajectories.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/archives/v0.4.1_and_earlier_versions/3.STREAM_complex_trajectories.ipynb?flush_cache=true)
 
-* Example for scATAC-seq(using k-mers): [4.STREAM_scATAC-seq_k-mers.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/4.STREAM_scATAC-seq_k-mers.ipynb?flush_cache=true)
+* Example for scATAC-seq(using k-mers): [4.STREAM_scATAC-seq_k-mers.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/archives/v0.4.1_and_earlier_versions/4.STREAM_scATAC-seq_k-mers.ipynb?flush_cache=true)
 
-* Example for scATAC-seq(using motifs): [5.STREAM_scATAC-seq_motifs.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/5.STREAM_scATAC-seq_motifs.ipynb?flush_cache=true)
+* Example for scATAC-seq(using motifs): [5.STREAM_scATAC-seq_motifs.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/archives/v0.4.1_and_earlier_versions/5.STREAM_scATAC-seq_motifs.ipynb?flush_cache=true)
 
 Installation with Docker
 ------------------------
