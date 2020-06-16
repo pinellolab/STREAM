@@ -109,18 +109,29 @@ To get an image of STREAM, simply execute the following command:
 $ docker pull pinellolab/stream
 ```
 
-Basic usage of *docker run* 
+>Basic usage of *docker run* 
+>```sh
+>$ docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+> ```
+>Options:  
+>```
+>--publish , -p	Publish a container’s port(s) to the host  
+>--volume , -v	Bind mount a volume  
+>--workdir , -w	Working directory inside the container  
+>```
 
-```sh
-$ docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
-```
+To use STREAM inside the docker container:
+* Mount your data folder and enter STREAM docker container:
 
-OPTIONS:  
+```bash
+$ docker run --entrypoint /bin/bash -v /your/data/file/path/:/data -w /data -p 8888:8888 -it pinellolab/stream:1.0
 ```
---publish , -p	Publish a container’s port(s) to the host  
---volume , -v	Bind mount a volume  
---workdir , -w	Working directory inside the container  
+* Inside the container, launch Jupyter notebook:
 ```
+root@46e09702ce87:/data# jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root
+```
+Access the notebook through your desktops browser on http://127.0.0.1:8888. The notebook will prompt you for a token which was generated when you create the notebook.
+
 
 STREAM interactive website
 --------------------------
