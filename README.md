@@ -136,7 +136,7 @@ Access the notebook through your desktops browser on http://127.0.0.1:8888. The 
 STREAM interactive website
 --------------------------
 
-In order to make STREAM user friendly and accessible to non-bioinformatician, we have created an interactive website: [http://stream.pinellolab.org](http://stream.pinellolab.org)
+In order to make STREAM user friendly and accessible to non-bioinformatician, we have created an interactive website: [http://stream.pinellolab.org](https://stream.pinellolab.partners.org/)
 
 The website can also run on a local machine. More details can be found [https://github.com/pinellolab/STREAM_web](https://github.com/pinellolab/STREAM_web)
 
