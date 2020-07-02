@@ -29,6 +29,7 @@ import math
 # mpl.use('Agg')
 from scipy import stats
 from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde,kruskal
+from scipy.sparse import issparse,lil_matrix,csr_matrix
 from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
@@ -401,16 +402,19 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     
     assay = assay.lower()
     assert assay in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
+    
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)
 
-    n_counts = np.sum(adata.X,axis=0).astype(int)
+    n_counts = adata.X.sum(axis=0).A1.astype(int)
     adata.var['n_counts'] = n_counts
-    n_cells = np.sum(adata.X>=expr_cutoff,axis=0).astype(int)
+    n_cells = (adata.X>=expr_cutoff).sum(axis=0).A1
     adata.var['n_cells'] = n_cells 
     adata.var['pct_cells'] = n_cells/adata.shape[0]
 
-    n_counts = np.sum(adata.X,axis=1).astype(int)
+    n_counts = adata.X.sum(axis=1).A1.astype(int)
     adata.obs['n_counts'] = n_counts
-    n_features = np.sum(adata.X>=expr_cutoff,axis=1).astype(int)
+    n_features = (adata.X>=expr_cutoff).sum(axis=1).A1
     if(assay=='atac'):
         adata.obs['n_peaks'] = n_features  
         adata.obs['pct_peaks'] = n_features/adata.shape[1]
@@ -420,7 +424,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
         r = re.compile("^MT-",flags=re.IGNORECASE)
         mt_genes = list(filter(r.match, adata.var_names))
         if(len(mt_genes)>0):
-            n_counts_mt = np.sum(adata[:,mt_genes].X,axis=1)
+            n_counts_mt = adata[:,mt_genes].X.sum(axis=1).A1
             adata.obs['pct_mt'] = n_counts_mt/n_counts
         else:
             adata.obs['pct_mt'] = 0
