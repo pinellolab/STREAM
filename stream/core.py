@@ -467,9 +467,13 @@ def plot_qc(adata,
     -------
     None
 
-    """    
-    
+    """ 
+
     assert 'assay' in adata.uns_keys(),'please run `cal_qc(adata)` first'
+    
+    if(fig_path is None):
+        fig_path = adata.uns['workdir']
+
     if(adata.uns['assay']=='rna'):
         feature = 'Genes'
         obs_list = ['n_counts','n_genes','pct_genes','pct_mt',] 
@@ -534,6 +538,9 @@ def plot_qc(adata,
         else:
             ax_i.set_ylabel('')
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+    if(save_fig):
+        plt.savefig(os.path.join(fig_path,fig_name),pad_inches=1,bbox_inches='tight')
+        plt.close(fig)
 
 
 def filter_features(adata,
