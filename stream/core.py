@@ -157,17 +157,11 @@ def read(file_name,file_path=None,file_format=None,delimiter='\t',workdir=None, 
         # adata.raw = adata
     if(file_format == 'mtx'):
         adata = ad.read_mtx(_fp(file_name),**kwargs).T 
-        adata.X = adata.X.toarray()
+        adata.X = adata.X
         adata.obs_names = pd.read_csv(_fp(file_sample), header=None)[0]
         features = pd.read_csv(_fp(file_feature), header=None, sep='\t')
         features.index = features.index.astype('str')
         adata.var = features
-        # if(genes.shape[1]>=2):
-        #     adata.var_names = genes[1]
-        #     adata.var['gene_ids'] = genes[0].values
-        # else:
-        #     adata.var_names = genes[0]
-        # adata.raw = adata
     if(file_format == 'h5ad'):
         adata = ad.read_h5ad(_fp(file_name),**kwargs)
     if(file_format == 'pkl'):
@@ -183,7 +177,10 @@ def read(file_name,file_path=None,file_format=None,delimiter='\t',workdir=None, 
         f = gzip.open(_fp(file_name), 'rb')
         adata = pickle.load(f)
         f.close()
-                
+        
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)    
+    
     if('workdir' not in adata.uns_keys()):
         set_workdir(adata,workdir=workdir)
     else:
