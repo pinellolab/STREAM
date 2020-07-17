@@ -406,13 +406,13 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     if(not issparse(adata.X)):
         adata.X = csr_matrix(adata.X)
 
-    n_counts = adata.X.sum(axis=0).A1.astype(int)
+    n_counts = adata.X.sum(axis=0).A1
     adata.var['n_counts'] = n_counts
     n_cells = (adata.X>=expr_cutoff).sum(axis=0).A1
     adata.var['n_cells'] = n_cells 
     adata.var['pct_cells'] = n_cells/adata.shape[0]
 
-    n_counts = adata.X.sum(axis=1).A1.astype(int)
+    n_counts = adata.X.sum(axis=1).A1
     adata.obs['n_counts'] = n_counts
     n_features = (adata.X>=expr_cutoff).sum(axis=1).A1
     if(assay=='atac'):
@@ -1022,8 +1022,8 @@ def select_top_principal_components(adata,feature=None,n_pc = 15,max_pc = 100,fi
         fig_path = adata.uns['workdir']
     fig_size = mpl.rcParams['figure.figsize'] if fig_size is None else fig_size  
     if(feature is None):
-        feature = 'all_genes'
-    if(feature not in ['all_genes','var_genes']):
+        feature = 'all'
+    if(feature not in ['all','var_genes']):
         raise ValueError("unrecognized feature '%s'" % feature)
 
     if(use_precomputed and ('pca' in adata.obsm_keys())):
@@ -1100,7 +1100,7 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         Feature used for dimension reduction.
         'var_genes': most variable genes
         'top_pcs': top principal components
-        'all_genes': all genes
+        'all': all available features (genes)
     method: `str`, optional (default: 'se')
         Choose from {{'se','mlle','umap','pca'}}
         Method used for dimension reduction.
@@ -1145,7 +1145,7 @@ def dimension_reduction(adata,n_neighbors=50, nb_pct = None,n_components = 3,n_j
         input_data = adata.obsm['var_genes']
     if(feature == 'top_pcs'):
         input_data = adata.obsm['top_pcs']
-    if(feature == 'all_genes'):
+    if(feature == 'all'):
         input_data = adata.X
     print('feature ' + feature + ' is being used ...')
     print(str(n_jobs)+' cpus are being used ...')
@@ -4058,7 +4058,7 @@ def map_new_data(adata_ref,adata_new,use_radius=False):
         adata_new.uns['var_genes'] = adata_ref.uns['var_genes'].copy()
         adata_new.obsm['var_genes'] = adata_new[:,adata_new.uns['var_genes']].X.copy()
         input_data = adata_new.obsm['var_genes']
-    if(feature == 'all_genes'):
+    if(feature == 'all'):
         print('All genes are being used for mapping ...')
         if(not set(adata_ref.var_names) <= set(adata_new.var_names)):
             raise ValueError("`adata_new.var_names` does not contain all the genes in `adata_ref.var_names`")
