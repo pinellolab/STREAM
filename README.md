@@ -82,7 +82,9 @@ Tutorial
 
 * Example for scRNA-seq: [1.1-STREAM_scRNA-seq (Bifurcation).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.1.STREAM_scRNA-seq%20%28Bifurcation%29.ipynb?flush_cache=true)
 
-* Example for scRNA-seq: [1.2-STREAM_scRNA-seq (Multifurcation).ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.2.STREAM_scRNA-seq%20%28Multifurcation%29.ipynb?flush_cache=true)
+* Example for scRNA-seq: [1.2-STREAM_scRNA-seq (Multifurcation) on 2D visulization.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.2.use_vis.ipynb)
+
+* Example for scRNA-seq: [1.3-STREAM_scRNA-seq (Multifurcation) on original embedding.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/1.2.STREAM_scRNA-seq%20%28Multifurcation%29.ipynb?flush_cache=true)
 
 * Example for scATAC-seq(using peaks): [2.1-STREAM_scATAC-seq_peaks.ipynb](https://nbviewer.jupyter.org/github/pinellolab/STREAM/blob/master/tutorial/2.1-STREAM_scATAC-seq_peaks.ipynb?flush_cache=true)
 
