@@ -60,12 +60,12 @@ $ conda config --add channels conda-forge
 
 * *For single cell **RNA-seq** analysis*:
 ```sh
-$ conda create -n env_stream python stream=1.0 jupyter
+$ conda create -n env_stream python=3.7 stream=1.0 jupyter
 $ conda activate env_stream
 ```
 * *For single cell **ATAC-seq** analysis*:
 ```sh
-$ conda create -n env_stream python stream=1.0 stream_atac jupyter
+$ conda create -n env_stream python=3.7 stream=1.0 stream_atac jupyter
 $ conda activate env_stream
 ```
 
