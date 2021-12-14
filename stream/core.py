@@ -53,11 +53,11 @@ from scipy.stats import (
     # gaussian_kde,
     # kruskal
 )
-from scipy.sparse import (
-    issparse,
-    lil_matrix,
-    csr_matrix
-)
+# from scipy.sparse import (
+#     issparse,
+#     lil_matrix,
+#     csr_matrix
+# )
 from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
@@ -209,8 +209,8 @@ def read(file_name,file_path=None,file_format=None,delimiter='\t',workdir=None, 
         adata = pickle.load(f)
         f.close()
         
-    if(not issparse(adata.X)):
-        adata.X = csr_matrix(adata.X)    
+    # if(not issparse(adata.X)):
+    #     adata.X = csr_matrix(adata.X)
     
     if('workdir' not in adata.uns_keys()):
         set_workdir(adata,workdir=workdir)
@@ -433,18 +433,18 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     assay = assay.lower()
     assert assay in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
     
-    if(not issparse(adata.X)):
-        adata.X = csr_matrix(adata.X)
+    # if(not issparse(adata.X)):
+    #     adata.X = csr_matrix(adata.X)
 
-    n_counts = adata.X.sum(axis=0).A1
+    n_counts = adata.X.sum(axis=0)
     adata.var['n_counts'] = n_counts
-    n_cells = (adata.X>=expr_cutoff).sum(axis=0).A1
+    n_cells = (adata.X>=expr_cutoff).sum(axis=0)
     adata.var['n_cells'] = n_cells 
     adata.var['pct_cells'] = n_cells/adata.shape[0]
 
-    n_counts = adata.X.sum(axis=1).A1
+    n_counts = adata.X.sum(axis=1)
     adata.obs['n_counts'] = n_counts
-    n_features = (adata.X>=expr_cutoff).sum(axis=1).A1
+    n_features = (adata.X>=expr_cutoff).sum(axis=1)
     if(assay=='atac'):
         adata.obs['n_peaks'] = n_features  
         adata.obs['pct_peaks'] = n_features/adata.shape[1]
@@ -454,7 +454,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
         r = re.compile("^MT-",flags=re.IGNORECASE)
         mt_genes = list(filter(r.match, adata.var_names))
         if(len(mt_genes)>0):
-            n_counts_mt = adata[:,mt_genes].X.sum(axis=1).A1
+            n_counts_mt = adata[:,mt_genes].X.sum(axis=1)
             adata.obs['pct_mt'] = n_counts_mt/n_counts
         else:
             adata.obs['pct_mt'] = 0
@@ -889,6 +889,9 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
     var_genes: `pandas.core.indexes.base.Index` (`adata.uns['var_genes']`)
         The selected variable gene names.
     """
+
+    # if(not issparse(adata.X)):
+    #     adata.X = csr_matrix(adata.X) 
 
     if(fig_path is None):
         fig_path = adata.uns['workdir']  
