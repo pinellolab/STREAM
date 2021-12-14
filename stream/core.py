@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_string_dtype,is_numeric_dtype
+from pandas.api.types import (
+    is_string_dtype,
+    is_numeric_dtype
+)
 import anndata as ad
 import networkx as nx
 import re
@@ -13,10 +16,22 @@ import plotly.express as px
 import multiprocessing
 import os
 from sklearn.decomposition import PCA as sklearnPCA
-from sklearn import preprocessing
-from sklearn.manifold import LocallyLinearEmbedding,TSNE, SpectralEmbedding
-from sklearn.cluster import SpectralClustering,AffinityPropagation,KMeans
-from sklearn.metrics.pairwise import pairwise_distances_argmin_min,pairwise_distances,euclidean_distances
+# from sklearn import preprocessing
+from sklearn.manifold import (
+    LocallyLinearEmbedding,
+    TSNE,
+    SpectralEmbedding
+)
+from sklearn.cluster import (
+    SpectralClustering,
+    AffinityPropagation,
+    KMeans
+)
+from sklearn.metrics.pairwise import (
+    # pairwise_distances_argmin_min,
+    pairwise_distances,
+    euclidean_distances
+)
 import matplotlib as mpl
 import matplotlib.patches as Patches
 from matplotlib.patches import Polygon
@@ -24,12 +39,25 @@ from mpl_toolkits.mplot3d import Axes3D
 import umap
 from copy import deepcopy
 import itertools
-from scipy.spatial import distance,cKDTree,KDTree
+from scipy.spatial import (
+    # distance,
+    cKDTree,
+    # KDTree
+)
 import math
 # mpl.use('Agg')
 from scipy import stats
-from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde,kruskal
-from scipy.sparse import issparse,lil_matrix,csr_matrix
+from scipy.stats import (
+    spearmanr,
+    mannwhitneyu,
+    # gaussian_kde,
+    # kruskal
+)
+from scipy.sparse import (
+    issparse,
+    lil_matrix,
+    csr_matrix
+)
 from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
@@ -44,11 +72,13 @@ import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 
 from .extra import *
-#scikit_posthocs is currently not available in conda system. We will update it once it can be installed via conda.
-#import scikit_posthocs as sp
+# scikit_posthocs is currently not available in conda system.
+# We will update it once it can be installed via conda.
+# import scikit_posthocs as sp
 from .scikit_posthocs import posthoc_conover
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 
 def set_figure_params(context='notebook',style='white',palette='deep',font='sans-serif',font_scale=1.1,color_codes=True,
                       dpi=80,dpi_save=150,figsize=[5.4, 4.8],rc=None):
@@ -3107,7 +3137,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
             dict_ann[ann] = adata.obs_vector(ann)
         else:
             raise ValueError("could not find '%s' in `adata.obs.columns` and `adata.var_names`"  % (ann))
-    
+
     flat_tree = adata.uns['flat_tree']
     ft_node_label = nx.get_node_attributes(flat_tree,'label')
     label_to_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}    
