@@ -1,12 +1,12 @@
 import stream as st
 import os
-from pathlib import Path
+# from pathlib import Path
 import tarfile
 import tempfile
 from shutil import rmtree
-import pandas as pd
-from pandas.api.types import is_numeric_dtype
-import numpy as np
+# import pandas as pd
+# from pandas.api.types import is_numeric_dtype
+# import numpy as np
 
 
 _root = os.path.abspath(os.path.dirname(__file__))
@@ -161,46 +161,48 @@ def stream_test_Nestorowa_2016():
         n_jobs=4)
     # st.write(adata,file_name='stream_result.pkl')
 
-    print(ref_temp_folder)
-    print(comp_temp_folder)
+    # print(ref_temp_folder)
+    # print(comp_temp_folder)
 
-    pathlist = Path(ref_temp_folder)
-    for path in pathlist.glob('**/*'):
-        if path.is_file() and (not path.name.startswith('.')):
-            file = os.path.relpath(str(path), ref_temp_folder)
-            print(file)
-            if(file.endswith('pdf')):
-                if(os.path.getsize(os.path.join(comp_temp_folder, file)) > 0):
-                    print('The file %s passed' % file)
-                else:
-                    raise Exception('Error! The file %s is not matched' % file)
-            else:
-                checklist = list()
-                df_ref = pd.read_csv(
-                    os.path.join(ref_temp_folder, file), sep='\t')
-                # print(df_ref.shape)
-                # print(df_ref.head())
-                df_comp = pd.read_csv(
-                    os.path.join(comp_temp_folder, file), sep='\t')
-                # print(df_comp.shape)
-                # print(df_comp.head())
-                for c in df_ref.columns:
-                    # print(c)
-                    if(is_numeric_dtype(df_ref[c])):
-                        checklist.append(
-                            all(np.isclose(df_ref[c], df_comp[c])))
-                    else:
-                        checklist.append(
-                            all(df_ref[c] == df_comp[c]))
-                if(all(checklist)):
-                    print('The file %s passed' % file)
-                else:
-                    raise Exception('Error! The file %s is not matched' % file)
-
-    print('Successful!')
+    # pathlist = Path(ref_temp_folder)
+    # for path in pathlist.glob('**/*'):
+    #     if path.is_file() and (not path.name.startswith('.')):
+    #         file = os.path.relpath(str(path), ref_temp_folder)
+    #         print(file)
+    #         if(file.endswith('pdf')):
+    #             if(os.path.getsize(
+    #                os.path.join(comp_temp_folder, file)) > 0):
+    #                 print('The file %s passed' % file)
+    #             else:
+    #                 raise Exception(
+    #                     'Error! The file %s is not matched' % file)
+    #         else:
+    #             checklist = list()
+    #             df_ref = pd.read_csv(
+    #                 os.path.join(ref_temp_folder, file), sep='\t')
+    #             # print(df_ref.shape)
+    #             # print(df_ref.head())
+    #             df_comp = pd.read_csv(
+    #                 os.path.join(comp_temp_folder, file), sep='\t')
+    #             # print(df_comp.shape)
+    #             # print(df_comp.head())
+    #             for c in df_ref.columns:
+    #                 # print(c)
+    #                 if(is_numeric_dtype(df_ref[c])):
+    #                     checklist.append(
+    #                         all(np.isclose(df_ref[c], df_comp[c])))
+    #                 else:
+    #                     checklist.append(
+    #                         all(df_ref[c] == df_comp[c]))
+    #             if(all(checklist)):
+    #                 print('The file %s passed' % file)
+    #             else:
+    #                 raise Exception(
+    #                     'Error! The file %s is not matched' % file)
 
     rmtree(comp_temp_folder, ignore_errors=True)
     rmtree(ref_temp_folder, ignore_errors=True)
+    print('Successful!')
 
 
 def main():
