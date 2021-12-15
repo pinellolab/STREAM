@@ -25,6 +25,7 @@ jobs:
       run: |
         conda config --add channels bioconda 
         conda config --add channels conda-forge
+        conda config --set channel_priority false
         # conda env update --file environment.yml --name base
         conda install stream
         python -m pip install --upgrade pip
