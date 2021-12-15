@@ -1,6 +1,8 @@
 language: python
 python:
   - "3.7"
+  - "3.8"
+  - "3.9"
 install:
   - sudo apt-get update
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -13,9 +15,9 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION 
   - source activate test-environment
   - conda config --add channels defaults
-  - conda config --add channels bioconda 
+  - conda config --add channels bioconda
   - conda config --add channels conda-forge
-  - conda install tzlocal stream=1.0 -y
+  - conda install tzlocal stream -y
   - Rscript -e 'install.packages("stringi",repos="https://cloud.r-project.org/")'
   - installationpath=$PWD
   - echo $installationpath
