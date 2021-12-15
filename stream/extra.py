@@ -1519,11 +1519,15 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
     for x in bfs_edges:
         if x in nx.get_edge_attributes(flat_tree,'id').values():
             id_cells = np.where(df_stream['branch_id']==x)[0]
-            df_stream.loc[df_stream.index[id_cells],'edge'] = [x]
+            df_stream.loc[df_stream.index[id_cells],'edge'] = pd.Series(
+                index= df_stream.index[id_cells],
+                data = [x] * len(id_cells))
             df_stream.loc[df_stream.index[id_cells],'lam_ordered'] = df_stream.loc[df_stream.index[id_cells],'branch_lam']
         else:
             id_cells = np.where(df_stream['branch_id']==(x[1],x[0]))[0]
-            df_stream.loc[df_stream.index[id_cells],'edge'] = [x]
+            df_stream.loc[df_stream.index[id_cells],'edge'] = pd.Series(
+                index= df_stream.index[id_cells],
+                data = [x] * len(id_cells))
             df_stream.loc[df_stream.index[id_cells],'lam_ordered'] = flat_tree.edges[x]['len'] - df_stream.loc[df_stream.index[id_cells],'branch_lam']  
     
     df_stream['CELL_LABEL'] = 'unknown'
