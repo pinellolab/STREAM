@@ -1130,6 +1130,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                         df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
                         df_bins.loc['center',"win"+str(total_bins+i_win)] = (sum(mat_w_common[i_win,:])+len_ori[edge_i])/2
 
+        df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
         #order cell names by the index of first non-zero
         cell_list = df_bins.index[:-3]
         id_nonzero = []
@@ -1660,6 +1661,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                 for ann in list_ann_numeric:
                     ann_values_common = pd.concat(dict_df_ann_common[ann]).groupby(['CELL_LABEL'])[ann].mean()
                     dict_ann_df[ann].loc[ann_values_common.index,"win"+str(total_bins+i_win)] = ann_values_common
+                    dict_ann_df[ann] = dict_ann_df[ann].copy() # avoid warning "DataFrame is highly fragmented."
                 df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
                 if(i_win == 0):
                     df_bins.loc['center',"win"+str(total_bins+i_win)] = 0
@@ -1684,6 +1686,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                     ann_values = df_edge_i[np.logical_and(df_edge_i.lam_ordered>=mat_w[i_win,0],\
                                                     df_edge_i.lam_ordered<=mat_w[i_win,1])].groupby(['CELL_LABEL'])[ann].mean()
                     dict_ann_df[ann].loc[ann_values.index,"win"+str(total_bins+i_win)] = ann_values
+                    dict_ann_df[ann] = dict_ann_df[ann].copy() # avoid warning "DataFrame is highly fragmented."
                     dict_merge_num[ann].append(1)
                 if(degree_st == 1 and i_win==0):
                     df_bins.loc['center',"win"+str(total_bins+i_win)] = 0
@@ -1715,6 +1718,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                         ann_values = df_edge_i[np.logical_and(df_edge_i.lam_ordered>=bd_bins[0],\
                                                         df_edge_i.lam_ordered<=bd_bins[1])].groupby(['CELL_LABEL'])[ann].mean()
                         dict_ann_df[ann].loc[ann_values.index,"win"+str(total_bins)] = ann_values
+                        dict_ann_df[ann] = dict_ann_df[ann].copy() # avoid warning "DataFrame is highly fragmented."
                         dict_merge_num[ann].append(len(id_stack))
                     if(degree_st == 1 and (0 in id_stack)):
                         df_bins.loc['center',"win"+str(total_bins)] = 0
@@ -1774,9 +1778,11 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                     for ann in list_ann_numeric:
                         ann_values_common = pd.concat(dict_df_ann_common[ann]).groupby(['CELL_LABEL'])[ann].mean()
                         dict_ann_df[ann].loc[ann_values_common.index,"win"+str(total_bins+i_win)] = ann_values_common
+                        dict_ann_df[ann] = dict_ann_df[ann].copy() # avoid warning "DataFrame is highly fragmented."s
                     df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
                     df_bins.loc['center',"win"+str(total_bins+i_win)] = (sum(mat_w_common[i_win,:])+len_ori[edge_i])/2
 
+    df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
     #order cell names by the index of first non-zero
     cell_list = df_bins.index[:-3]
     id_nonzero = []
