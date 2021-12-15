@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_string_dtype,is_numeric_dtype
+from pandas.api.types import (
+    is_string_dtype,
+    is_numeric_dtype
+)
 import anndata as ad
 import networkx as nx
 import re
@@ -13,10 +16,22 @@ import plotly.express as px
 import multiprocessing
 import os
 from sklearn.decomposition import PCA as sklearnPCA
-from sklearn import preprocessing
-from sklearn.manifold import LocallyLinearEmbedding,TSNE, SpectralEmbedding
-from sklearn.cluster import SpectralClustering,AffinityPropagation,KMeans
-from sklearn.metrics.pairwise import pairwise_distances_argmin_min,pairwise_distances,euclidean_distances
+# from sklearn import preprocessing
+from sklearn.manifold import (
+    LocallyLinearEmbedding,
+    TSNE,
+    SpectralEmbedding
+)
+from sklearn.cluster import (
+    SpectralClustering,
+    AffinityPropagation,
+    KMeans
+)
+from sklearn.metrics.pairwise import (
+    # pairwise_distances_argmin_min,
+    pairwise_distances,
+    euclidean_distances
+)
 import matplotlib as mpl
 import matplotlib.patches as Patches
 from matplotlib.patches import Polygon
@@ -24,12 +39,25 @@ from mpl_toolkits.mplot3d import Axes3D
 import umap
 from copy import deepcopy
 import itertools
-from scipy.spatial import distance,cKDTree,KDTree
+from scipy.spatial import (
+    # distance,
+    cKDTree,
+    # KDTree
+)
 import math
 # mpl.use('Agg')
 from scipy import stats
-from scipy.stats import spearmanr,mannwhitneyu,gaussian_kde,kruskal
-from scipy.sparse import issparse,lil_matrix,csr_matrix
+from scipy.stats import (
+    spearmanr,
+    mannwhitneyu,
+    # gaussian_kde,
+    # kruskal
+)
+# from scipy.sparse import (
+#     issparse,
+#     lil_matrix,
+#     csr_matrix
+# )
 from slugify import slugify
 from decimal import *
 import matplotlib.gridspec as gridspec
@@ -44,11 +72,13 @@ import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 
 from .extra import *
-#scikit_posthocs is currently not available in conda system. We will update it once it can be installed via conda.
-#import scikit_posthocs as sp
+# scikit_posthocs is currently not available in conda system.
+# We will update it once it can be installed via conda.
+# import scikit_posthocs as sp
 from .scikit_posthocs import posthoc_conover
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 
 def set_figure_params(context='notebook',style='white',palette='deep',font='sans-serif',font_scale=1.1,color_codes=True,
                       dpi=80,dpi_save=150,figsize=[5.4, 4.8],rc=None):
@@ -179,8 +209,8 @@ def read(file_name,file_path=None,file_format=None,delimiter='\t',workdir=None, 
         adata = pickle.load(f)
         f.close()
         
-    if(not issparse(adata.X)):
-        adata.X = csr_matrix(adata.X)    
+    # if(not issparse(adata.X)):
+    #     adata.X = csr_matrix(adata.X)
     
     if('workdir' not in adata.uns_keys()):
         set_workdir(adata,workdir=workdir)
@@ -403,18 +433,18 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
     assay = assay.lower()
     assert assay in ['rna','atac'], "`assay` must be chosen from ['rna','atac']"
     
-    if(not issparse(adata.X)):
-        adata.X = csr_matrix(adata.X)
+    # if(not issparse(adata.X)):
+    #     adata.X = csr_matrix(adata.X)
 
-    n_counts = adata.X.sum(axis=0).A1
+    n_counts = adata.X.sum(axis=0)
     adata.var['n_counts'] = n_counts
-    n_cells = (adata.X>=expr_cutoff).sum(axis=0).A1
+    n_cells = (adata.X>=expr_cutoff).sum(axis=0)
     adata.var['n_cells'] = n_cells 
     adata.var['pct_cells'] = n_cells/adata.shape[0]
 
-    n_counts = adata.X.sum(axis=1).A1
+    n_counts = adata.X.sum(axis=1)
     adata.obs['n_counts'] = n_counts
-    n_features = (adata.X>=expr_cutoff).sum(axis=1).A1
+    n_features = (adata.X>=expr_cutoff).sum(axis=1)
     if(assay=='atac'):
         adata.obs['n_peaks'] = n_features  
         adata.obs['pct_peaks'] = n_features/adata.shape[1]
@@ -424,7 +454,7 @@ def cal_qc(adata,expr_cutoff=1,assay='rna'):
         r = re.compile("^MT-",flags=re.IGNORECASE)
         mt_genes = list(filter(r.match, adata.var_names))
         if(len(mt_genes)>0):
-            n_counts_mt = adata[:,mt_genes].X.sum(axis=1).A1
+            n_counts_mt = adata[:,mt_genes].X.sum(axis=1)
             adata.obs['pct_mt'] = n_counts_mt/n_counts
         else:
             adata.obs['pct_mt'] = 0
@@ -859,6 +889,9 @@ def select_variable_genes(adata,loess_frac=0.01,percentile=95,n_genes = None,n_j
     var_genes: `pandas.core.indexes.base.Index` (`adata.uns['var_genes']`)
         The selected variable gene names.
     """
+
+    # if(not issparse(adata.X)):
+    #     adata.X = csr_matrix(adata.X) 
 
     if(fig_path is None):
         fig_path = adata.uns['workdir']  
@@ -3032,6 +3065,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
                 factor_num_win=10,factor_min_win=2.0,factor_width=2.5,factor_nrow=200,factor_ncol=400,
                 log_scale = False,factor_zoomin=100.0,
                 fig_size=(7,4.5),fig_legend_order=None,fig_legend_ncol=1,
+                fig_colorbar_aspect=30,
                 vmin=None,vmax=None,
                 pad=1.08,w_pad=None,h_pad=None,
                 save_fig=False,fig_path=None,fig_format='pdf'):  
@@ -3107,7 +3141,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
             dict_ann[ann] = adata.obs_vector(ann)
         else:
             raise ValueError("could not find '%s' in `adata.obs.columns` and `adata.var_names`"  % (ann))
-    
+
     flat_tree = adata.uns['flat_tree']
     ft_node_label = nx.get_node_attributes(flat_tree,'label')
     label_to_node = {value: key for key,value in nx.get_node_attributes(flat_tree,'label').items()}    
@@ -3206,7 +3240,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
                 clip_path = Polygon(verts_cell, facecolor='none', edgecolor='none', closed=True)
                 ax.add_patch(clip_path)
                 im.set_clip_path(clip_path)
-                cbar = plt.colorbar(im, ax=ax, pad=0.04, fraction=0.02, aspect='auto')
+                cbar = plt.colorbar(im, ax=ax, pad=0.04, fraction=0.02, aspect=fig_colorbar_aspect)
                 cbar.ax.locator_params(nbins=5)  
         ax.set_xlim(xmin,xmax)
         ax.set_ylim(ymin,ymax)

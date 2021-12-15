@@ -8,7 +8,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python-version: [3.7, 3.8, 3.9]       
+        python-version: [3.7]       
 
     steps:
     - uses: actions/checkout@v2
@@ -22,10 +22,14 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        conda config --add channels bioconda 
+        conda config --add channels defaults
+        conda config --add channels bioconda
         conda config --add channels conda-forge
+        # conda config --set channel_priority flexible
         # conda env update --file environment.yml --name base
-        conda install stream
+        conda create -n test-environment stream r-stringi python=${{ matrix.python-version }}
+        source activate test-environment
+        # conda install stream
         python -m pip install --upgrade pip
         pip install -e .
 #     - name: Lint with flake8
@@ -37,4 +41,5 @@ jobs:
 #         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test
       run: |
+        source activate test-environment
         stream_run_test
