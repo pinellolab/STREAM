@@ -27,8 +27,8 @@ jobs:
         conda config --add channels conda-forge
         # conda config --set channel_priority flexible
         # conda env update --file environment.yml --name base
-        conda create -n test-environment stream python=${{ matrix.python-version }}
-        source activate test-environment
+        conda create -n test-environment stream r-stringi python=${{ matrix.python-version }}
+        conda activate test-environment
         # conda install stream
         python -m pip install --upgrade pip
         pip install -e .
@@ -41,4 +41,5 @@ jobs:
 #         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test
       run: |
+        conda activate test-environment
         stream_run_test
