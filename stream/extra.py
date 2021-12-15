@@ -747,7 +747,7 @@ def construct_bfs_flat_tree(adata,dict_win_ncells,dict_edge_shift_dist,max_width
         df_ncells_edge_i_cumsum = bfs_flat_tree.edges[edge_i]['ncells_cumsum']
         #normalize cell count  
         df_ncells_edge_i_cumsum_norm = df_ncells_edge_i_cumsum.copy()
-        df_ncells_edge_i_cumsum_norm.iloc[:,1:] = max_width*df_ncells_edge_i_cumsum.iloc[:,1:]/np.float(max_ncells_cumsum)
+        df_ncells_edge_i_cumsum_norm.iloc[:,1:] = max_width*df_ncells_edge_i_cumsum.iloc[:,1:]/float(max_ncells_cumsum)
         dict_edges_ncells_cumsum_norm[edge_i] = df_ncells_edge_i_cumsum_norm
         node_pos_st = np.array([dict_path_len[edge_i[0]],dict_edge_shift_dist[edge_i]]) 
         dict_edges_x[edge_i] = dict_path_len[edge_i[0]] + df_ncells_edge_i_cumsum_norm['pt_lam']
@@ -967,7 +967,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
             node = dfs_nodes_copy.pop()
             prev_node = dict_tree[node]['prev']
             if(node in leaves):
-                dict_shift_dist[(prev_node,node)] = -(np.float(1)/dist_scale)*(num_nonroot_leaf-1)/2.0 + id_leaf*(np.float(1)/dist_scale)
+                dict_shift_dist[(prev_node,node)] = -(float(1)/dist_scale)*(num_nonroot_leaf-1)/2.0 + id_leaf*(float(1)/dist_scale)
                 id_leaf = id_leaf+1
             else:
                 next_nodes = dict_tree[node]['next']
@@ -981,17 +981,17 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
         df_bins = pd.DataFrame(index = list(df_stream['CELL_LABEL'].unique()) + ['boundary','center','edge'])    
         list_paths = find_root_to_leaf_paths(flat_tree, root_node)
         max_path_len = find_longest_path(list_paths,len_ori)
-        size_w = max_path_len/np.float(factor_num_win)
-        if(size_w>min(len_ori.values())/np.float(factor_min_win)):
-            size_w = min(len_ori.values())/np.float(factor_min_win)
+        size_w = max_path_len/float(factor_num_win)
+        if(size_w>min(len_ori.values())/float(factor_min_win)):
+            size_w = min(len_ori.values())/float(factor_min_win)
 
         step_w = size_w/2 #step of sliding window (the divisor should be even)
 
         if(len(dict_shift_dist)>1):
-            max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+            max_width = (max_path_len/float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
         else:
-            max_width = max_path_len/np.float(factor_width)
-        # max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+            max_width = max_path_len/float(factor_width)
+        # max_width = (max_path_len/float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
         dict_shift_dist = {x: dict_shift_dist[x]*max_width for x in dict_shift_dist.keys()}
         min_width = 0.0 #min width of branch
         min_cellnum = 0 #the minimal cell number in one branch
@@ -1035,7 +1035,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                 for i_win in range(mat_w_common.shape[0]):
                     df_bins["win"+str(total_bins+i_win)] = ""
                     df_bins.loc[df_bins.index[:-3],"win"+str(total_bins+i_win)] = 0
-                    df_bins.loc['edge',"win"+str(total_bins+i_win)] = [(root_node,root_node)]
+                    df_bins.at['edge',"win"+str(total_bins+i_win)] = [(root_node,root_node)]
                     for j in range(degree_st):
                         df_edge_j = dict_edge_filter[(edge_i[0],nb_nodes[j])]
                         cell_num_common2 = df_edge_j[np.logical_and(df_edge_j.lam_ordered>=0,\
@@ -1043,7 +1043,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                         df_bins.loc[cell_num_common2.index,"win"+str(total_bins+i_win)] = \
                         df_bins.loc[cell_num_common2.index,"win"+str(total_bins+i_win)] + cell_num_common2
                         df_bins.loc['edge',"win"+str(total_bins+i_win)].append((edge_i[0],nb_nodes[j]))
-                    df_bins.loc['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
+                    df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
                     if(i_win == 0):
                         df_bins.loc['center',"win"+str(total_bins+i_win)] = 0
                     else:
@@ -1060,14 +1060,17 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                     cell_num = df_edge_i[np.logical_and(df_edge_i.lam_ordered>=mat_w[i_win,0],\
                                                         df_edge_i.lam_ordered<=mat_w[i_win,1])]['CELL_LABEL'].value_counts()
                     df_bins.loc[cell_num.index,"win"+str(total_bins+i_win)] = cell_num
-                    df_bins.loc['boundary',"win"+str(total_bins+i_win)] = mat_w[i_win,:]
+                    df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w[i_win,:]
                     if(degree_st == 1 and i_win==0):
                         df_bins.loc['center',"win"+str(total_bins+i_win)] = 0
                     elif(degree_end == 1 and i_win==(mat_w.shape[0]-1)):
                         df_bins.loc['center',"win"+str(total_bins+i_win)] = len_ori[edge_i]
                     else:
                         df_bins.loc['center',"win"+str(total_bins+i_win)] = np.mean(mat_w[i_win,:])
-                df_bins.loc['edge',["win"+str(total_bins+i_win) for i_win in range(mat_w.shape[0])]] = [[edge_i]]
+                col_wins = ["win"+str(total_bins+i_win) for i_win in range(mat_w.shape[0])]
+                df_bins.loc['edge', col_wins] = pd.Series(
+                    index = col_wins,
+                    data=[[edge_i]]*len(col_wins))
 
             if(max_binnum>1):
                 id_stack = []
@@ -1080,8 +1083,8 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                         df_bins["win"+str(total_bins)] = ""
                         df_bins.loc[df_bins.index[:-3],"win"+str(total_bins)] = 0
                         df_bins.loc[cell_num.index,"win"+str(total_bins)] = cell_num
-                        df_bins.loc['boundary',"win"+str(total_bins)] = bd_bins
-                        df_bins.loc['edge',"win"+str(total_bins)] = [edge_i]
+                        df_bins.at['boundary',"win"+str(total_bins)] = bd_bins
+                        df_bins.at['edge',"win"+str(total_bins)] = [edge_i]
                         if(degree_st == 1 and (0 in id_stack)):
                             df_bins.loc['center',"win"+str(total_bins)] = 0
                         elif(degree_end == 1 and i_win==(mat_w.shape[0]-1)):
@@ -1110,7 +1113,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                         cell_num_common1 = df_edge_i[np.logical_and(df_edge_i.lam_ordered>mat_w_common[i_win,0],\
                                                                     df_edge_i.lam_ordered<=len_ori[edge_i])]['CELL_LABEL'].value_counts()
                         df_bins.loc[cell_num_common1.index,"win"+str(total_bins+i_win)] = cell_num_common1
-                        df_bins.loc['edge',"win"+str(total_bins+i_win)] = [edge_i]
+                        df_bins.at['edge',"win"+str(total_bins+i_win)] = [edge_i]
                         for j in range(degree_end - 1):
                             df_edge_j = dict_edge_filter[(edge_i[1],nb_nodes[j])]
                             cell_num_common2 = df_edge_j[np.logical_and(df_edge_j.lam_ordered>=0,\
@@ -1119,7 +1122,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                             df_bins.loc[cell_num_common2.index,"win"+str(total_bins+i_win)] + cell_num_common2
                             if abs(((sum(mat_w_common[i_win,:])+len_ori[edge_i])/2)-(len_ori[edge_i]+size_w/2.0))< step_w/100.0:
                                 df_bins.loc['edge',"win"+str(total_bins+i_win)].append((edge_i[1],nb_nodes[j]))
-                        df_bins.loc['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
+                        df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
                         df_bins.loc['center',"win"+str(total_bins+i_win)] = (sum(mat_w_common[i_win,:])+len_ori[edge_i])/2
 
         #order cell names by the index of first non-zero
@@ -1557,7 +1560,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
         node = dfs_nodes_copy.pop()
         prev_node = dict_tree[node]['prev']
         if(node in leaves):
-            dict_shift_dist[(prev_node,node)] = -(np.float(1)/dist_scale)*(num_nonroot_leaf-1)/2.0 + id_leaf*(np.float(1)/dist_scale)
+            dict_shift_dist[(prev_node,node)] = -(float(1)/dist_scale)*(num_nonroot_leaf-1)/2.0 + id_leaf*(float(1)/dist_scale)
             id_leaf = id_leaf+1
         else:
             next_nodes = dict_tree[node]['next']
@@ -1573,16 +1576,16 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
     dict_merge_num = {ann:[] for ann in list_ann_numeric} #number of merged sliding windows          
     list_paths = find_root_to_leaf_paths(flat_tree, root_node)
     max_path_len = find_longest_path(list_paths,len_ori)
-    size_w = max_path_len/np.float(factor_num_win)
-    if(size_w>min(len_ori.values())/np.float(factor_min_win)):
-        size_w = min(len_ori.values())/np.float(factor_min_win)
+    size_w = max_path_len/float(factor_num_win)
+    if(size_w>min(len_ori.values())/float(factor_min_win)):
+        size_w = min(len_ori.values())/float(factor_min_win)
 
     step_w = size_w/2 #step of sliding window (the divisor should be even)    
     if(len(dict_shift_dist)>1):
-        max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+        max_width = (max_path_len/float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
     else:
-        max_width = max_path_len/np.float(factor_width)
-    # max_width = (max_path_len/np.float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
+        max_width = max_path_len/float(factor_width)
+    # max_width = (max_path_len/float(factor_width))/(max(dict_shift_dist.values()) - min(dict_shift_dist.values()))
     dict_shift_dist = {x: dict_shift_dist[x]*max_width for x in dict_shift_dist.keys()}
     min_width = 0.0 #min width of branch
     min_cellnum = 0 #the minimal cell number in one branch
@@ -1626,7 +1629,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
             for i_win in range(mat_w_common.shape[0]):
                 df_bins["win"+str(total_bins+i_win)] = ""
                 df_bins.loc[df_bins.index[:-3],"win"+str(total_bins+i_win)] = 0
-                df_bins.loc['edge',"win"+str(total_bins+i_win)] = [(root_node,root_node)]
+                df_bins.at['edge',"win"+str(total_bins+i_win)] = [(root_node,root_node)]
                 dict_df_ann_common = dict()
                 for ann in list_ann_numeric:
                     dict_df_ann_common[ann] = list()
@@ -1647,7 +1650,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                 for ann in list_ann_numeric:
                     ann_values_common = pd.concat(dict_df_ann_common[ann]).groupby(['CELL_LABEL'])[ann].mean()
                     dict_ann_df[ann].loc[ann_values_common.index,"win"+str(total_bins+i_win)] = ann_values_common
-                df_bins.loc['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
+                df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
                 if(i_win == 0):
                     df_bins.loc['center',"win"+str(total_bins+i_win)] = 0
                 else:
@@ -1664,7 +1667,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                 cell_num = df_edge_i[np.logical_and(df_edge_i.lam_ordered>=mat_w[i_win,0],\
                                                     df_edge_i.lam_ordered<=mat_w[i_win,1])]['CELL_LABEL'].value_counts()
                 df_bins.loc[cell_num.index,"win"+str(total_bins+i_win)] = cell_num
-                df_bins.loc['boundary',"win"+str(total_bins+i_win)] = mat_w[i_win,:]
+                df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w[i_win,:]
                 for ann in list_ann_numeric:
                     dict_ann_df[ann]["win"+str(total_bins+i_win)] = 0
                     ann_values = df_edge_i[np.logical_and(df_edge_i.lam_ordered>=mat_w[i_win,0],\
@@ -1677,7 +1680,10 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                     df_bins.loc['center',"win"+str(total_bins+i_win)] = len_ori[edge_i]
                 else:
                     df_bins.loc['center',"win"+str(total_bins+i_win)] = np.mean(mat_w[i_win,:])
-            df_bins.loc['edge',["win"+str(total_bins+i_win) for i_win in range(mat_w.shape[0])]] = [[edge_i]]
+            col_wins = ["win"+str(total_bins+i_win) for i_win in range(mat_w.shape[0])]
+            df_bins.loc['edge', col_wins] = pd.Series(
+                index = col_wins,
+                data=[[edge_i]]*len(col_wins))
 
         if(max_binnum>1):
             id_stack = []
@@ -1690,8 +1696,8 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                     df_bins["win"+str(total_bins)] = ""
                     df_bins.loc[df_bins.index[:-3],"win"+str(total_bins)] = 0
                     df_bins.loc[cell_num.index,"win"+str(total_bins)] = cell_num
-                    df_bins.loc['boundary',"win"+str(total_bins)] = bd_bins
-                    df_bins.loc['edge',"win"+str(total_bins)] = [edge_i]
+                    df_bins.at['boundary',"win"+str(total_bins)] = bd_bins
+                    df_bins.at['edge',"win"+str(total_bins)] = [edge_i]
                     for ann in list_ann_numeric:
                         dict_ann_df[ann]["win"+str(total_bins)] = 0
                         ann_values = df_edge_i[np.logical_and(df_edge_i.lam_ordered>=bd_bins[0],\
@@ -1736,7 +1742,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
     #                                                             df_edge_i.lam_ordered<=len_ori[edge_i])].groupby(['CELL_LABEL'])[ann].mean()
     #                     dict_ann_df[ann].ix[ann_values_common1.index,"win"+str(total_bins+i_win)] = ann_values_common1
                         dict_merge_num[ann].append(1)
-                    df_bins.loc['edge',"win"+str(total_bins+i_win)] = [edge_i]
+                    df_bins.at['edge',"win"+str(total_bins+i_win)] = [edge_i]
                     for j in range(degree_end - 1):
                         df_edge_j = dict_edge_filter[(edge_i[1],nb_nodes[j])]
                         cell_num_common2 = df_edge_j[np.logical_and(df_edge_j.lam_ordered>=0,\
@@ -1755,7 +1761,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                     for ann in list_ann_numeric:
                         ann_values_common = pd.concat(dict_df_ann_common[ann]).groupby(['CELL_LABEL'])[ann].mean()
                         dict_ann_df[ann].loc[ann_values_common.index,"win"+str(total_bins+i_win)] = ann_values_common
-                    df_bins.loc['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
+                    df_bins.at['boundary',"win"+str(total_bins+i_win)] = mat_w_common[i_win,:]
                     df_bins.loc['center',"win"+str(total_bins+i_win)] = (sum(mat_w_common[i_win,:])+len_ori[edge_i])/2
 
     #order cell names by the index of first non-zero
