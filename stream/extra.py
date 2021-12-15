@@ -1023,6 +1023,8 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                 mat_w = np.insert(mat_w,mat_w.shape[0],[len_ori[edge_i]-size_w/2.0,len_ori[edge_i]],axis=0)
             total_bins = df_bins.shape[1] # current total number of bins
 
+            
+            df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
             if(degree_st>1 and i==0):
                 #matrix of windows appearing on multiple edges
                 mat_w_common = np.array([[0,size_w/2.0],[0,size_w]])
@@ -1053,6 +1055,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
             df_edge_i = dict_edge_filter[edge_i]
             total_bins = df_bins.shape[1] # current total number of bins
 
+            df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
             if(max_binnum<=1):
                 for i_win in range(mat_w.shape[0]):
                     df_bins["win"+str(total_bins+i_win)] = ""
@@ -1072,6 +1075,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                     index = col_wins,
                     data=[[edge_i]]*len(col_wins))
 
+            df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
             if(max_binnum>1):
                 id_stack = []
                 for i_win in range(mat_w.shape[0]):
@@ -1094,6 +1098,7 @@ def cal_stream_polygon_string(adata,dict_ann,root='S0',preference=None,dist_scal
                         total_bins = total_bins + 1
                         id_stack = []
 
+            df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
             if(degree_end>1):
                 #matrix of windows appearing on multiple edges
                 mat_w_common = np.vstack([np.arange(len_ori[edge_i]-size_w+step_w,len_ori[edge_i]+(len_ori[edge_i]/10**6),step_w),\
@@ -1621,6 +1626,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
             mat_w = np.insert(mat_w,mat_w.shape[0],[len_ori[edge_i]-size_w/2.0,len_ori[edge_i]],axis=0)
         total_bins = df_bins.shape[1] # current total number of bins
 
+        df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
         if(degree_st>1 and i==0):
             #matrix of windows appearing on multiple edges
             mat_w_common = np.array([[0,size_w/2.0],[0,size_w]])
@@ -1664,6 +1670,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
         df_edge_i = dict_edge_filter[edge_i]
         total_bins = df_bins.shape[1] # current total number of bins
 
+        df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
         if(max_binnum<=1):
             for i_win in range(mat_w.shape[0]):
                 df_bins["win"+str(total_bins+i_win)] = ""
@@ -1689,6 +1696,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                 index = col_wins,
                 data=[[edge_i]]*len(col_wins))
 
+        df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
         if(max_binnum>1):
             id_stack = []
             for i_win in range(mat_w.shape[0]):
@@ -1717,6 +1725,7 @@ def cal_stream_polygon_numeric(adata,dict_ann,root='S0',preference=None, dist_sc
                     total_bins = total_bins + 1
                     id_stack = []
 
+        df_bins = df_bins.copy() # avoid warning "DataFrame is highly fragmented."
         if(degree_end>1):
             #matrix of windows appearing on multiple edges
             mat_w_common = np.vstack([np.arange(len_ori[edge_i]-size_w+step_w,len_ori[edge_i]+(len_ori[edge_i]/10**6),step_w),\
