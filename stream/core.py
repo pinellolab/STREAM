@@ -3065,6 +3065,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
                 factor_num_win=10,factor_min_win=2.0,factor_width=2.5,factor_nrow=200,factor_ncol=400,
                 log_scale = False,factor_zoomin=100.0,
                 fig_size=(7,4.5),fig_legend_order=None,fig_legend_ncol=1,
+                fig_colorbar_aspect=30,
                 vmin=None,vmax=None,
                 pad=1.08,w_pad=None,h_pad=None,
                 save_fig=False,fig_path=None,fig_format='pdf'):  
@@ -3239,7 +3240,7 @@ def plot_stream(adata,root='S0',color = None,preference=None,dist_scale=0.9,
                 clip_path = Polygon(verts_cell, facecolor='none', edgecolor='none', closed=True)
                 ax.add_patch(clip_path)
                 im.set_clip_path(clip_path)
-                cbar = plt.colorbar(im, ax=ax, pad=0.04, fraction=0.02, aspect='auto')
+                cbar = plt.colorbar(im, ax=ax, pad=0.04, fraction=0.02, aspect=fig_colorbar_aspect)
                 cbar.ax.locator_params(nbins=5)  
         ax.set_xlim(xmin,xmax)
         ax.set_ylim(ymin,ymax)
