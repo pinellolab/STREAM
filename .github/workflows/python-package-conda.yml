@@ -20,14 +20,16 @@ jobs:
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
-        conda update -q conda
     - name: Install dependencies
       run: |
-        conda config --add channels bioconda 
+        conda config --add channels defaults
+        conda config --add channels bioconda
         conda config --add channels conda-forge
-        conda config --set channel_priority false
+        # conda config --set channel_priority flexible
         # conda env update --file environment.yml --name base
-        conda install stream
+        conda create -n test-environment stream python=${{ matrix.python-version }}
+        source activate test-environment
+        # conda install stream
         python -m pip install --upgrade pip
         pip install -e .
 #     - name: Lint with flake8
