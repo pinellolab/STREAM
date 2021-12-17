@@ -539,7 +539,8 @@ def plot_qc(adata,
                 df_obs['log10_'+ann] = np.log10(df_obs[ann]+1)
                 ann = 'log10_'+ann 
             if(i in hist_plot):
-                sc_i1 = sns.distplot(df_obs[ann],vertical=True)
+                sc_i1 = sns.histplot(ax=ax_i, data=df_obs, y=ann)
+                # sc_i1 = sns.distplot(df_obs[ann],vertical=True)
                 ax_i.set_xticks([]) 
             else:
                 sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=df_obs,inner=None)
@@ -551,7 +552,8 @@ def plot_qc(adata,
                 df_var['log10_'+ann] = np.log10(df_var[ann]+1)
                 ann = 'log10_'+ann 
             if(i in hist_plot):
-                sc_i1 = sns.distplot(df_var[ann],vertical=True)
+                sc_i1 = sns.histplot(ax=ax_i, data=df_var, y=ann)
+                # sc_i1 = sns.distplot(df_var[ann],vertical=True)
                 ax_i.set_xticks([])
             else:
                 sc_i1 = sns.violinplot(ax=ax_i,y=ann,data=df_var,inner=None)
@@ -1452,7 +1454,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                     ax_i.scatter(df_plot_shuf['Dim'+str(comp1+1)], df_plot_shuf['Dim'+str(comp2+1)],df_plot_shuf['Dim'+str(comp3+1)],
                                  c=colors_sns,alpha=alpha,linewidth=0,
                                  zorder=-1)
-                    ax_i.legend(legend_sns[1:],labels_sns[1:],bbox_to_anchor=(1.03, 0.5), loc='center left', ncol=fig_legend_ncol,
+                    ax_i.legend(legend_sns,labels_sns,bbox_to_anchor=(1.08, 0.5), loc='center left', ncol=fig_legend_ncol,
                                 frameon=False,)                    
                     
                 else:
@@ -1464,7 +1466,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                         df_plot_shuf['Dim'+str(comp3+1)],
                                         c=df_plot_shuf[ann],vmin=vmin_i,vmax=vmax_i,alpha=alpha,linewidth=0,
                                         zorder=-1)
-                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.04, fraction=0.05, aspect=30)
+                    cbar = plt.colorbar(sc_i,ax=ax_i, pad=0.1, fraction=0.05, aspect=30)
                     cbar.solids.set_edgecolor("face")
                     cbar.ax.locator_params(nbins=5)
                 if(show_graph):
@@ -1505,7 +1507,7 @@ def plot_dimension_reduction(adata,n_components = None,comp1=0,comp2=1,comp3=2,c
                                                 else None
                                         )
                     legend_handles, legend_labels = ax_i.get_legend_handles_labels()
-                    ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                    ax_i.legend(handles=legend_handles, labels=legend_labels,
                                 bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                                 frameon=False,
                                 )
@@ -2623,7 +2625,7 @@ def plot_flat_tree(adata,color=None,dist_scale=1,
                                             if (ann+'_color' in adata.uns_keys()) and (set(adata.uns[ann+'_color'].keys()) >= set(np.unique(df_plot_shuf[ann]))) \
                                             else None)
                 legend_handles, legend_labels = ax_i.get_legend_handles_labels()
-                ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                ax_i.legend(handles=legend_handles, labels=legend_labels,
                             bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
                             )
@@ -2818,7 +2820,7 @@ def plot_visualization_2D(adata,method='umap',n_neighbors=50, nb_pct=None,perple
                                             else None
                                     )
                 legend_handles, legend_labels = ax_i.get_legend_handles_labels()
-                ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                ax_i.legend(handles=legend_handles, labels=legend_labels,
                             bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
                             )
@@ -3008,7 +3010,7 @@ def plot_stream_sc(adata,root='S0',color=None,dist_scale=1,dist_pctl=95,preferen
                                             else None                                    
                                     )
                 legend_handles, legend_labels = ax_i.get_legend_handles_labels()
-                ax_i.legend(handles=legend_handles[1:], labels=legend_labels[1:],
+                ax_i.legend(handles=legend_handles, labels=legend_labels,
                             bbox_to_anchor=(1, 0.5), loc='center left', ncol=fig_legend_ncol,
                             frameon=False,
                             )
