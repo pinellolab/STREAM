@@ -4,10 +4,16 @@
 
 [![CI](https://github.com/pinellolab/STREAM/actions/workflows/python-package-conda.yml/badge.svg)](https://github.com/pinellolab/STREAM/actions/workflows/python-package-conda.yml)
 
-# STREAM (Latest version v1.0)
+# STREAM (Latest version v1.1)
 
 Latest News
 -----------
+> Dec 17, 2021  
+
+Version 1.1 is now available. 
+1) fixed incompatible issues related to the latest version of `pandas`
+2) fixed plotting issues related to the latest version of `matplotlib` and `seaborn` 
+
 > Jun 1, 2020  
 
 Version 1.0 is now available. The v1.0 has added a lot of new functionality:
