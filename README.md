@@ -2,7 +2,7 @@
 
 <!-- [![Build Status](https://travis-ci.org/pinellolab/STREAM.svg)](https://travis-ci.org/pinellolab/STREAM) -->
 
-[![CI](https://github.com/pinellolab/stream/actions/workflows/python-package-conda.yml/badge.svg)](https://github.com/pinellolab/simba/actions/workflows/python-package-conda.yml)
+[![CI](https://github.com/pinellolab/STREAM/actions/workflows/python-package-conda.yml/badge.svg)](https://github.com/pinellolab/STREAM/actions/workflows/python-package-conda.yml)
 
 # STREAM (Latest version v1.0)
 
